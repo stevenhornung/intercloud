@@ -1,0 +1,145 @@
+package com.intercloud.cloudstore
+
+import com.dropbox.client2.DropboxAPI
+import com.dropbox.client2.DropboxAPI.Entry
+import com.dropbox.client2.session.AccessTokenPair
+import com.dropbox.client2.session.AppKeyPair
+import com.dropbox.client2.session.RequestTokenPair
+import com.dropbox.client2.session.WebAuthSession
+import com.dropbox.client2.session.Session.AccessType
+import com.dropbox.client2.session.WebAuthSession.WebAuthInfo
+import com.intercloud.*
+
+class DropboxCloudStore implements CloudStoreInterface {
+	
+	static String APP_KEY = "ujdofnwh516yrg0";
+	static String APP_SECRET = "43itigcfb9y59dy";
+	static AccessType ACCESS_TYPE = AccessType.DROPBOX;
+	static DropboxAPI<WebAuthSession> dbApi;
+	
+	static String account_key;
+	static String account_secret;
+	
+	//directly testable
+	public static void main(String[] args) {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
+		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE);
+		WebAuthInfo authInfo = session.getAuthInfo();
+ 
+		RequestTokenPair pair = authInfo.requestTokenPair;
+		String url = authInfo.url;
+ 
+		System.out.println(url)
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
+		br.readLine()
+		session.retrieveWebAccessToken(pair);
+ 
+		AccessTokenPair tokens = session.getAccessTokenPair();
+		account_key = tokens.key
+		account_secret = tokens.secret
+		dbApi = new DropboxAPI<WebAuthSession>(session);
+		
+		def dbAccount = dbApi.accountInfo()
+		
+		Account acc = new Account()
+		acc.fullName = dbAccount.displayName
+		acc.spaceUsed = dbAccount.quotaNormal
+		acc.totalSpace = dbAccount.quota
+		
+		System.out.println(acc)
+ 
+	}
+
+	def configure(String[] credentials) {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
+		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE);
+		WebAuthInfo authInfo = session.getAuthInfo();
+ 
+		RequestTokenPair pair = authInfo.requestTokenPair;
+		String url = authInfo.url;
+ 
+		// this will be a window or something to pop up and authenticate
+		System.out.println("go to: "+url)
+		BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
+		br.readLine()
+		session.retrieveWebAccessToken(pair);
+ 
+		AccessTokenPair tokens = session.getAccessTokenPair();
+		account_key = tokens.key
+		account_secret = tokens.secret
+		
+		dbApi = new DropboxAPI<WebAuthSession>(session);
+	}
+
+	def retrieveAccountInfo() {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
+		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
+		
+		def dbAccount = dbApi.accountInfo()
+		
+		return dbAccountToCloudStore(dbAccount)
+	}
+	
+	private def dbAccountToCloudStore(def dbAccount) {
+		CloudStore cloudStore = new CloudStore()
+		cloudStore.uid = dbAccount.uid
+		cloudStore.fullName = dbAccount.displayName
+		cloudStore.spaceUsed = dbAccount.quotaNormal
+		cloudStore.totalSpace = dbAccount.quota
+		
+		return cloudStore;
+	}
+
+	def retrieveAllResourcesInfo() {
+		
+		//Testing shenans
+		Entry entries = dbApi.metadata("/", 100, null, true, null);
+		
+		for (Entry e : entries.contents) {
+			if (!e.isDeleted) {
+				if(e.isDir) {
+					Entry entries2 = dbApi.metadata(e.path, 100, null, true, null);
+					
+					for (Entry e2 : entries2.contents) {
+						if(e.isDir) {
+							Entry entries3 = dbApi.metadata(e2.path, 100, null, true, null);
+					
+							for (Entry e3 : entries3.contents) {
+								System.out.println("Item Name: "+e3.path);
+							}
+						}
+						else {
+							System.out.println("Item Name: "+e2.path);
+						}
+					}
+				}
+				else {
+					System.out.println("Item Name: "+e.path);
+				}
+				
+			}
+		}
+		
+	}
+
+	def retrieveSingleResourceInfo(String resource_id) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+	def uploadResources(List<FileResource> fileResources) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	def updateResources(List<FileResource> fileResources) {
+		// TODO Auto-generated method stub
+		
+	}
+
+	def downloadResources(List<FileResource> fileResources) {
+		// TODO Auto-generated method stub
+		return null;
+	}
+
+}

@@ -1,0 +1,14 @@
+package com.intercloud.cloudstore
+
+import com.intercloud.Account
+import com.intercloud.FileResource
+
+interface CloudStoreInterface {
+	def configure(String[] credentials)
+	def retrieveAccountInfo()
+	def retrieveAllResourcesInfo()
+	def retrieveSingleResourceInfo(String resource_id)
+	def uploadResources(List<FileResource> fileResources)
+	def updateResources(List<FileResource> fileResources)
+	def downloadResources(List<FileResource> fileResources)
+}
