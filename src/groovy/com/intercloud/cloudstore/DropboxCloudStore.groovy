@@ -12,82 +12,62 @@ import com.intercloud.*
 
 class DropboxCloudStore implements CloudStoreInterface {
 	
-	static String APP_KEY = "ujdofnwh516yrg0";
-	static String APP_SECRET = "43itigcfb9y59dy";
-	static AccessType ACCESS_TYPE = AccessType.DROPBOX;
-	static DropboxAPI<WebAuthSession> dbApi;
+	final static STORE_NAME = "Dropbox"
+	final static ACCOUNT_KEY_STRING = "account_key"
+	final static ACCOUNT_SECRET_STRING = "account_secret"
 	
-	static String account_key;
-	static String account_secret;
+	static String APP_KEY = "ujdofnwh516yrg0"
+	static String APP_SECRET = "43itigcfb9y59dy"
+	static AccessType ACCESS_TYPE = AccessType.DROPBOX
+	static DropboxAPI<WebAuthSession> dbApi
+	static WebAuthSession session
+	static WebAuthInfo authInfo
 	
-	//directly testable
-	public static void main(String[] args) {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE);
-		WebAuthInfo authInfo = session.getAuthInfo();
- 
-		RequestTokenPair pair = authInfo.requestTokenPair;
-		String url = authInfo.url;
- 
-		System.out.println(url)
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
-		br.readLine()
-		session.retrieveWebAccessToken(pair);
- 
-		AccessTokenPair tokens = session.getAccessTokenPair();
+	static String account_key
+	static String account_secret
+
+	def getClientAccessRequestUrl() {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET)
+		session = new WebAuthSession(appKeys, ACCESS_TYPE)
+		authInfo = session.getAuthInfo()
+		
+		String redirectUrlParam = "&oauth_callback=http://localhost:8080/InterCloud/auth_redirect"
+		String url = authInfo.url+redirectUrlParam
+
+		return url
+	}
+	
+	def setClientAccessCredentials() {
+		RequestTokenPair pair = authInfo.requestTokenPair
+		session.retrieveWebAccessToken(pair)
+		setAccountTokens()
+		
+		dbApi = new DropboxAPI<WebAuthSession>(session)
+	}
+	
+	private def setAccountTokens() {
+		AccessTokenPair tokens = session.getAccessTokenPair()
 		account_key = tokens.key
 		account_secret = tokens.secret
-		dbApi = new DropboxAPI<WebAuthSession>(session);
-		
-		def dbAccount = dbApi.accountInfo()
-		
-		Account acc = new Account()
-		acc.fullName = dbAccount.displayName
-		acc.spaceUsed = dbAccount.quotaNormal
-		acc.totalSpace = dbAccount.quota
-		
-		System.out.println(acc)
- 
-	}
-
-	def configure(String[] credentials) {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE);
-		WebAuthInfo authInfo = session.getAuthInfo();
- 
-		RequestTokenPair pair = authInfo.requestTokenPair;
-		String url = authInfo.url;
- 
-		// this will be a window or something to pop up and authenticate
-		System.out.println("go to: "+url)
-		BufferedReader br = new BufferedReader(new InputStreamReader(System.in))
-		br.readLine()
-		session.retrieveWebAccessToken(pair);
- 
-		AccessTokenPair tokens = session.getAccessTokenPair();
-		account_key = tokens.key
-		account_secret = tokens.secret
-		
-		dbApi = new DropboxAPI<WebAuthSession>(session);
-	}
-
-	def retrieveAccountInfo() {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
-		
-		def dbAccount = dbApi.accountInfo()
-		
-		return dbAccountToCloudStore(dbAccount)
 	}
 	
-	private def dbAccountToCloudStore(def dbAccount) {
-		CloudStore cloudStore = new CloudStore()
-		cloudStore.uid = dbAccount.uid
-		cloudStore.fullName = dbAccount.displayName
-		cloudStore.spaceUsed = dbAccount.quotaNormal
-		cloudStore.totalSpace = dbAccount.quota
+	def populateCloudStoreInstance(def cloudStoreInstance) {
+		def accountInfo = retrieveAccountInfo()
 		
-		return cloudStore;
+		cloudStoreInstance.storeName = STORE_NAME
+		cloudStoreInstance.credentials = [ACCOUNT_KEY_STRING : account_key, ACCOUNT_SECRET_STRING : account_secret]
+		cloudStoreInstance.uid = accountInfo.uid
+		cloudStoreInstance.fullName = accountInfo.displayName
+		cloudStoreInstance.spaceUsed = accountInfo.quotaNormal
+		cloudStoreInstance.totalSpace = accountInfo.quota
+	}
+
+	private def retrieveAccountInfo() {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
+		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));	
+		def dbAccount = dbApi.accountInfo()
+		
+		return dbAccount
 	}
 
 	def retrieveAllResourcesInfo() {

@@ -3,10 +3,17 @@ class UrlMappings {
 	static mappings = {
 		"404" (controller: 'base', action: 'respondPageNotFound')
 		"500"(controller: 'base', action: 'respondServerError')
-		
+		// temp
 		"/" {
-			controller = 'home'
+			controller = 'cloudStore'
 			action = [GET: "index",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
+		"/auth_redirect" {
+			controller = 'cloudStore'
+			action = [GET: "authRedirect",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']

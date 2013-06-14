@@ -4,8 +4,9 @@ import com.intercloud.Account
 import com.intercloud.FileResource
 
 interface CloudStoreInterface {
-	def configure(String[] credentials)
-	def retrieveAccountInfo()
+	def getClientAccessRequestUrl()
+	def setClientAccessCredentials()
+	def populateCloudStoreInstance(def cloudStoreInstance)
 	def retrieveAllResourcesInfo()
 	def retrieveSingleResourceInfo(String resource_id)
 	def uploadResources(List<FileResource> fileResources)

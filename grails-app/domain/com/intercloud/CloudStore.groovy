@@ -3,7 +3,7 @@ package com.intercloud
 class CloudStore {
 	
 	String storeName
-	List<String> credentials
+	def credentials
 	String uid
 	String fullName
 	Integer spaceUsed
