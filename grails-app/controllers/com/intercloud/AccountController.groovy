@@ -1,6 +1,6 @@
 package com.intercloud
 
-class AccountController {
+class AccountController extends BaseController {
 
     def index() { }
 }

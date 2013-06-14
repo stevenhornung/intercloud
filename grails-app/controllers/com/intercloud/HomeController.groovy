@@ -1,8 +1,15 @@
 package com.intercloud
 
-class HomeController {
+class HomeController extends BaseController {
 
-    def index() { 
-		render "<html>select cloud service to add: <br/> <a href='/InterCloud/cs?cloudStore=Dropbox'>Dropbox</a></html>"
+	def home() {
+		redirect(url: "/home")
+	}
+	
+    def index() {
+		def dropboxCloudStore = CloudStore.findByStoreName("dropbox")
+		if(dropboxCloudStore) {
+			[fileInstanceList: dropboxCloudStore.fileResources]
+		}
 	}
 }

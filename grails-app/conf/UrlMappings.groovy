@@ -6,14 +6,7 @@ class UrlMappings {
 
 		"/" {
 			controller = 'home'
-			action = [GET: "index",
-						POST: 'respondInvalidAction',
-						PUT: 'respondInvalidAction',
-						DELETE: 'respondInvalidAction']
-		}
-		"/auth_redirect" {
-			controller = 'cloudStore'
-			action = [GET: "authRedirect",
+			action = [GET: "home",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -21,7 +14,7 @@ class UrlMappings {
 		
 		"/home" {
 			controller = 'home'
-			action = [GET: "list",
+			action = [GET: "index",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -57,6 +50,14 @@ class UrlMappings {
 						POST: 'addAccountCloudStore',
 						PUT: 'updateAccountCloudStore',
 						DELETE: 'deleteAccountCloudStore']
+		}
+		
+		"/auth_redirect" {
+			controller = 'cloudStore'
+			action = [GET: "authRedirect",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
 		}
 	}
 }

@@ -1,6 +1,8 @@
 package com.intercloud
 
-class FileResourceController {
+class FileResourceController extends BaseController {
 
-    def index() { }
+	def index() {
+		
+	}
 }

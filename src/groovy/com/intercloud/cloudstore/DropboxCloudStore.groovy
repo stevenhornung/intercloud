@@ -12,13 +12,11 @@ import com.intercloud.*
 
 class DropboxCloudStore implements CloudStoreInterface {
 	
-	final static STORE_NAME = "Dropbox"
-	final static ACCOUNT_KEY_STRING = "account_key"
-	final static ACCOUNT_SECRET_STRING = "account_secret"
+	final static STORE_NAME = "dropbox"
+	final static String APP_KEY = "ujdofnwh516yrg0"
+	final static String APP_SECRET = "43itigcfb9y59dy"
+	final static AccessType ACCESS_TYPE = AccessType.DROPBOX
 	
-	static String APP_KEY = "ujdofnwh516yrg0"
-	static String APP_SECRET = "43itigcfb9y59dy"
-	static AccessType ACCESS_TYPE = AccessType.DROPBOX
 	static DropboxAPI<WebAuthSession> dropboxApi
 	static WebAuthSession session
 	static WebAuthInfo authInfo
@@ -33,7 +31,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		
 		String redirectUrlParam = "&oauth_callback=http://localhost:8080/InterCloud/auth_redirect"
 		String url = authInfo.url+redirectUrlParam
-		
+
 		return url
 	}
 	
@@ -55,7 +53,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		def accountInfo = retrieveAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
-		cloudStoreInstance.credentials = [ACCOUNT_KEY_STRING : account_key, ACCOUNT_SECRET_STRING : account_secret]
+		cloudStoreInstance.credentials = [ACCOUNT_KEY : account_key, ACCOUNT_SECRET : account_secret]
 		cloudStoreInstance.uid = accountInfo.uid
 		cloudStoreInstance.fullName = accountInfo.displayName
 		cloudStoreInstance.spaceUsed = accountInfo.quotaNormal
@@ -65,46 +63,46 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private def retrieveAccountInfo() {
 		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
 		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));	
-		def dbAccount = dropboxApi.accountInfo()
+		def dropboxAccountInfo = dropboxApi.accountInfo()
 		
-		return dbAccount
+		return dropboxAccountInfo
 	}
 
 	def retrieveAllResourcesInfo() {
-		
-		//Testing shenans
 		Entry entries = dropboxApi.metadata("/", 100, null, true, null);
-		
+		def fileResources = retrieveFilesInDir(entries)
+
+		return fileResources
+	}
+	
+	private def retrieveFilesInDir(def entries) {
+		def dirResources = []
 		for (Entry e : entries.contents) {
 			if (!e.isDeleted) {
 				if(e.isDir) {
-					Entry entries2 = dropboxApi.metadata(e.path, 100, null, true, null);
-					
-					for (Entry e2 : entries2.contents) {
-						if(e.isDir) {
-							Entry entries3 = dropboxApi.metadata(e2.path, 100, null, true, null);
-					
-							for (Entry e3 : entries3.contents) {
-								System.out.println("Item Name: "+e3.path);
-							}
-						}
-						else {
-							System.out.println("Item Name: "+e2.path);
-						}
-					}
+					def directory = convertFromDropboxResource(e)
+					dirResources.add(directory)
+					Entry dirEntries = dropboxApi.metadata(e.path, 100, null, true, null)
+					dirResources.addAll(retrieveFilesInDir(dirEntries))
 				}
 				else {
-					System.out.println("Item Name: "+e.path);
+					def fileResource = convertFromDropboxResource(e)
+					dirResources.add(fileResource)
 				}
-				
 			}
 		}
-		
+		return dirResources
 	}
+	
+	private def convertFromDropboxResource(def dropboxResource) {
+		def fileResource = new FileResource()
+		fileResource.byteSize = dropboxResource.bytes
+		fileResource.path = dropboxResource.path
+		fileResource.modified = dropboxResource.modified
+		fileResource.isDir = dropboxResource.isDir
+		fileResource.mimeType = dropboxResource.mimeType
 
-	def retrieveSingleResourceInfo(String resource_id) {
-		// TODO Auto-generated method stub
-		return null;
+		return fileResource
 	}
 
 	def uploadResources(List<FileResource> fileResources) {
@@ -119,7 +117,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 	def downloadResources(List<FileResource> fileResources) {
 		// TODO Auto-generated method stub
-		return null;
+
 	}
 
 }
