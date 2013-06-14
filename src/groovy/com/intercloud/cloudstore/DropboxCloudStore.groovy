@@ -19,7 +19,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	static String APP_KEY = "ujdofnwh516yrg0"
 	static String APP_SECRET = "43itigcfb9y59dy"
 	static AccessType ACCESS_TYPE = AccessType.DROPBOX
-	static DropboxAPI<WebAuthSession> dbApi
+	static DropboxAPI<WebAuthSession> dropboxApi
 	static WebAuthSession session
 	static WebAuthInfo authInfo
 	
@@ -33,7 +33,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		
 		String redirectUrlParam = "&oauth_callback=http://localhost:8080/InterCloud/auth_redirect"
 		String url = authInfo.url+redirectUrlParam
-
+		
 		return url
 	}
 	
@@ -42,7 +42,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		session.retrieveWebAccessToken(pair)
 		setAccountTokens()
 		
-		dbApi = new DropboxAPI<WebAuthSession>(session)
+		dropboxApi = new DropboxAPI<WebAuthSession>(session)
 	}
 	
 	private def setAccountTokens() {
@@ -65,7 +65,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private def retrieveAccountInfo() {
 		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
 		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));	
-		def dbAccount = dbApi.accountInfo()
+		def dbAccount = dropboxApi.accountInfo()
 		
 		return dbAccount
 	}
@@ -73,16 +73,16 @@ class DropboxCloudStore implements CloudStoreInterface {
 	def retrieveAllResourcesInfo() {
 		
 		//Testing shenans
-		Entry entries = dbApi.metadata("/", 100, null, true, null);
+		Entry entries = dropboxApi.metadata("/", 100, null, true, null);
 		
 		for (Entry e : entries.contents) {
 			if (!e.isDeleted) {
 				if(e.isDir) {
-					Entry entries2 = dbApi.metadata(e.path, 100, null, true, null);
+					Entry entries2 = dropboxApi.metadata(e.path, 100, null, true, null);
 					
 					for (Entry e2 : entries2.contents) {
 						if(e.isDir) {
-							Entry entries3 = dbApi.metadata(e2.path, 100, null, true, null);
+							Entry entries3 = dropboxApi.metadata(e2.path, 100, null, true, null);
 					
 							for (Entry e3 : entries3.contents) {
 								System.out.println("Item Name: "+e3.path);

@@ -3,9 +3,9 @@ class UrlMappings {
 	static mappings = {
 		"404" (controller: 'base', action: 'respondPageNotFound')
 		"500"(controller: 'base', action: 'respondServerError')
-		// temp
+
 		"/" {
-			controller = 'cloudStore'
+			controller = 'home'
 			action = [GET: "index",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
@@ -53,7 +53,7 @@ class UrlMappings {
 		
 		"/cs" {
 			controller = 'cloudStore'
-			action = [GET: 'list',
+			action = [GET: 'index',
 						POST: 'addAccountCloudStore',
 						PUT: 'updateAccountCloudStore',
 						DELETE: 'deleteAccountCloudStore']
