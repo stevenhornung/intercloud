@@ -44,6 +44,15 @@ class UrlMappings {
 						DELETE: 'deleteAccount']
 		}
 		
+		"/account/logout" {
+			controller = 'account'
+			action = [GET: 'logout',
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
+		
+		
 		"/cs" {
 			controller = 'cloudStore'
 			action = [GET: 'index',

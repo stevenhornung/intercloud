@@ -21,6 +21,13 @@ class AccountController extends BaseController {
 		account.fullName = params.name
 		account.save(flush: true)
 		
+		session.user = account
+		
+		redirect(controller: 'home', action: 'index')
+	}
+	
+	def logout() {
+		session.user = null
 		redirect(controller: 'home', action: 'index')
 	}
 }
