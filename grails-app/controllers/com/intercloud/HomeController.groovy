@@ -12,4 +12,14 @@ class HomeController extends BaseController {
 			[fileInstanceList: dropboxCloudStore.fileResources]
 		}
 	}
+	
+	def loginOrRegister() {
+		def submit = params.submit
+		if(submit == 'Login') {
+			forward(controller: 'account', action: 'login', params: params)
+		}
+		else {
+			forward(controller: 'account', action: 'register', params: params)
+		}
+	}
 }

@@ -2,5 +2,25 @@ package com.intercloud
 
 class AccountController extends BaseController {
 
-    def index() { }
+    def login() {
+		def account = Account.findWhere(email:params.email, password:params.password)
+		session.user = account
+		
+		if(account) {
+			redirect(controller: 'home', action: 'index')
+		}
+		else {
+			render 'invalid email or password'
+		}
+	}
+	
+	def register() {		
+		def account = new Account()
+		account.email = params.email
+		account.password = params.password
+		account.fullName = params.name
+		account.save(flush: true)
+		
+		redirect(controller: 'home', action: 'index')
+	}
 }

@@ -15,7 +15,7 @@ class UrlMappings {
 		"/home" {
 			controller = 'home'
 			action = [GET: "index",
-						POST: 'respondInvalidAction',
+						POST: 'loginOrRegister',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}

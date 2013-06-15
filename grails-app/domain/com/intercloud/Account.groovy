@@ -2,18 +2,16 @@ package com.intercloud
 
 class Account {
 	
-	String userName
-	String password
 	String email
+	String password
 	String fullName
 	String type='basic'
-	Integer spaceUsed
-	Integer totalSpace
+	String spaceUsed="0"
+	String totalSpace="10737418240"
 	
 	static hasMany = [fileResources: FileResource, cloudStores: CloudStore]
 
     static constraints = {
-		userName blank: false, unique: true
 		password blank: false
 		email blank: false, email: true
 		fullName blank: false
