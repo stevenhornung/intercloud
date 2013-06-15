@@ -91,12 +91,9 @@
 			<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 					<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
 						<td><g:link action="retrieveResource" id="${fileInstance.id}">${fieldValue(bean: fileInstance, field: "path")}</g:link></td>
-						<br>
+						<br />
 					</tr>
 			</g:each>
-				
-				
-			</p>
 		</div>
 	</body>
 </html>
