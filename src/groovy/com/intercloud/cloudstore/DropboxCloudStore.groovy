@@ -49,26 +49,41 @@ class DropboxCloudStore implements CloudStoreInterface {
 		account_secret = tokens.secret
 	}
 	
-	def populateCloudStoreInstance(def cloudStoreInstance) {
+	def setCloudStoreInstanceProperties(def cloudStoreInstance, def session) {
+		setCloudStoreInfo(cloudStoreInstance)
+		setCloudStoreFileResources(cloudStoreInstance)
+		setCloudStoreAccount(cloudStoreInstance, session)
+	}
+	
+	private def setCloudStoreInfo(def cloudStoreInstance) {
 		def accountInfo = retrieveAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
 		cloudStoreInstance.credentials = [ACCOUNT_KEY : account_key, ACCOUNT_SECRET : account_secret]
-		cloudStoreInstance.uid = accountInfo.uid
-		cloudStoreInstance.fullName = accountInfo.displayName
 		cloudStoreInstance.spaceUsed = accountInfo.quotaNormal
 		cloudStoreInstance.totalSpace = accountInfo.quota
 	}
-
+	
 	private def retrieveAccountInfo() {
 		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));	
+		WebAuthSession session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
 		def dropboxAccountInfo = dropboxApi.accountInfo()
 		
 		return dropboxAccountInfo
 	}
-
-	def retrieveAllResourcesInfo() {
+	
+	private def setCloudStoreFileResources(def cloudStoreInstance) {
+		def fileResources = retrieveAllResourcesInfo()
+		for(fileResource in fileResources) {
+			if(!fileResource.save()) {
+				// show message that a resource couldnt be loaded
+				print fileResource.errors.allErrors
+			}
+		}
+		cloudStoreInstance.fileResources = fileResources
+	}
+	
+	private def retrieveAllResourcesInfo() {
 		Entry entries = dropboxApi.metadata("/", 100, null, true, null);
 		def fileResources = retrieveFilesInDir(entries)
 
@@ -104,6 +119,12 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 		return fileResource
 	}
+	
+	private def setCloudStoreAccount(def cloudStoreInstance, def session) {
+		def account = Account.findByEmail(session.user.email)
+		cloudStoreInstance.account = account
+	}
+
 
 	def uploadResources(List<FileResource> fileResources) {
 		// TODO Auto-generated method stub

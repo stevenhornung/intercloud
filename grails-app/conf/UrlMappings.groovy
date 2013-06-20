@@ -6,7 +6,7 @@ class UrlMappings {
 
 		"/" {
 			controller = 'home'
-			action = [GET: "home",
+			action = [GET: "redirectHome",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -20,25 +20,9 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 		}
 		
-		"/files" {
-			controller = 'fileResource'
-			action = [GET: "retrieveAllResources",
-						POST: 'uploadResources',
-						PUT: 'updateResources',
-						DELETE: 'deleteResources']
-		}
-		
-		"/files/$file_id" {
-			controller = 'fileResource'
-			action = [GET: "retrieveSingleResource",
-						POST: 'respondInvalidAction',
-						PUT: 'updateResources',
-						DELETE: 'deleteResources']
-		}
-		
 		"/account" {
 			controller = 'account'
-			action = [GET: 'info',
+			action = [GET: 'index',
 						POST: 'createAccount',
 						PUT: 'updateAccount',
 						DELETE: 'deleteAccount']
@@ -52,13 +36,29 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 		}
 		
-		
-		"/cs" {
+		"/cloudstore" {
 			controller = 'cloudStore'
 			action = [GET: 'index',
-						POST: 'addAccountCloudStore',
-						PUT: 'updateAccountCloudStore',
-						DELETE: 'deleteAccountCloudStore']
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
+		
+		"/dropbox" {
+			controller = 'cloudStore'
+			action = [GET: "listCloudStoreFiles",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			cloudStore = 'dropbox'
+		}
+		"/dropbox/$folder_name" {
+			controller = 'cloudStore'
+			action = [GET: "listCloudStoreFiles",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			cloudStore = 'dropbox'
 		}
 		
 		"/auth_redirect" {

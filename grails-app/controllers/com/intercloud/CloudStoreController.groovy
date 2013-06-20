@@ -4,45 +4,64 @@ import com.intercloud.cloudstore.DropboxCloudStore
 
 class CloudStoreController extends BaseController {
 	
-	static def currentCloudStore
-	
 	def index() {
-		def cloudStoreToAdd = params["cloudStore"]
-		requestClientAccessToCloudStore(cloudStoreToAdd)
+		if(session.user != null) {
+			if(params.cloudStore) {
+				requestClientAccessToCloudStore(params.cloudStore)
+			}
+			else {
+				redirect(controller: 'home', action: 'index')
+			}
+		}
+		else {
+			redirect(controller: 'home', action: 'index')
+		}
 	}
 
     private def requestClientAccessToCloudStore(def cloudStoreToAdd) {
+		def currentCloudStore = null
 		if(cloudStoreToAdd == 'dropbox') {
 			currentCloudStore = new DropboxCloudStore()
-			def clientAccessRequestUrl = currentCloudStore.getClientAccessRequestUrl()
-
-			redirect(url : clientAccessRequestUrl)
 		}
+		
+		def clientAccessRequestUrl = currentCloudStore?.getClientAccessRequestUrl()
+
+		flash.currentCloudStore = currentCloudStore
+		redirect(url : clientAccessRequestUrl)
 	}
 	
 	def authRedirect = {
+		def currentCloudStore = flash.currentCloudStore
 		currentCloudStore.setClientAccessCredentials()
 		
-		populateAndSaveCloudStoreInstance()
+		saveCloudStoreInstance(currentCloudStore)
 		
 		redirect(controller: 'home', action:'index')
 	}
 	
-	private def populateAndSaveCloudStoreInstance() {
+	private def saveCloudStoreInstance(def currentCloudStore) {
 		def cloudStoreInstance = new CloudStore()
-		currentCloudStore.populateCloudStoreInstance(cloudStoreInstance)
+		currentCloudStore.setCloudStoreInstanceProperties(cloudStoreInstance, session)
 		
-		def fileResources = currentCloudStore.retrieveAllResourcesInfo()
-		for(fileResource in fileResources) {
-			if(!fileResource.save()) {
-				print fileResource.errors.allErrors
-			}
+		if(!cloudStoreInstance.save(flush: true)) {
+			// show message that cloud store link failed, and ask to retry
+			print cloudStoreInstance.errors.allErrors
 		}
-		cloudStoreInstance.fileResources = fileResources
-		cloudStoreInstance.save(flush: true)
 	}
 	
-	def retrieveAllFiles() {
-		[fileInstanceList: CloudStore.findByStoreName('dropbox')]
+	def listCloudStoreFiles() {
+		def storeName = params.cloudStore
+		def cloudStoreFiles = null
+		if(session.user != null) {
+			cloudStoreFiles = retrieveAllFilesByCloudStore(session, storeName)
+			
+		}
+		render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+	}
+	
+	def retrieveAllFilesByCloudStore(def session, def storeName) {
+		Account account = Account.findByEmail(session.user.email)
+		def cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		return cloudStore?.fileResources
 	}
 }

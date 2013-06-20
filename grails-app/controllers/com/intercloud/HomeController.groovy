@@ -2,15 +2,32 @@ package com.intercloud
 
 class HomeController extends BaseController {
 
-	def home() {
+	def redirectHome() {
 		redirect(url: "/home")
 	}
 	
     def index() {
-		def dropboxCloudStore = CloudStore.findByStoreName("dropbox")
-		if(dropboxCloudStore) {
-			[fileInstanceList: dropboxCloudStore.fileResources]
+		if(session.user != null) {
+			def accountFileResources = retrieveAccountFileResources()
+			[fileInstanceMap : accountFileResources]
 		}
+	}
+	
+	private def retrieveAccountFileResources() {
+		CloudStoreController controller = new CloudStoreController()
+		def fileInstanceMap = getFilesForEachCloudStore(controller)
+		return fileInstanceMap
+	}
+	
+	private def getFilesForEachCloudStore(def controller) {
+		def fileInstanceMap = [:]
+		CLOUD_STORES.each {
+			def fileResources = controller.retrieveAllFilesByCloudStore(session, it)
+			if(fileResources) {
+				fileInstanceMap << ["$it" : fileResources]
+			}
+		}
+		return fileInstanceMap
 	}
 	
 	def loginOrRegister() {

@@ -83,25 +83,21 @@
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
 		<div id="status" role="complementary">
-			<p>side panel?</p>
+			<p>side stuff</p>
 		</div>
 		<div id="page-body" role="main">
 			<g:if test="${session.user != null }">
 				<h1>Welcome to InterCloud</h1>
-				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
-					<br>
-					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a></h2>
-					<g:each in="${cloudStore.value }" var="fileInstance">
-						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<td><g:link action="index" params="[fileResourceId:fileInstance.id]">${fileInstance.path}</g:link></td>
-							<br>
-						</tr>
-					</g:each>
+				<h2><b>Google Drive Files</b></h2>
+				<g:each in="${fileInstanceList}" status="i" var="fileInstance">
+					<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
+						<td><g:link action="" params="[fileResourceId:fileInstance.id]">${fileInstance.path}</g:link></td>
+						<br/>
+					</tr>
 				</g:each>
 			</g:if>
 			<g:else>
-				<h1>Display all features and capabilities for non logged in user</h1>
+				<h1>Non user stuffs</h1>
 			</g:else>
 		</div>
 	</body>

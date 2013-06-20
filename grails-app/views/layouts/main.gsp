@@ -25,7 +25,7 @@
 	<body>
 		<header>
 	      <div class="inner">
-	        <h1>InterCloud</h1>
+	        <a href="home"><h1>InterCloud</h1></a>
 	        <h2></h2>
 	      </div>
 	    </header>
@@ -113,10 +113,9 @@
 						<div class="left right">			
 							<!-- Account Settings -->
 							<h1>Account Settings</h1><br>
-							<g:link controller="account" action="" params="">Some setting</g:link><br>
-							<g:link controller="account" action="" params="">Some setting</g:link><br>
-							<g:link controller="account" action="" params="">Some setting</g:link><br>
-							<g:link controller="account" action="" params="">Some setting</g:link><br>
+							<g:link controller="account" action="index">Account Settings</g:link><br>
+							<g:link controller="account" action="upgrade" params="">Upgrade Account</g:link><br>
+							<g:link controller="account" action="logout" params="">Logout</g:link><br>
 						</div>
 					</div>
 				</div> <!-- /logged in user -->	
@@ -129,8 +128,6 @@
 							<a id="open" class="open" href="#">${session.user.fullName }</a>
 							<a id="close" style="display: none;" class="close" href="#">Close Panel</a>			
 						</li>
-						<li class="sep">|</li>
-						<li><g:link controller="account" action="logout">&nbsp&nbspLogout</g:link></li>
 						<li class="right">&nbsp;</li>
 					</ul> 
 				</div> <!-- / top -->
