@@ -94,7 +94,7 @@
 					<h2><b>Dropbox Files</b></h2>
 					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<td><g:link action="" params="[fileResourceId:fileInstance.id]">${fileInstance.path}</g:link></td>
+							<td><a href="dropbox/${fileInstance.id}">${fileInstance.path}</a></td>
 							<br/>
 						</tr>
 					</g:each>
@@ -104,5 +104,6 @@
 				<h1>Display what adding dropbox link can do</h1>
 			</g:else>
 		</div>
+		
 	</body>
 </html>

@@ -7,7 +7,7 @@ interface CloudStoreInterface {
 	def getClientAccessRequestUrl()
 	def setClientAccessCredentials()
 	def setCloudStoreInstanceProperties(def cloudStoreInstance, def session)
-	def uploadResources(List<FileResource> fileResources)
-	def updateResources(List<FileResource> fileResources)
-	def downloadResources(List<FileResource> fileResources)
+	def uploadResources(def credentials, def fileResources)
+	def updateResources(def credentials, def fileResources)
+	def downloadResources(def credentials, def fileResources)
 }

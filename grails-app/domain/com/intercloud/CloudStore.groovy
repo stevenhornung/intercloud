@@ -3,7 +3,7 @@ package com.intercloud
 class CloudStore {
 	
 	String storeName
-	def credentials
+	Map credentials = new HashMap()
 	Integer spaceUsed
 	Integer totalSpace
 	

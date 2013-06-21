@@ -1,6 +1,7 @@
 package com.intercloud.cloudstore
 
 import com.dropbox.client2.DropboxAPI
+import com.dropbox.client2.DropboxAPI.DropboxFileInfo
 import com.dropbox.client2.DropboxAPI.Entry
 import com.dropbox.client2.session.AccessTokenPair
 import com.dropbox.client2.session.AppKeyPair
@@ -59,7 +60,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 		def accountInfo = retrieveAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
-		cloudStoreInstance.credentials = [ACCOUNT_KEY : account_key, ACCOUNT_SECRET : account_secret]
+		cloudStoreInstance.credentials.put('ACCOUNT_KEY', account_key)
+		cloudStoreInstance.credentials.put('ACCOUNT_SECRET', account_secret)
 		cloudStoreInstance.spaceUsed = accountInfo.quotaNormal
 		cloudStoreInstance.totalSpace = accountInfo.quota
 	}
@@ -126,19 +128,32 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 
 
-	def uploadResources(List<FileResource> fileResources) {
+	def uploadResources(def credentials, def fileResources) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	def updateResources(List<FileResource> fileResources) {
+	def updateResources(def credentials, def fileResources) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	def downloadResources(List<FileResource> fileResources) {
-		// TODO Auto-generated method stub
-
+	def downloadResources(def credentials, def fileResources) {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
+		account_key = credentials.ACCOUNT_KEY
+		account_secret = credentials.ACCOUNT_SECRET
+		session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
+		dropboxApi = new DropboxAPI<WebAuthSession>(session);
+		
+		def downloadedResources = []
+		for(fileResource in fileResources) {
+			ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+			DropboxFileInfo info = dropboxApi.getFile(fileResource.path, null, outputStream, null)
+			byte[] data = outputStream.toByteArray()
+			downloadedResources.add(data)
+		}
+		
+		return downloadedResources
 	}
 
 }

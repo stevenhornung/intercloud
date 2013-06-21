@@ -19,8 +19,13 @@
   		<link rel="stylesheet" href="${resource(dir: 'css', file: 'header.css')}" type="text/css" media="screen" />
 		<g:layoutHead/>
 		<r:layoutResources />
+		
 		<script src="js/jquery-1.3.2.min.js" type="text/javascript"></script>
 		<script src="js/slide.js" type="text/javascript"></script>
+		
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
+		<script src="js/jquery.colorbox.js" type="text/javascript"></script>
+		<script src="js/jquery.colorbox-min.js" type="text/javascript"></script>
 	</head>
 	<body>
 		<header>
@@ -115,26 +120,26 @@
 							<h1>Account Settings</h1><br>
 							<g:link controller="account" action="index">Account Settings</g:link><br>
 							<g:link controller="account" action="upgrade" params="">Upgrade Account</g:link><br>
-							<g:link controller="account" action="logout" params="">Logout</g:link><br>
 						</div>
 					</div>
 				</div> <!-- /logged in user -->	
 			
 				<!-- The tab on top -->	
 				<div class="tab">
-					<ul class="login">
-						<li class="left">&nbsp;</li>
-						<li id="toggle">
-							<a id="open" class="open" href="#">${session.user.fullName }</a>
-							<a id="close" style="display: none;" class="close" href="#">Close Panel</a>			
-						</li>
-						<li class="right">&nbsp;</li>
-					</ul> 
-				</div> <!-- / top -->
+		        	<ul class="login">
+		            	<li class="left">&nbsp;</li>
+		            	<li id="toggle">
+		              		<a id="open" class="open" href="#">${session.user.fullName }</a>
+		              		<a id="close" style="display: none;" class="close" href="#">Close Panel</a>      
+		            	</li>
+		            	<li class="sep">|</li>
+		            	<li><g:link controller="account" action="logout">&nbsp&nbspLogout</g:link></li>
+		            	<li class="right">&nbsp;</li>
+		          	</ul> 
+		       	</div> <!-- / top -->
 			</g:else>
 			
 		</div> <!--panel -->
-
 		
 		<div class="footer" role="contentinfo"></div>
 		<div id="spinner" class="spinner" style="display:none;"><g:message code="spinner.alt" default="Loading&hellip;"/></div>

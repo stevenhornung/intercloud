@@ -52,9 +52,9 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 			cloudStore = 'dropbox'
 		}
-		"/dropbox/$folder_name" {
+		"/dropbox/$fileResourceId" {
 			controller = 'cloudStore'
-			action = [GET: "listCloudStoreFiles",
+			action = [GET: "retrieveFileResource",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
