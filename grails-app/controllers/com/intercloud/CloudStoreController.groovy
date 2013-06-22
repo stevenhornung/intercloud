@@ -24,7 +24,7 @@ class CloudStoreController extends BaseController {
 			currentCloudStore = new DropboxCloudStore()
 		}
 		
-		def clientAccessRequestUrl = currentCloudStore?.getClientAccessRequestUrl()
+		def clientAccessRequestUrl = currentCloudStore?.configure(false)
 
 		flash.currentCloudStore = currentCloudStore
 		redirect(url : clientAccessRequestUrl)
@@ -32,7 +32,7 @@ class CloudStoreController extends BaseController {
 	
 	def authRedirect = {
 		def currentCloudStore = flash.currentCloudStore
-		currentCloudStore.setClientAccessCredentials()
+		currentCloudStore.configure(true)
 		
 		saveCloudStoreInstance(currentCloudStore)
 		

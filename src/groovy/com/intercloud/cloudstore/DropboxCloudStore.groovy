@@ -25,25 +25,26 @@ class DropboxCloudStore implements CloudStoreInterface {
 	static String account_key
 	static String account_secret
 
-	def getClientAccessRequestUrl() {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET)
-		session = new WebAuthSession(appKeys, ACCESS_TYPE)
-		authInfo = session.getAuthInfo()
-		
-		String redirectUrlParam = "&oauth_callback=http://localhost:8080/InterCloud/auth_redirect"
-		String url = authInfo.url+redirectUrlParam
+	def configure(boolean isAuthRedirect) {
+		if(!isAuthRedirect) {
+			AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET)
+			session = new WebAuthSession(appKeys, ACCESS_TYPE)
+			authInfo = session.getAuthInfo()
+			
+			String redirectUrlParam = "&oauth_callback=http://localhost:8080/InterCloud/auth_redirect"
+			String url = authInfo.url+redirectUrlParam
+	
+			return url
+		}	
+		else {
+			RequestTokenPair pair = authInfo.requestTokenPair
+			session.retrieveWebAccessToken(pair)
+			setAccountTokens()
+			
+			dropboxApi = new DropboxAPI<WebAuthSession>(session)
+		}
+	}
 
-		return url
-	}
-	
-	def setClientAccessCredentials() {
-		RequestTokenPair pair = authInfo.requestTokenPair
-		session.retrieveWebAccessToken(pair)
-		setAccountTokens()
-		
-		dropboxApi = new DropboxAPI<WebAuthSession>(session)
-	}
-	
 	private def setAccountTokens() {
 		AccessTokenPair tokens = session.getAccessTokenPair()
 		account_key = tokens.key
@@ -123,37 +124,36 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def setCloudStoreAccount(def cloudStoreInstance, def session) {
-		def account = Account.findByEmail(session.user.email)
+		def account = Account1.findByEmail(session.user.email)
 		cloudStoreInstance.account = account
 	}
 
 
-	def uploadResources(def credentials, def fileResources) {
+	def uploadResource(def credentials, def fileResource) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	def updateResources(def credentials, def fileResources) {
+	def updateResource(def credentials, def fileResource) {
 		// TODO Auto-generated method stub
 		
 	}
 
-	def downloadResources(def credentials, def fileResources) {
+	def downloadResource(def credentials, def fileResource) {
 		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
 		account_key = credentials.ACCOUNT_KEY
 		account_secret = credentials.ACCOUNT_SECRET
 		session = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
 		dropboxApi = new DropboxAPI<WebAuthSession>(session);
-		
-		def downloadedResources = []
-		for(fileResource in fileResources) {
+
+		byte[] downloadedData = null
+		if(!fileResource.isDir) {
 			ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
 			DropboxFileInfo info = dropboxApi.getFile(fileResource.path, null, outputStream, null)
-			byte[] data = outputStream.toByteArray()
-			downloadedResources.add(data)
+			downloadedData = outputStream.toByteArray()
 		}
 		
-		return downloadedResources
+		return downloadedData
 	}
 
 }
