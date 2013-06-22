@@ -124,7 +124,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def setCloudStoreAccount(def cloudStoreInstance, def session) {
-		def account = Account1.findByEmail(session.user.email)
+		def account = Account.findByEmail(session.user.email)
 		cloudStoreInstance.account = account
 	}
 

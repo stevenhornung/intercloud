@@ -88,8 +88,8 @@ class CloudStoreController extends BaseController {
 
 			if(storeName == 'dropbox') {
 				def dropboxCloudStore = new DropboxCloudStore()
-				def downloadedFile = dropboxCloudStore.downloadResources(cloudStore.credentials, fileResource)
-				resourceData = downloadedFile[0]
+				def downloadedFile = dropboxCloudStore.downloadResource(cloudStore.credentials, fileResource)
+				resourceData = downloadedFile
 			}
 		}
 		return resourceData
