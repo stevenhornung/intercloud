@@ -100,7 +100,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 				if(e.isDir) {
 					def directory = convertFromDropboxResource(e)
 					dirResources.add(directory)
-					Entry dirEntries = dropboxApi.metadata(e.path, 100, null, true, null)
+					Entry dirEntries = dropboxApi.metadata(e.path, 0, null, true, null)
 					dirResources.addAll(retrieveFilesInDir(dirEntries))
 				}
 				else {
