@@ -68,31 +68,38 @@ class CloudStoreController extends BaseController {
 	def retrieveFileResource() {
 		def cloudStoreFileData = null
 		def storeName = params.cloudStore
-		def fileResourceId = params.fileResourceId
-		
+		def fileResourcePath = params.fileResourcePath
+
 		if(session.user != null) {
-			cloudStoreFileData = retrieveSingleFileResourceData(fileResourceId, session, storeName)
-			response.outputStream << cloudStoreFileData
+			cloudStoreFileData = retrieveSingleFileResourceData(fileResourcePath, session, storeName)
+			if(cloudStoreFileData) {
+				response.outputStream << cloudStoreFileData
+			}
 		}
 		else {
 			redirect(controller: 'home', action: 'index')
 		}
 	}
 	
-	def retrieveSingleFileResourceData(def fileResourceId, def session, def storeName) {
-		def fileResource = FileResource.get(fileResourceId)
-		def resourceData = fileResource.bytes
-		if(!resourceData) {
-			Account account = Account.findByEmail(session.user.email)
-			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-
-			if(storeName == 'dropbox') {
-				def dropboxCloudStore = new DropboxCloudStore()
-				def downloadedFile = dropboxCloudStore.downloadResource(cloudStore.credentials, fileResource)
-				resourceData = downloadedFile
+	def retrieveSingleFileResourceData(def fileResourcePath, def session, def storeName) {
+		Account account = Account.findByEmail(session.user.email)
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		FileResource fileResource = cloudStore.fileResources.find { it.path == '/'+fileResourcePath }
+		
+		if(!fileResource) {
+			respondPageNotFound()
+		} 
+		
+		else {
+			def resourceData = fileResource.bytes
+			if(!resourceData) {
+				if(storeName == 'dropbox') {
+					def dropboxCloudStore = new DropboxCloudStore()
+					def downloadedFile = dropboxCloudStore.downloadResource(cloudStore.credentials, fileResource)
+					resourceData = downloadedFile
+				}
 			}
+			return resourceData
 		}
-		return resourceData
 	}
-	
 }

@@ -13,4 +13,8 @@ class CloudStore {
     static constraints = {
 		fileResources: nullable: true
     }
+	
+	static mapping = {
+		fileResources lazy: false
+	}
 }

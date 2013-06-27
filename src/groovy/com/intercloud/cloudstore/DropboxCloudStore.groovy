@@ -31,7 +31,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			session = new WebAuthSession(appKeys, ACCESS_TYPE)
 			authInfo = session.getAuthInfo()
 			
-			String redirectUrlParam = "&oauth_callback=http://localhost:8080/InterCloud/auth_redirect"
+			String redirectUrlParam = "&oauth_callback=http://localhost:8080/auth_redirect"
 			String url = authInfo.url+redirectUrlParam
 	
 			return url
@@ -53,7 +53,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	def setCloudStoreInstanceProperties(def cloudStoreInstance, def session) {
 		setCloudStoreInfo(cloudStoreInstance)
-		setCloudStoreFileResources(cloudStoreInstance)
+		setCloudStoreFileResources(cloudStoreInstance, session)
 		setCloudStoreAccount(cloudStoreInstance, session)
 	}
 	
@@ -75,7 +75,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return dropboxAccountInfo
 	}
 	
-	private def setCloudStoreFileResources(def cloudStoreInstance) {
+	private def setCloudStoreFileResources(def cloudStoreInstance, def session) {
 		def fileResources = retrieveAllResourcesInfo()
 		for(fileResource in fileResources) {
 			if(!fileResource.save()) {

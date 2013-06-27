@@ -94,7 +94,7 @@
 					<h2><b>Dropbox Files</b></h2>
 					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<td><a href="dropbox/${fileInstance.id}">${fileInstance.path}</a></td>
+							<td><a href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
 							<br/>
 						</tr>
 					</g:each>
