@@ -68,5 +68,10 @@ class UrlMappings {
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}
+		
+		"/login/$action?"(controller: "login")
+		"/logout/$action?"(controller: "logout")
+		
+		"/admin" (controller: 'admin')
 	}
 }

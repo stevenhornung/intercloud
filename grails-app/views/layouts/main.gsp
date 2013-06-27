@@ -40,7 +40,7 @@
 		<div id="toppanel">
 		
 			<!-- Display login/register for non logged in user -->
-			<g:if test="${session.user == null }">
+			<sec:ifNotLoggedIn>
 				<!--  login -->
 				<div id="panel">
 					<div class="content clearfix">
@@ -51,13 +51,13 @@
 							</div>
 						<div class="left">
 							<!-- Login Form -->
-							<form class="clearfix" action="#" method="post">
+							<form class="clearfix" action="${resource(file: 'j_spring_security_check')}" method="post">
 								<h1>Member Login</h1>
 								<label class="grey" for="log">Email:</label>
-								<input class="field" type="text" name="email" id="log" value="" size="23" />
+								<input class="field" type="text" name="j_username" id="log" value="" size="23" />
 								<label class="grey" for="pwd">Password:</label>
-								<input class="field" type="password" name="password" id="pwd" size="23" />
-				            	<label><input name="rememberme" id="rememberme" type="checkbox" checked="checked" value="forever" /> &nbsp;Remember me</label>
+								<input class="field" type="password" name="j_password" id="pwd" size="23" />
+				            	<label><input name="_spring_security_remember_me" id="rememberme" type="checkbox" checked="checked" value="forever" /> &nbsp;Remember me</label>
 			        			<div class="clear"></div>
 								<input type="submit" name="submit" value="Login" class="bt_login" />
 								<a class="lost-pwd" href="#">Lost your password?</a>
@@ -94,9 +94,9 @@
 						<li class="right">&nbsp;</li>
 					</ul> 
 				</div> <!-- / top -->
-			</g:if>
+			</sec:ifNotLoggedIn>
 			
-			<g:else>
+			<sec:ifLoggedIn>
 				<!--  loggged in user -->
 				<div id="panel">
 					<div class="content clearfix">
@@ -118,6 +118,9 @@
 						<div class="left right">			
 							<!-- Account Settings -->
 							<h1>Account Settings</h1><br>
+							<sec:access expression="hasRole('ROLE_ADMIN')">
+								<g:link controller="admin" action="index">Admininstration</g:link><br>
+							</sec:access>
 							<g:link controller="account" action="index">Account Settings</g:link><br>
 							<g:link controller="account" action="upgrade" params="">Upgrade Account</g:link><br>
 						</div>
@@ -129,15 +132,15 @@
 		        	<ul class="login">
 		            	<li class="left">&nbsp;</li>
 		            	<li id="toggle">
-		              		<a id="open" class="open" href="#">${session.user.fullName }</a>
+		              		<a id="open" class="open" href="#"><sec:loggedInUserInfo field="fullName"/></a>
 		              		<a id="close" style="display: none;" class="close" href="#">Close Panel</a>      
 		            	</li>
 		            	<li class="sep">|</li>
-		            	<li><g:link controller="account" action="logout">&nbsp&nbspLogout</g:link></li>
+		            	<li><g:link controller="logout">&nbsp&nbspLogout</g:link></li>
 		            	<li class="right">&nbsp;</li>
 		          	</ul> 
 		       	</div> <!-- / top -->
-			</g:else>
+			</sec:ifLoggedIn>
 			
 		</div> <!--panel -->
 		

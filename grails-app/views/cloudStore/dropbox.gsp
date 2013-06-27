@@ -89,7 +89,7 @@
 			<h1>Welcome to InterCloud</h1>
 			<br>
 			<hr>
-			<g:if test="${session.user != null }">
+			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
 					<h2><b>Dropbox Files</b></h2>
 					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
@@ -99,10 +99,10 @@
 						</tr>
 					</g:each>
 				</g:if>
-			</g:if>
-			<g:else>
+			</sec:ifLoggedIn>
+			<sec:ifNotLoggedIn>
 				<h1>Display what adding dropbox link can do</h1>
-			</g:else>
+			</sec:ifNotLoggedIn>
 		</div>
 		
 	</body>

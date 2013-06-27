@@ -5,7 +5,7 @@ import com.intercloud.cloudstore.DropboxCloudStore
 class CloudStoreController extends BaseController {
 	
 	def index() {
-		if(session.user != null) {
+		if(getCurrentAccount()) {
 			if(params.cloudStore) {
 				requestClientAccessToCloudStore(params.cloudStore)
 			}
@@ -41,7 +41,8 @@ class CloudStoreController extends BaseController {
 	
 	private def saveCloudStoreInstance(def currentCloudStore) {
 		def cloudStoreInstance = new CloudStore()
-		currentCloudStore.setCloudStoreInstanceProperties(cloudStoreInstance, session)
+		def account = getCurrentAccount()
+		currentCloudStore.setCloudStoreInstanceProperties(cloudStoreInstance, account)
 
 		if(!cloudStoreInstance.save(flush: true)) {
 			// show message that cloud store link failed, and ask to retry
@@ -53,14 +54,14 @@ class CloudStoreController extends BaseController {
 		def cloudStoreFiles = null
 		def storeName = params.cloudStore
 		
-		if(session.user != null) {
-			cloudStoreFiles = retrieveAllFilesByCloudStore(session, storeName)
+		if(getCurrentAccount()) {
+			cloudStoreFiles = retrieveAllFilesByCloudStore(storeName)
 		}
 		render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
 	}
 	
-	def retrieveAllFilesByCloudStore(def session, def storeName) {
-		Account account = Account.findByEmail(session.user.email)
+	def retrieveAllFilesByCloudStore(def storeName) {
+		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		return cloudStore?.fileResources
 	}
@@ -70,8 +71,8 @@ class CloudStoreController extends BaseController {
 		def storeName = params.cloudStore
 		def fileResourcePath = params.fileResourcePath
 
-		if(session.user != null) {
-			cloudStoreFileData = retrieveSingleFileResourceData(fileResourcePath, session, storeName)
+		if(getCurrentAccount()) {
+			cloudStoreFileData = retrieveSingleFileResourceData(fileResourcePath, storeName)
 			if(cloudStoreFileData) {
 				response.outputStream << cloudStoreFileData
 			}
@@ -81,8 +82,8 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	def retrieveSingleFileResourceData(def fileResourcePath, def session, def storeName) {
-		Account account = Account.findByEmail(session.user.email)
+	def retrieveSingleFileResourceData(def fileResourcePath, def storeName) {
+		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		FileResource fileResource = cloudStore.fileResources.find { it.path == '/'+fileResourcePath }
 		

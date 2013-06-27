@@ -7,7 +7,7 @@ class HomeController extends BaseController {
 	}
 	
     def index() {
-		if(session.user != null) {
+		if(getCurrentAccount()) {
 			def accountFileResources = retrieveAccountFileResources()
 			[fileInstanceMap : accountFileResources]
 		}
@@ -22,7 +22,7 @@ class HomeController extends BaseController {
 	private def getFilesForEachCloudStore(def controller) {
 		def fileInstanceMap = [:]
 		CLOUD_STORES.each {
-			def fileResources = controller.retrieveAllFilesByCloudStore(session, it)
+			def fileResources = controller.retrieveAllFilesByCloudStore(it)
 			if(fileResources) {
 				fileInstanceMap << ["$it" : fileResources]
 			}

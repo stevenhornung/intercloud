@@ -1,3 +1,6 @@
+import grails.plugins.springsecurity.SecurityConfigType
+
+
 // locations to search for config files that get merged into the main config;
 // config files can be ConfigSlurper scripts, Java properties files, or classes
 // in the classpath in ConfigSlurper format
@@ -89,3 +92,23 @@ log4j = {
            'org.hibernate',
            'net.sf.ehcache.hibernate'
 }
+
+// Added by the Spring Security Core plugin:
+grails.plugins.springsecurity.userLookup.userDomainClassName = 'com.intercloud.Account'
+grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.intercloud.AccountRole'
+grails.plugins.springsecurity.authority.className = 'com.intercloud.Role'
+
+grails.plugins.springsecurity.auth.loginFormUrl = '/'
+grails.plugins.springsecurity.userLookup.usernamePropertyName='email'
+
+grails.plugins.springsecurity.securityConfigType = SecurityConfigType.InterceptUrlMap
+grails.plugins.springsecurity.interceptUrlMap = [
+	'/account':         ['IS_AUTHENTICATED_REMEMBERED'],
+	'/dropbox/*':         ['IS_AUTHENTICATED_REMEMBERED'],
+	'/googledrive/*':  ['IS_AUTHENTICATED_REMEMBERED'],
+	'/cloudstore': ['IS_AUTHENTICATED_REMEMBERED'],
+	'/auth_redirect': ['IS_AUTHENTICATED_REMEMBERED'],
+	'/admin/**':		['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
+	'/**':               ['IS_AUTHENTICATED_ANONYMOUSLY']
+]
+

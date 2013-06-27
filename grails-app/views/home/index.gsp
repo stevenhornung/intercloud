@@ -86,7 +86,7 @@
 			<p>side panel?</p>
 		</div>
 		<div id="page-body" role="main">
-			<g:if test="${session.user != null }">
+			<sec:ifLoggedIn>
 				<h1>Welcome to InterCloud</h1>
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
@@ -99,10 +99,10 @@
 						</tr>
 					</g:each>
 				</g:each>
-			</g:if>
-			<g:else>
+			</sec:ifLoggedIn>
+			<sec:ifNotLoggedIn>
 				<h1>Display all features and capabilities for non logged in user</h1>
-			</g:else>
+			</sec:ifNotLoggedIn>
 		</div>
 	</body>
 </html>

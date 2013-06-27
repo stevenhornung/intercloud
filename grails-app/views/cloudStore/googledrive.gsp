@@ -86,7 +86,7 @@
 			<p>side stuff</p>
 		</div>
 		<div id="page-body" role="main">
-			<g:if test="${session.user != null }">
+			<sec:ifLoggedIn>
 				<h1>Welcome to InterCloud</h1>
 				<h2><b>Google Drive Files</b></h2>
 				<g:each in="${fileInstanceList}" status="i" var="fileInstance">
@@ -95,10 +95,10 @@
 						<br/>
 					</tr>
 				</g:each>
-			</g:if>
-			<g:else>
+			</sec:ifLoggedIn>
+			<sec:ifNotLoggedIn>
 				<h1>Non user stuffs</h1>
-			</g:else>
+			</sec:ifNotLoggedIn>
 		</div>
 	</body>
 </html>
