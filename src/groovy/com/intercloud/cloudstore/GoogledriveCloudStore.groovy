@@ -1,5 +1,8 @@
 package com.intercloud.cloudstore
 
+import com.intercloud.Account
+import com.intercloud.CloudStore
+
 class GoogledriveCloudStore implements CloudStoreInterface{
 
 	public def configure(boolean isAuthRedirect) {
@@ -7,7 +10,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return null;
 	}
 
-	public def setCloudStoreInstanceProperties(def cloudStoreInstance, def session) {
+	public def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
 		// TODO Auto-generated method stub
 		return null;
 	}

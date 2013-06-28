@@ -3,11 +3,12 @@ package com.intercloud
 class AccountController extends BaseController {
 
 	def index() {
-		if(getCurrentAccount()) {
-			// show account overview
+		def account = getCurrentAccount()
+		if(account) {
+			render account
 		}
 		else {
-			// redirect to login page
+			redirect view: 'login'
 		}
 	}
 	

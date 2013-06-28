@@ -24,41 +24,47 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	static String account_key
 	static String account_secret
+	
+	final static REDIRECT_URL_PARAM = "&oauth_callback=http://localhost:8080/auth_redirect"
 
 	def configure(boolean isAuthRedirect) {
 		if(!isAuthRedirect) {
-			AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET)
-			webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE)
-			authInfo = webAuthSession.getAuthInfo()
-			
-			String redirectUrlParam = "&oauth_callback=http://localhost:8080/auth_redirect"
-			String url = authInfo.url+redirectUrlParam
-	
-			return url
+			authInfo = getAuthInfoForConfigure()
+			return authInfo.url + REDIRECT_URL_PARAM
 		}	
 		else {
-			RequestTokenPair pair = authInfo.requestTokenPair
-			webAuthSession.retrieveWebAccessToken(pair)
-			setAccountTokens()
-			
-			dropboxApi = new DropboxAPI<WebAuthSession>(webAuthSession)
+			setDropboxApiForConfigure()
 		}
 	}
+	
+	private def getAuthInfoForConfigure() {
+		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET)
+		webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE)
+		return webAuthSession.getAuthInfo()
+	}
+	
+	private void setDropboxApiForConfigure() {
+		RequestTokenPair pair = authInfo.requestTokenPair
+		webAuthSession.retrieveWebAccessToken(pair)
+		setAccountTokensForConfigure()
+		
+		dropboxApi = new DropboxAPI<WebAuthSession>(webAuthSession)
+	}
 
-	private def setAccountTokens() {
+	private def setAccountTokensForConfigure() {
 		AccessTokenPair tokens = webAuthSession.getAccessTokenPair()
 		account_key = tokens.key
 		account_secret = tokens.secret
 	}
 	
-	def setCloudStoreInstanceProperties(def cloudStoreInstance, def account) {
+	def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
 		setCloudStoreInfo(cloudStoreInstance)
 		setCloudStoreFileResources(cloudStoreInstance)
 		setCloudStoreAccount(cloudStoreInstance, account)
 	}
 	
-	private def setCloudStoreInfo(def cloudStoreInstance) {
-		def accountInfo = retrieveAccountInfo()
+	private def setCloudStoreInfo(CloudStore cloudStoreInstance) {
+		def accountInfo = getAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
 		cloudStoreInstance.credentials.put('ACCOUNT_KEY', account_key)
@@ -67,16 +73,16 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStoreInstance.totalSpace = accountInfo.quota
 	}
 	
-	private def retrieveAccountInfo() {
+	private def getAccountInfo() {
 		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
+		WebAuthSession webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret))
 		def dropboxAccountInfo = dropboxApi.accountInfo()
 		
 		return dropboxAccountInfo
 	}
 	
-	private def setCloudStoreFileResources(def cloudStoreInstance) {
-		def fileResources = retrieveAllResourcesInfo()
+	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
+		def fileResources = getAllDropboxResources()
 		for(fileResource in fileResources) {
 			if(!fileResource.save()) {
 				// show message that a resource couldnt be loaded
@@ -86,14 +92,13 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStoreInstance.fileResources = fileResources
 	}
 	
-	private def retrieveAllResourcesInfo() {
-		Entry entries = dropboxApi.metadata("/", 100, null, true, null);
-		def fileResources = retrieveFilesInDir(entries)
-
+	private def getAllDropboxResources() {
+		Entry rootDirEntries = dropboxApi.metadata("/", 0, null, true, null);
+		def fileResources = getFilesInDir(rootDirEntries)
 		return fileResources
 	}
 	
-	private def retrieveFilesInDir(def entries) {
+	private def getFilesInDir(Entry entries) {
 		def dirResources = []
 		for (Entry e : entries.contents) {
 			if (!e.isDeleted) {
@@ -101,7 +106,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 					def directory = convertFromDropboxResource(e)
 					dirResources.add(directory)
 					Entry dirEntries = dropboxApi.metadata(e.path, 0, null, true, null)
-					dirResources.addAll(retrieveFilesInDir(dirEntries))
+					dirResources.addAll(getFilesInDir(dirEntries))
 				}
 				else {
 					def fileResource = convertFromDropboxResource(e)
@@ -123,7 +128,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private def setCloudStoreAccount(def cloudStoreInstance, def account) {
+	private def setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
 		cloudStoreInstance.account = account
 	}
 
@@ -139,20 +144,28 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 
 	def downloadResource(def credentials, def fileResource) {
+		setDropboxApiWithCredentials(credentials)
+
+		byte[] downloadedBytes = null
+		if(!fileResource.isDir) {
+			downloadedBytes = getDropboxFileBytes(fileResource)
+		}
+		
+		return downloadedBytes
+	}
+	
+	private void setDropboxApiWithCredentials(def credentials) {
 		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
 		account_key = credentials.ACCOUNT_KEY
 		account_secret = credentials.ACCOUNT_SECRET
 		webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
-		dropboxApi = new DropboxAPI<WebAuthSession>(webAuthSession);
-
-		byte[] downloadedData = null
-		if(!fileResource.isDir) {
-			ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
-			DropboxFileInfo info = dropboxApi.getFile(fileResource.path, null, outputStream, null)
-			downloadedData = outputStream.toByteArray()
-		}
 		
-		return downloadedData
+		dropboxApi = new DropboxAPI<WebAuthSession>(webAuthSession);
 	}
-
+	
+	private def getDropboxFileBytes(FileResource fileResource) {
+		ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
+		DropboxFileInfo info = dropboxApi.getFile(fileResource.path, null, outputStream, null)
+		return outputStream.toByteArray()
+	}
 }

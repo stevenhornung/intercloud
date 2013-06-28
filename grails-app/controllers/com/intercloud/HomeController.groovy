@@ -15,11 +15,11 @@ class HomeController extends BaseController {
 	
 	private def retrieveAccountFileResources() {
 		CloudStoreController controller = new CloudStoreController()
-		def fileInstanceMap = getFilesForEachCloudStore(controller)
-		return fileInstanceMap
+		def accountFileResources = getFilesForEachCloudStore(controller)
+		return accountFileResources
 	}
 	
-	private def getFilesForEachCloudStore(def controller) {
+	private def getFilesForEachCloudStore(CloudStoreController controller) {
 		def fileInstanceMap = [:]
 		CLOUD_STORES.each {
 			def fileResources = controller.retrieveAllFilesByCloudStore(it)

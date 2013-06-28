@@ -1,6 +1,6 @@
 package com.intercloud
 
-import com.intercloud.cloudstore.DropboxCloudStore
+import com.intercloud.cloudstore.*
 
 class CloudStoreController extends BaseController {
 	
@@ -19,30 +19,43 @@ class CloudStoreController extends BaseController {
 	}
 
     private def requestClientAccessToCloudStore(def cloudStoreToAdd) {
-		def currentCloudStore = null
-		if(cloudStoreToAdd == 'dropbox') {
-			currentCloudStore = new DropboxCloudStore()
+		def currentCloudStoreLink = getCloudStoreLink(cloudStoreToAdd)
+		if(currentCloudStoreLink) {
+			def clientAccessRequestUrl = currentCloudStoreLink.configure(false)
+			flash.currentCloudStoreLink = currentCloudStoreLink
+			
+			redirect(url : clientAccessRequestUrl)
+		}
+		else {
+			// Bad Cloud Store
+			redirect(controller: 'home', action: 'index')
+		}
+	}
+	
+	private def getCloudStoreLink(def cloudStoreName) {
+		def cloudStoreLink = null
+		if(cloudStoreName == 'dropbox') {
+			cloudStoreLink = new DropboxCloudStore()
+		}
+		else if(cloudStoreName == 'googledrive') {
+			cloudStoreLink = new GoogledriveCloudStore()
 		}
 		
-		def clientAccessRequestUrl = currentCloudStore?.configure(false)
-
-		flash.currentCloudStore = currentCloudStore
-		redirect(url : clientAccessRequestUrl)
+		return cloudStoreLink
 	}
 	
 	def authRedirect = {
-		def currentCloudStore = flash.currentCloudStore
-		currentCloudStore.configure(true)
-		
-		saveCloudStoreInstance(currentCloudStore)
+		def currentCloudStoreLink = flash.currentCloudStoreLink
+		currentCloudStoreLink.configure(true)
+		saveCloudStoreInstance(currentCloudStoreLink)
 		
 		redirect(controller: 'home', action:'index')
 	}
 	
-	private def saveCloudStoreInstance(def currentCloudStore) {
-		def cloudStoreInstance = new CloudStore()
-		def account = getCurrentAccount()
-		currentCloudStore.setCloudStoreInstanceProperties(cloudStoreInstance, account)
+	private def saveCloudStoreInstance(def currentCloudStoreLink) {
+		CloudStore cloudStoreInstance = new CloudStore()
+		Account account = getCurrentAccount()
+		currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
 
 		if(!cloudStoreInstance.save(flush: true)) {
 			// show message that cloud store link failed, and ask to retry
@@ -72,7 +85,7 @@ class CloudStoreController extends BaseController {
 		def fileResourcePath = params.fileResourcePath
 
 		if(getCurrentAccount()) {
-			cloudStoreFileData = retrieveSingleFileResourceData(fileResourcePath, storeName)
+			cloudStoreFileData = getFileResourceData(fileResourcePath, storeName)
 			if(cloudStoreFileData) {
 				response.outputStream << cloudStoreFileData
 			}
@@ -82,25 +95,27 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	def retrieveSingleFileResourceData(def fileResourcePath, def storeName) {
+	def getFileResourceData(def fileResourcePath, def storeName) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		FileResource fileResource = cloudStore.fileResources.find { it.path == '/'+fileResourcePath }
+		FileResource fileResource = cloudStore?.fileResources.find { it.path == '/'+fileResourcePath }
 		
 		if(!fileResource) {
+			// redirect to page not found
 			respondPageNotFound()
 		} 
 		
 		else {
 			def resourceData = fileResource.bytes
 			if(!resourceData) {
-				if(storeName == 'dropbox') {
-					def dropboxCloudStore = new DropboxCloudStore()
-					def downloadedFile = dropboxCloudStore.downloadResource(cloudStore.credentials, fileResource)
-					resourceData = downloadedFile
-				}
+				resourceData = downloadFileResourceFromCloudStore(storeName, cloudStore, fileResource)
 			}
 			return resourceData
 		}
+	}
+	private def downloadFileResourceFromCloudStore(def storeName, CloudStore cloudStore, FileResource fileResource) {
+		def cloudStoreLink = getCloudStoreLink(storeName)
+		def downloadedFile = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
+		return downloadedFile
 	}
 }
