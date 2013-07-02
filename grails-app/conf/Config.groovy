@@ -98,7 +98,8 @@ grails.plugins.springsecurity.userLookup.userDomainClassName = 'com.intercloud.A
 grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.intercloud.AccountRole'
 grails.plugins.springsecurity.authority.className = 'com.intercloud.Role'
 
-grails.plugins.springsecurity.auth.loginFormUrl = '/'
+grails.plugins.springsecurity.auth.loginFormUrl = '/login'
+grails.plugins.springsecurity.failureHandler.defaultFailureUrl = '/login'
 grails.plugins.springsecurity.userLookup.usernamePropertyName='email'
 
 grails.plugins.springsecurity.securityConfigType = SecurityConfigType.InterceptUrlMap

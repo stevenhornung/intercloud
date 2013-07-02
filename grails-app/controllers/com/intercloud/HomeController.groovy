@@ -33,7 +33,7 @@ class HomeController extends BaseController {
 	def loginOrRegister() {
 		def submit = params.submit
 		if(submit == 'Login') {
-			forward(controller: 'account', action: 'login', params: params)
+			forward(controller: 'login', params: params)
 		}
 		else {
 			forward(controller: 'account', action: 'register', params: params)

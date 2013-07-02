@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Home - InterCloud</title>
+		<title>Dropbox - InterCloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -79,6 +79,15 @@
 				}
 			}
 		</style>
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'jquery-1.3.2.min.js')}" type="text/javascript"></script>
+		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
+		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
+		<script>
+			$(document).ready(function(){
+				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
+			});
+		</script>
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
@@ -94,7 +103,7 @@
 					<h2><b>Dropbox Files</b></h2>
 					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<td><a href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
+							<td><a class="colorbox" href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
 							<br/>
 						</tr>
 					</g:each>

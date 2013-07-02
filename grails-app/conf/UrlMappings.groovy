@@ -23,7 +23,7 @@ class UrlMappings {
 		"/account" {
 			controller = 'account'
 			action = [GET: 'index',
-						POST: 'createAccount',
+						POST: 'register',
 						PUT: 'updateAccount',
 						DELETE: 'deleteAccount']
 		}
@@ -69,8 +69,9 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 		}
 		
-		"/login/$action?"(controller: "login")
-		"/logout/$action?"(controller: "logout")
+		"/register" (controller: 'account', action: 'register')
+		"/login" (controller: 'account', action: 'login')
+		"/logout"(controller: "logout")
 		
 		"/admin" (controller: 'admin')
 	}

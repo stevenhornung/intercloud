@@ -14,8 +14,8 @@ import com.intercloud.*
 class DropboxCloudStore implements CloudStoreInterface {
 	
 	final static STORE_NAME = "dropbox"
-	final static String APP_KEY = "ujdofnwh516yrg0"
-	final static String APP_SECRET = "43itigcfb9y59dy"
+	static String APP_KEY
+	static String APP_SECRET
 	final static AccessType ACCESS_TYPE = AccessType.DROPBOX
 	
 	static DropboxAPI<WebAuthSession> dropboxApi

@@ -54,9 +54,9 @@
 							<form class="clearfix" action="${resource(file: 'j_spring_security_check')}" method="post">
 								<h1>Member Login</h1>
 								<label class="grey" for="log">Email:</label>
-								<input class="field" type="text" name="j_username" id="log" value="" size="23" />
+								<input class="field" type="email" name="j_username" id="log" value="" size="23" required="required"/>
 								<label class="grey" for="pwd">Password:</label>
-								<input class="field" type="password" name="j_password" id="pwd" size="23" />
+								<input class="field" type="password" name="j_password" id="pwd" size="23" required="required"/>
 				            	<label><input name="_spring_security_remember_me" id="rememberme" type="checkbox" checked="checked" value="forever" /> &nbsp;Remember me</label>
 			        			<div class="clear"></div>
 								<input type="submit" name="submit" value="Login" class="bt_login" />
@@ -68,13 +68,13 @@
 							<form action="#" method="post">
 								<h1>Not a member yet? Sign Up!</h1>				
 								<label class="grey" for="signup">Name:</label>
-								<input class="field" type="text" name="name" id="name" value="" size="23" />
+								<input class="field" type="text" name="name" id="name" value="" size="23" required="required"/>
 								<label class="grey" for="email">Email:</label>
-								<input class="field" type="text" name="email" id="email" size="23" />
+								<input class="field" type="email" name="email" id="email" size="23" required="required"/>
 								<label class="grey" for="password">Password:</label>
-								<input class="field" type="password" name="password" id="password" size="23" />
+								<input class="field" type="password" name="password" id="password" size="23" required="required"/>
 								<label class="grey" for="confirmPass">Confirm Password:</label>
-								<input class="field" type="password" name="confirmPass" id="confirmPass" size="23" />
+								<input class="field" type="password" name="confirmPass" id="confirmPass" size="23" required="required"/>
 								<input type="submit" name="submit" value="Register" class="bt_register" />
 							</form>
 						</div>
@@ -141,8 +141,8 @@
 		          	</ul> 
 		       	</div> <!-- / top -->
 			</sec:ifLoggedIn>
-			
 		</div> <!--panel -->
+
 		
 		<div class="footer" role="contentinfo"></div>
 		<div id="spinner" class="spinner" style="display:none;"><g:message code="spinner.alt" default="Loading&hellip;"/></div>
