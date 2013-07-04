@@ -21,23 +21,23 @@
                     <a class="hiddenanchor" id="tologin"></a>
                     <div id="wrapper">
                         <div id="login" class="animate form">
-                            <form method="POST" action="${resource(file: 'j_spring_security_check')}" autocomplete="on"> 
+                            <form method="POST" action='${postUrl}' autocomplete="on"> 
                                 <h1>Log in</h1> 
                                 <p>
-                                	<g:if test="${flash.message}">
-										<div class="message" role="status">${flash.message}</div>
+                                	<g:if test="${flash.loginMessage}">
+										<div class="login_message" role="status">${flash.loginMessage}</div>
 									</g:if>	
 								</p>	
                                 <p> 
                                     <label for="email" class="uname" data-icon="u" > Email </label>
-                                    <input class="field" type="text" name="j_username" id="email" value="" size="23" required="required" placeholder="email@intercloud.com"/>
+                                    <input class="field" type="email" name="j_username" id="email" value="" size="23" required="required" placeholder="email@intercloud.com"/>
                                 </p>
                                 <p> 
                                     <label for="password" class="youpasswd" data-icon="p"> Password </label>
                                     <input class="field" type="password" name="j_password" id="password" size="23" required="required" placeholder="eg. X8df!90EO" /> 
                                 </p>
                                 <p class="keeplogin">
-									<label><input name="_spring_security_remember_me" id="rememberme" type="checkbox" checked="checked" value="forever" /> &nbsp;Remember me</label>
+									<label><input name='${rememberMeParameter}' id="rememberme" type="checkbox" <g:if test='${hasCookie}'>checked='checked'</g:if> value="forever" /> &nbsp;Remember me</label>
 								</p>
                                 <p class="login button"> 
                                     <input type="submit" value="Login" /> 

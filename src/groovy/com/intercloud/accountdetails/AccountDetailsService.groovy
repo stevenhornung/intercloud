@@ -23,7 +23,7 @@ class AccountDetailsService implements GrailsUserDetailsService {
       Account.withTransaction { status ->
 
          Account account = Account.findByEmail(email)
-         if (!email) throw new UsernameNotFoundException(
+         if (!account) throw new UsernameNotFoundException(
                       'Email not found', email)
 
          def authorities = account.authorities.collect {

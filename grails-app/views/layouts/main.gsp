@@ -57,7 +57,7 @@
 								<input class="field" type="email" name="j_username" id="log" value="" size="23" required="required"/>
 								<label class="grey" for="pwd">Password:</label>
 								<input class="field" type="password" name="j_password" id="pwd" size="23" required="required"/>
-				            	<label><input name="_spring_security_remember_me" id="rememberme" type="checkbox" checked="checked" value="forever" /> &nbsp;Remember me</label>
+				            	<label><input name="_spring_security_remember_me" id="rememberme" type="checkbox" <g:if test='${hasCookie}'>checked='checked'</g:if> value="forever" /> &nbsp;Remember me</label>
 			        			<div class="clear"></div>
 								<input type="submit" name="submit" value="Login" class="bt_login" />
 								<a class="lost-pwd" href="#">Lost your password?</a>

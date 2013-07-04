@@ -15,6 +15,7 @@ class BootStrap {
 			
 		if (!adminUser1.authorities.contains(adminRole)) {
 			AccountRole.create adminUser1, adminRole
+			AccountRole.create adminUser1, userRole
 		}
 			
 		def adminUser2 = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
@@ -24,6 +25,7 @@ class BootStrap {
 
 		if (!adminUser2.authorities.contains(adminRole)) {
 			AccountRole.create adminUser2, adminRole
+			AccountRole.create adminUser2, userRole
 		}
 
     }

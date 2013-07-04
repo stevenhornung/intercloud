@@ -99,17 +99,20 @@ grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.interclou
 grails.plugins.springsecurity.authority.className = 'com.intercloud.Role'
 
 grails.plugins.springsecurity.auth.loginFormUrl = '/login'
-grails.plugins.springsecurity.failureHandler.defaultFailureUrl = '/login'
+grails.plugins.springsecurity.failureHandler.defaultFailureUrl = '/login/authfail'
+grails.plugins.springsecurity.adh.errorPage = '/denied'
+
 grails.plugins.springsecurity.userLookup.usernamePropertyName='email'
 
 grails.plugins.springsecurity.securityConfigType = SecurityConfigType.InterceptUrlMap
 grails.plugins.springsecurity.interceptUrlMap = [
-	'/account':         ['IS_AUTHENTICATED_REMEMBERED'],
-	'/dropbox/*':         ['IS_AUTHENTICATED_REMEMBERED'],
-	'/googledrive/*':  ['IS_AUTHENTICATED_REMEMBERED'],
-	'/cloudstore': ['IS_AUTHENTICATED_REMEMBERED'],
-	'/auth_redirect': ['IS_AUTHENTICATED_REMEMBERED'],
+	'/account/**':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/dropbox/*':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/googledrive/*':  ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/cloudstore': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/auth_redirect': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/admin/**':		['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
 	'/**':               ['IS_AUTHENTICATED_ANONYMOUSLY']
 ]
 
+grails.plugins.springsecurity.password.algorithm = 'bcrypt'

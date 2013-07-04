@@ -5,21 +5,25 @@ class BaseController {
 	def springSecurityService
 	
 	static final CLOUD_STORES = ['dropbox', 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws']
-
-	// Need to set up these error pages as gsp's
-    def respondServerError() {
-		render 'Internal Server Error'
-		return
+	
+	def respondUnauthorized() {
+		flash.message = message(code: 'error.unauthorized')
+		render view: '/error', status: 401
 	}
 	
 	def respondPageNotFound() {
-		render 'Page Not Found'
-		return
+		flash.message = message(code: 'error.notfound')
+		render view: '/error', status: 404
 	}
 	
 	def respondInvalidAction() {
-		render "Invalid Action"
-		return
+		flash.message = message(code: 'error.invalid')
+		render view: '/error', status: 405
+	}
+	
+	def respondServerError() {
+		flash.message = message(code: 'error.server')
+		render view: '/error', status: 500
 	}
 	
 	def getCurrentAccount() {

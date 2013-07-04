@@ -1,7 +1,9 @@
 class UrlMappings {
 
 	static mappings = {
+		"401" (controller: 'base', action: 'respondUnauthorized')
 		"404" (controller: 'base', action: 'respondPageNotFound')
+		"405" (controller: 'base', action: 'respondInvalidAction')
 		"500"(controller: 'base', action: 'respondServerError')
 
 		"/" {
@@ -70,8 +72,12 @@ class UrlMappings {
 		}
 		
 		"/register" (controller: 'account', action: 'register')
-		"/login" (controller: 'account', action: 'login')
+		"/login" (controller: 'login', action: 'auth')
+		"/login/authfail" (controller: 'login', action: 'authfail')
+		"/denied" (controller: 'login', action: 'denied')
 		"/logout"(controller: "logout")
+		
+		"/error" (controller: 'base')
 		
 		"/admin" (controller: 'admin')
 	}

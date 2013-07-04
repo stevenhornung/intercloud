@@ -1,19 +1,20 @@
 package com.intercloud
 
-class AccountController extends BaseController {
+import org.codehaus.groovy.grails.plugins.springsecurity.SpringSecurityUtils
 
+import org.springframework.security.web.WebAttributes
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
+
+class AccountController extends BaseController {
+	
 	def index() {
 		def account = getCurrentAccount()
 		if(account) {
-			render account
+			render account.email + account.fullName + account.type
 		}
 		else {
-			render view: 'login'
+			respondServerError()
 		}
-	}
-	 
-	def login() {
-		render view: 'login'
 	}
 	
 	def showRegisterErrors() {
@@ -24,13 +25,13 @@ class AccountController extends BaseController {
 		def newAccount = new Account()
 
 		if(params.password != params.confirmPass) {
-			flash.message = message(code: 'account.password.mismatch', args: [message(code: 'account.label', default: 'Account'), newAccount.id])
+			flash.message = message(code: 'account.password.mismatch')
 			showRegisterErrors()
 			return
 		}
 		
 		if(Account.findByEmail(params.email)) {
-			flash.message = message(code: 'account.email.notunique', args: [message(code: 'account.label', default: 'Account'), newAccount.id])
+			flash.message = message(code: 'account.email.notunique')
 			showRegisterErrors()
 			return
 		}
@@ -40,7 +41,7 @@ class AccountController extends BaseController {
 		newAccount.fullName = params.name
 		
 		if(!newAccount.save(flush: true)) {
-			flash.message = message(code: 'account.notcreated', args: [message(code: 'account.label', default: 'Account'), newAccount.id])
+			flash.message = message(code: 'account.notcreated')
 			showRegisterErrors()
 			return
 		}
@@ -48,7 +49,7 @@ class AccountController extends BaseController {
 		Role userRole = Role.findByAuthority('ROLE_USER')
 		AccountRole.create newAccount, userRole
 		
-		flash.message = message(code: 'account.created', args: [message(code: 'account.label', default: 'Account'), newAccount.id])
-		redirect(controller: 'account', action: 'login')
+		flash.loginMessage = message(code: 'account.created')
+		redirect(controller: 'login', action: 'auth')
 	}
 }
