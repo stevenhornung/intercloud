@@ -46,17 +46,9 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 		}
 		
-		"/dropbox" {
+		"/dropbox/$fileResourcePath**?" {
 			controller = 'cloudStore'
-			action = [GET: "listCloudStoreFiles",
-						POST: 'respondInvalidAction',
-						PUT: 'respondInvalidAction',
-						DELETE: 'respondInvalidAction']
-			cloudStore = 'dropbox'
-		}
-		"/dropbox/$fileResourcePath**" {
-			controller = 'cloudStore'
-			action = [GET: "retrieveFileResource",
+			action = [GET: "getCloudStoreResources",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -76,8 +68,6 @@ class UrlMappings {
 		"/login/authfail" (controller: 'login', action: 'authfail')
 		"/denied" (controller: 'login', action: 'denied')
 		"/logout"(controller: "logout")
-		
-		"/error" (controller: 'base')
 		
 		"/admin" (controller: 'admin')
 	}

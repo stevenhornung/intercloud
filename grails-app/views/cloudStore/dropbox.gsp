@@ -103,7 +103,12 @@
 					<h2><b>Dropbox Files</b></h2>
 					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<td><a class="colorbox" href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
+							<g:if test="${fileInstance.isDir }">
+								<td><a href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
+							</g:if>
+							<g:else>
+								<td><a class="colorbox" href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
+							</g:else>
 							<br/>
 						</tr>
 					</g:each>

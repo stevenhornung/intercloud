@@ -100,20 +100,26 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private def getFilesInDir(Entry entries) {
 		def dirResources = []
+		def dirFileResourceChildren = []
+		def dirFileResource = convertFromDropboxResource(entries)
 		for (Entry e : entries.contents) {
 			if (!e.isDeleted) {
 				if(e.isDir) {
 					def directory = convertFromDropboxResource(e)
+					dirFileResourceChildren.add(directory)
 					dirResources.add(directory)
 					Entry dirEntries = dropboxApi.metadata(e.path, 0, null, true, null)
 					dirResources.addAll(getFilesInDir(dirEntries))
 				}
 				else {
 					def fileResource = convertFromDropboxResource(e)
+					dirFileResourceChildren.add(fileResource)
 					dirResources.add(fileResource)
 				}
 			}
 		}
+		dirFileResource.fileResources = dirFileResourceChildren
+		dirResources.add(dirFileResource)
 		return dirResources
 	}
 	

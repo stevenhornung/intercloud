@@ -63,26 +63,58 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	def listCloudStoreFiles() {
+	def getCloudStoreResources() {
 		def cloudStoreFiles = null
 		def storeName = params.cloudStore
-		
-		if(getCurrentAccount()) {
-			cloudStoreFiles = retrieveAllFilesByCloudStore(storeName)
+
+		if(params.fileResourcePath) {
+			def fileResourcePath = '/'+params.fileResourcePath
+			def isDir = isPathDir(storeName, fileResourcePath)
+			if(!isDir) {
+				retrieveFileResource(storeName, fileResourcePath)
+			}
+			else {
+				def dir = fileResourcePath
+				cloudStoreFiles = retrieveFilesByCloudStoreInDir(storeName, dir)
+				render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+			}
 		}
-		render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+		else {
+			if(getCurrentAccount()) {
+				def dir = "/"
+				cloudStoreFiles = retrieveFilesByCloudStoreInDir(storeName, dir)
+			}
+			render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+		}
 	}
 	
-	def retrieveAllFilesByCloudStore(def storeName) {
+	private def isPathDir(def storeName, def fileResourcePath) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		return cloudStore?.fileResources
+		if(cloudStore) {
+			def resources = cloudStore?.fileResources
+			FileResource fileResource = cloudStore.fileResources.find { it.path == fileResourcePath }
+			if(fileResource?.isDir) {
+				return true
+			}
+			else {
+				return false
+			}
+		}
+		return false
 	}
 	
-	def retrieveFileResource() {
+	def retrieveFilesByCloudStoreInDir(def storeName, def dir) {
+		Account account = getCurrentAccount()
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		if(cloudStore) {
+			FileResource fileResource = cloudStore.fileResources.find { it.path == dir }
+			return fileResource.fileResources
+		}
+	}
+	
+	def retrieveFileResource(def storeName, def fileResourcePath) {
 		def cloudStoreFileData = null
-		def storeName = params.cloudStore
-		def fileResourcePath = params.fileResourcePath
 
 		if(getCurrentAccount()) {
 			cloudStoreFileData = getFileResourceData(fileResourcePath, storeName)
@@ -98,11 +130,11 @@ class CloudStoreController extends BaseController {
 	def getFileResourceData(def fileResourcePath, def storeName) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		FileResource fileResource = cloudStore?.fileResources.find { it.path == '/'+fileResourcePath }
+		FileResource fileResource = cloudStore?.fileResources.find { it.path == fileResourcePath }
 		
 		if(!fileResource) {
-			// redirect to page not found
-			respondPageNotFound()
+			forward(controller: 'base', action: 'respondPageNotFound')
+			return
 		} 
 		
 		else {

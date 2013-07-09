@@ -8,22 +8,22 @@ class BaseController {
 	
 	def respondUnauthorized() {
 		flash.message = message(code: 'error.unauthorized')
-		render view: '/error', status: 401
+		render view: 'error', status: 401
 	}
 	
 	def respondPageNotFound() {
 		flash.message = message(code: 'error.notfound')
-		render view: '/error', status: 404
+		render view: 'error', status: 404
 	}
 	
 	def respondInvalidAction() {
 		flash.message = message(code: 'error.invalid')
-		render view: '/error', status: 405
+		render view: 'error', status: 405
 	}
 	
 	def respondServerError() {
 		flash.message = message(code: 'error.server')
-		render view: '/error', status: 500
+		render view: 'error', status: 500
 	}
 	
 	def getCurrentAccount() {

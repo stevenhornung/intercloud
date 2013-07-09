@@ -1,3 +1,5 @@
+package com.intercloud
+
 import com.intercloud.BaseController
 import grails.converters.JSON
 
@@ -66,13 +68,15 @@ class LoginController extends BaseController{
 	/**
 	 * Show denied page.
 	 */
-	def denied = {
+	def denied() {
 		if (springSecurityService.isLoggedIn() &&
 				authenticationTrustResolver.isRememberMe(SCH.context?.authentication)) {
 			// have cookie but the page is guarded with IS_AUTHENTICATED_FULLY
 			redirect action: 'full', params: params
+		}
+		else {
+			forward controller: 'base', action: 'respondUnauthorized'
 		}	
-		respondUnauthorized()
 	}
 
 	/**
