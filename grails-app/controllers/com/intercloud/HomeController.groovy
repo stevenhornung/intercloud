@@ -22,8 +22,7 @@ class HomeController extends BaseController {
 	private def getFilesForEachCloudStore(CloudStoreController controller) {
 		def fileInstanceMap = [:]
 		CLOUD_STORES.each {
-			def dir = "/"
-			def fileResources = controller.retrieveFilesByCloudStoreInDir(it, dir)
+			def fileResources = controller.getHomeCloudStoreResources(it)
 			if(fileResources) {
 				fileInstanceMap << ["$it" : fileResources]
 			}

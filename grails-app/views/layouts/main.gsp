@@ -30,7 +30,7 @@
 	<body>
 		<header>
 	      <div class="inner">
-	        <a href="home"><h1>InterCloud</h1></a>
+	        <a href="/home"><h1>InterCloud</h1></a>
 	        <h2></h2>
 	      </div>
 	    </header>

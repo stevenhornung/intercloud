@@ -63,90 +63,96 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
+	def getHomeCloudStoreResources(def storeName) {
+		def dir = "/"
+		def fileResource = getFileResourceFromPath(storeName, dir)
+		return retrieveFilesInDir(fileResource)	
+	}
+	
 	def getCloudStoreResources() {
-		def cloudStoreFiles = null
 		def storeName = params.cloudStore
+		def dir = "/"
+		def fileResource = getFileResourceFromPath(storeName, dir)
 
-		if(params.fileResourcePath) {
-			def fileResourcePath = '/'+params.fileResourcePath
-			def isDir = isPathDir(storeName, fileResourcePath)
-			if(!isDir) {
-				retrieveFileResource(storeName, fileResourcePath)
+		renderFilesInFileResourceFolder(storeName, fileResource)
+	}
+	
+	def getSpecificCloudStoreResources() {
+		def storeName = params.cloudStore
+		def fileResourcePath = '/' + params.fileResourcePath
+		
+		def fileResource = getFileResourceFromPath(storeName, fileResourcePath)
+		if(fileResource) {
+			def isDir = isFileResourceDir(fileResource)
+			if(isDir) {
+				renderFilesInFileResourceFolder(storeName, fileResource)
 			}
 			else {
-				def dir = fileResourcePath
-				cloudStoreFiles = retrieveFilesByCloudStoreInDir(storeName, dir)
-				render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+				retrieveFileResource(storeName, fileResource)
 			}
 		}
 		else {
-			if(getCurrentAccount()) {
-				def dir = "/"
-				cloudStoreFiles = retrieveFilesByCloudStoreInDir(storeName, dir)
-			}
-			render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+			forward(controller: 'base', action: 'respondPageNotFound')
 		}
 	}
 	
-	private def isPathDir(def storeName, def fileResourcePath) {
+	private def getFileResourceFromPath(def storeName, def fileResourcePath) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		if(cloudStore) {
-			def resources = cloudStore?.fileResources
-			FileResource fileResource = cloudStore.fileResources.find { it.path == fileResourcePath }
-			if(fileResource?.isDir) {
-				return true
-			}
-			else {
-				return false
-			}
-		}
-		return false
-	}
-	
-	def retrieveFilesByCloudStoreInDir(def storeName, def dir) {
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		if(cloudStore) {
-			FileResource fileResource = cloudStore.fileResources.find { it.path == dir }
-			return fileResource.fileResources
+			def fileResources = cloudStore.fileResources
+			return cloudStore.fileResources.find { it.path == fileResourcePath }
 		}
 	}
 	
-	def retrieveFileResource(def storeName, def fileResourcePath) {
+	private def isFileResourceDir(def fileResource) {
+		if(fileResource.isDir) {
+			return true
+		}
+		else {
+			return false
+		}
+	}
+	
+	private def renderFilesInFileResourceFolder(def storeName, def fileResource) {
+		def cloudStoreFiles = retrieveFilesInDir(fileResource)
+		render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
+	}
+	
+	private def retrieveFilesInDir(FileResource fileResource) {
+		return fileResource?.fileResources
+	}
+	
+	private def retrieveFileResource(def storeName, def fileResource) {
 		def cloudStoreFileData = null
-
-		if(getCurrentAccount()) {
-			cloudStoreFileData = getFileResourceData(fileResourcePath, storeName)
-			if(cloudStoreFileData) {
+		cloudStoreFileData = getFileResourceData(storeName, fileResource)
+		
+		if(cloudStoreFileData) {
+			try{
 				response.outputStream << cloudStoreFileData
 			}
+			catch (Exception) {
+				//Do nothing, Client clicked out during load of data
+			}
 		}
 		else {
-			redirect(controller: 'home', action: 'index')
+			forward(controller: 'base', action: 'respondServerError')
 		}
 	}
 	
-	def getFileResourceData(def fileResourcePath, def storeName) {
+	def getFileResourceData(def storeName, def fileResource) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		FileResource fileResource = cloudStore?.fileResources.find { it.path == fileResourcePath }
 		
-		if(!fileResource) {
-			forward(controller: 'base', action: 'respondPageNotFound')
-			return
-		} 
-		
-		else {
-			def resourceData = fileResource.bytes
-			if(!resourceData) {
-				resourceData = downloadFileResourceFromCloudStore(storeName, cloudStore, fileResource)
-			}
-			return resourceData
+		def resourceData = fileResource.bytes
+		if(!resourceData) {
+			resourceData = downloadFileResourceFromCloudStore(cloudStore, fileResource)
 		}
+		return resourceData
 	}
-	private def downloadFileResourceFromCloudStore(def storeName, CloudStore cloudStore, FileResource fileResource) {
-		def cloudStoreLink = getCloudStoreLink(storeName)
+	
+	private def downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
+		def cloudStoreLink = getCloudStoreLink(cloudStore.storeName)
 		def downloadedFile = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
 		return downloadedFile
 	}
