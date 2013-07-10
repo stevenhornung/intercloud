@@ -10,7 +10,7 @@ class AccountController extends BaseController {
 	def index() {
 		def account = getCurrentAccount()
 		if(account) {
-			render account.email + account.fullName + account.type
+			render view: 'index', model: [accountInstance: account]
 		}
 		else {
 			respondServerError()

@@ -3,6 +3,6 @@ package com.intercloud
 class AdminController {
 
     def index() { 
-		render Account.list().email
+		render view: 'index', model: [accountList: Account.list()]
 	}
 }
