@@ -104,10 +104,10 @@
 					<g:each in="${cloudStore.value }" var="fileInstance">
 						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
 							<g:if test="${fileInstance.isDir }">
-								<td><a href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
+								<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">${fileInstance.path}</a></td>
 							</g:if>
 							<g:else>
-								<td><a class="colorbox" href="/dropbox${fileInstance.path}">${fileInstance.path}</a></td>
+								<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">${fileInstance.path}</a></td>
 							</g:else>
 							<br/>
 						</tr>
