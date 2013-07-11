@@ -3,6 +3,7 @@ package com.intercloud
 class FileResource {
 
 	String path
+	String fileName
 	String byteSize
 	byte[] bytes
 	String mimeType

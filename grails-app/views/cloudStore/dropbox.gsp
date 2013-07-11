@@ -79,14 +79,26 @@
 				}
 			}
 		</style>
+		
+		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
+		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
+		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+		
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
-		<script src="${resource(dir: 'js', file: 'jquery-1.3.2.min.js')}" type="text/javascript"></script>
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
 		<script>
 			$(document).ready(function(){
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
 			});
+		</script>
+		
+		<script>
+		  $(function() {
+		    $( "#accordion" ).accordion({
+		      collapsible: true
+		    });
+		  });
 		</script>
 	</head>
 	<body>
@@ -101,15 +113,25 @@
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
 					<h2><b>Dropbox Files</b></h2>
+					<div id="accordion">
 					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<g:if test="${fileInstance.isDir }">
-								<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">${fileInstance.path}</a></td>
-							</g:if>
-							<g:else>
-								<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">${fileInstance.path}</a></td>
-							</g:else>
-							<br/>
+							<h3>${fileInstance.fileName }</h3>
+								<div>
+									<p><g:if test="${fileInstance.isDir }">
+											<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+											<td><a href="#">Download</a></td>
+											<td><a href="#">Move</a></td>
+											<td><a href="#">Delete</a></td>
+										</g:if>
+										<g:else>
+											<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+											<td><a href="#">Download</a></td>
+											<td><a href="#">Move</a></td>
+											<td><a href="#">Delete</a></td>
+										</g:else>
+									</p>
+								</div>
 						</tr>
 					</g:each>
 				</g:if>

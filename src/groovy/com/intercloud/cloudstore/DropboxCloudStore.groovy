@@ -135,6 +135,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.modified = dropboxResource.modified
 		fileResource.isDir = dropboxResource.isDir
 		fileResource.mimeType = dropboxResource.mimeType
+		fileResource.fileName = dropboxResource.path.substring(dropboxResource.path.lastIndexOf('/')+1)
 
 		return fileResource
 	}
