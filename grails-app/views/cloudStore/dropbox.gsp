@@ -114,26 +114,27 @@
 				<g:if test="${fileInstanceList != null }">
 					<h2><b>Dropbox Files</b></h2>
 					<div id="accordion">
-					<g:each in="${fileInstanceList}" status="i" var="fileInstance">
-						<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-							<h3>${fileInstance.fileName }</h3>
-								<div>
-									<p><g:if test="${fileInstance.isDir }">
-											<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-											<td><a href="#">Download</a></td>
-											<td><a href="#">Move</a></td>
-											<td><a href="#">Delete</a></td>
-										</g:if>
-										<g:else>
-											<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-											<td><a href="#">Download</a></td>
-											<td><a href="#">Move</a></td>
-											<td><a href="#">Delete</a></td>
-										</g:else>
-									</p>
-								</div>
-						</tr>
-					</g:each>
+						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
+							<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
+								<h3>${fileInstance.fileName }</h3>
+									<div>
+										<p><g:if test="${fileInstance.isDir }">
+												<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+												<td><a href="#">Download</a></td>
+												<td><a href="#">Move</a></td>
+												<td><a href="#">Delete</a></td>
+											</g:if>
+											<g:else>
+												<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+												<td><a href="#">Download</a></td>
+												<td><a href="#">Move</a></td>
+												<td><a href="#">Delete</a></td>
+											</g:else>
+										</p>
+									</div>
+							</tr>
+						</g:each>
+					</div>
 				</g:if>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>
