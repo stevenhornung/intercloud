@@ -17,5 +17,6 @@ class FileResource {
 		mimeType nullable: true
 		modified nullable: true
 		fileResources nullable: true
+		fileName nullable: true
     }
 }

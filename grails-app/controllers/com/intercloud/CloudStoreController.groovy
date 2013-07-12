@@ -156,4 +156,59 @@ class CloudStoreController extends BaseController {
 		def downloadedFile = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
 		return downloadedFile
 	}
+	
+	def deleteResource() {
+		def storeName = params.cloudStore
+		def fileResource = FileResource.get(params.fileResourceId)
+		def type = params.type
+		
+		if(type == 'hard') {
+			// Delete from intercloud and cloud store
+			hardDelete(storeName, fileResource)
+		}
+		else if(type == 'soft') {
+			// Only delete from intercloud
+			softDelete(storeName, fileResource)
+		}
+		else {
+			forward(action: 'getCloudStoreResources')
+		}
+	}
+	
+	private def hardDelete(def storeName, FileResource fileResource) {
+		softDelete(storeName, fileResource)
+		deleteFromCloudStore(storeName, fileResource)
+		
+		forward(action: 'getCloudStoreResources')
+	}
+	
+	private def softDelete(def storeName, FileResource fileResource) {
+		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/')+1)
+		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath) 
+		parentResource.removeFromFileResources(fileResource)
+		parentResource.save(flush: true)
+		// gotta delete actual file resource brosef
+	}
+	
+	private def deleteFromCloudStore(def storeName, FileResource fileResource) {
+		Account account = getCurrentAccount()
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		def credentials = cloudStore.credentials
+		
+		if(storeName == 'dropbox') {
+			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
+			if(fileResource.isDir) {
+				// recursivly delete all under
+			}
+			else {
+				dropboxCloudStore.deleteResource(credentials, fileResource)
+			}
+		}
+		else if(storeName == 'googledrive') {
+			
+		}
+		else {
+			// not supported
+		}
+	}
 }

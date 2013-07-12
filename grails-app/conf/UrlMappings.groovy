@@ -64,6 +64,14 @@ class UrlMappings {
 			cloudStore = 'dropbox'
 		}
 		
+		"/delete" {
+			controller = 'cloudStore'
+			action = [GET: 'deleteResource',
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
+		
 		"/auth_redirect" {
 			controller = 'cloudStore'
 			action = [GET: "authRedirect",

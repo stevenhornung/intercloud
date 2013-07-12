@@ -84,12 +84,6 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources()
 		for(FileResource fileResource : fileResources) {
-			// TODO: better way to do this? ->Ensure path is unique within account cloud store
-			for(FileResource fileRes2 : fileResources) {
-				if(fileResource.path == fileRes2.path) {
-					continue
-				}
-			}
 			if(!fileResource.save()) {
 				// TODO: show a better message that a resource couldnt be saved
 				print fileResource.errors.allErrors
@@ -152,6 +146,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 	def updateResource(def credentials, def fileResource) {
 		// TODO Auto-generated method stub
+		
+	}
+	
+	def deleteResource(def credentials, def fileResource) {
 		
 	}
 
