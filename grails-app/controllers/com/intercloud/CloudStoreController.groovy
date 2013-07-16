@@ -21,7 +21,7 @@ class CloudStoreController extends BaseController {
     private def requestClientAccessToCloudStore(def cloudStoreToAdd) {
 		def currentCloudStoreLink = getCloudStoreLink(cloudStoreToAdd)
 		if(currentCloudStoreLink) {
-			def clientAccessRequestUrl = currentCloudStoreLink.configure(false)
+			def clientAccessRequestUrl = currentCloudStoreLink.configure(false, request)
 			flash.currentCloudStoreLink = currentCloudStoreLink
 			
 			redirect(url : clientAccessRequestUrl)
@@ -46,7 +46,7 @@ class CloudStoreController extends BaseController {
 	
 	def authRedirect = {
 		def currentCloudStoreLink = flash.currentCloudStoreLink
-		currentCloudStoreLink.configure(true)
+		currentCloudStoreLink.configure(true, request)
 		saveCloudStoreInstance(currentCloudStoreLink)
 		
 		redirect(controller: 'home', action:'index')

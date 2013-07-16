@@ -2,10 +2,11 @@ package com.intercloud.cloudstore
 
 import com.intercloud.Account
 import com.intercloud.CloudStore
+import javax.servlet.http.HttpServletRequest
 
 class GoogledriveCloudStore implements CloudStoreInterface{
 
-	def configure(boolean isAuthRedirect) {
+	def configure(boolean isAuthRedirect, HttpServletRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}

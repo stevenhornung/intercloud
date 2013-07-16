@@ -13,11 +13,11 @@ class FileResource {
 	static hasMany = [fileResources: FileResource]
 
     static constraints = {
+		byteSize nullable: true
 		bytes nullable: true
 		mimeType nullable: true
 		modified nullable: true
 		fileResources nullable: true
-		fileName nullable: true
     }
 	
 	static mapping = {

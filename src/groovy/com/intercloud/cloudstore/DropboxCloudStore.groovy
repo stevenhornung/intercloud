@@ -1,14 +1,19 @@
 package com.intercloud.cloudstore
 
-import com.dropbox.client2.DropboxAPI
-import com.dropbox.client2.DropboxAPI.DropboxFileInfo
-import com.dropbox.client2.DropboxAPI.Entry
-import com.dropbox.client2.session.AccessTokenPair
-import com.dropbox.client2.session.AppKeyPair
-import com.dropbox.client2.session.RequestTokenPair
-import com.dropbox.client2.session.WebAuthSession
-import com.dropbox.client2.session.Session.AccessType
-import com.dropbox.client2.session.WebAuthSession.WebAuthInfo
+import com.dropbox.core.DbxAccountInfo
+import com.dropbox.core.DbxAuthFinish
+import com.dropbox.core.DbxClient
+import com.dropbox.core.DbxEntry
+import com.dropbox.core.DbxStandardSessionStore
+import com.dropbox.core.DbxWebAuth
+import com.dropbox.core.DbxAuthInfo
+import com.dropbox.core.DbxSessionStore
+import com.dropbox.core.DbxAppInfo
+import com.dropbox.core.DbxRequestConfig
+
+import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpSession
+
 import com.intercloud.*
 
 class DropboxCloudStore implements CloudStoreInterface {
@@ -16,45 +21,64 @@ class DropboxCloudStore implements CloudStoreInterface {
 	final static STORE_NAME = "dropbox"
 	static String APP_KEY
 	static String APP_SECRET
-	final static AccessType ACCESS_TYPE = AccessType.DROPBOX
-	
-	static DropboxAPI<WebAuthSession> dropboxApi
-	static WebAuthSession webAuthSession
-	static WebAuthInfo authInfo
-	
-	static String account_key
-	static String account_secret
-	
-	final static REDIRECT_URL_PARAM = "&oauth_callback=http://localhost:8080/auth_redirect"
 
-	def configure(boolean isAuthRedirect) {
+	static DbxWebAuth auth
+	static DbxAuthInfo authInfo
+	static DbxClient dropboxClient
+	
+	static String access_token
+	
+	final static REDIRECT_URL = "http://localhost:8080/auth_redirect"
+
+	def configure(boolean isAuthRedirect, HttpServletRequest request) {
 		if(!isAuthRedirect) {
-			authInfo = getAuthInfoForConfigure()
-			return authInfo.url + REDIRECT_URL_PARAM
+			String authorizeUrl = getAuthorizeUrl(request)
+			return authorizeUrl
 		}	
 		else {
-			setDropboxApiForConfigure()
+			setDropboxApiForConfigure(request)
 		}
 	}
 	
-	private def getAuthInfoForConfigure() {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET)
-		webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE)
-		return webAuthSession.getAuthInfo()
+	private def getAuthorizeUrl(HttpServletRequest request) {
+		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
+		DbxAppInfo appInfo = new DbxAppInfo(APP_KEY, APP_SECRET)
+		HttpSession session = request.getSession(true)
+		String sessionKey = "dropbox-auth-csrf-token"
+		DbxSessionStore csrfTokenStore = new DbxStandardSessionStore(session, sessionKey);
+		auth = new DbxWebAuth(requestConfig, appInfo, REDIRECT_URL, csrfTokenStore)
+		
+		return auth.start()
 	}
 	
-	private void setDropboxApiForConfigure() {
-		RequestTokenPair pair = authInfo.requestTokenPair
-		webAuthSession.retrieveWebAccessToken(pair)
-		setAccountTokensForConfigure()
+	private void setDropboxApiForConfigure(HttpServletRequest request) {
+		HttpSession session = request.getSession(true)
+		def sessionToken = session.getAttribute('dropbox-auth-csrf-token')
 		
-		dropboxApi = new DropboxAPI<WebAuthSession>(webAuthSession)
+		if(sessionToken == null) {
+			print 'no requst token in session'
+			// return no request token in session
+			session.removeAttribute("dropbox-auth-csrf-token")
+		}
+		if(request.getParameter("state") != sessionToken) {
+			print 'invalid oauth'
+			// return invalid state (oauth)
+		}
+		DbxAuthFinish authFinish
+		try {
+			authFinish = auth.finish(request.parameterMap)
+		}
+		catch(Exception e) {
+			print 'exception hurr'
+			print e
+			// return 'couldnt complete link 
+		} 
+		setAccessTokenForConfigure(authFinish)
+		
 	}
 
-	private def setAccountTokensForConfigure() {
-		AccessTokenPair tokens = webAuthSession.getAccessTokenPair()
-		account_key = tokens.key
-		account_secret = tokens.secret
+	private def setAccessTokenForConfigure(def authFinish) {
+		access_token = authFinish.accessToken
 	}
 	
 	def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
@@ -64,19 +88,19 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def setCloudStoreInfo(CloudStore cloudStoreInstance) {
-		def accountInfo = getAccountInfo()
+		DbxAccountInfo accountInfo = getAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
-		cloudStoreInstance.credentials.put('ACCOUNT_KEY', account_key)
-		cloudStoreInstance.credentials.put('ACCOUNT_SECRET', account_secret)
-		cloudStoreInstance.spaceUsed = accountInfo.quotaNormal
-		cloudStoreInstance.totalSpace = accountInfo.quota
+		cloudStoreInstance.credentials.put('ACCESS_TOKEN', access_token)
+		cloudStoreInstance.userId = accountInfo.userId
+		cloudStoreInstance.spaceUsed = accountInfo.quota.normal
+		cloudStoreInstance.totalSpace = accountInfo.quota.total
 	}
 	
 	private def getAccountInfo() {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		WebAuthSession webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret))
-		def dropboxAccountInfo = dropboxApi.accountInfo()
+		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
+		dropboxClient = new DbxClient(requestConfig, access_token)
+		DbxAccountInfo dropboxAccountInfo = dropboxClient.accountInfo
 		
 		return dropboxAccountInfo
 	}
@@ -93,28 +117,27 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def getAllDropboxResources() {
-		Entry rootDirEntries = dropboxApi.metadata("/", 0, null, true, null);
-		def fileResources = getFilesInDir(rootDirEntries)
+		String rootPath = "/"
+		def rootDropboxFolder = dropboxClient.getMetadataWithChildren(rootPath)
+		def fileResources = getFilesInDir(rootDropboxFolder)
 		return fileResources
 	}
 	
-	private def getFilesInDir(Entry entries) {
+	private def getFilesInDir(def dropboxFolder) {
 		def dirResources = []
 		def dirFileResourceChildren = []
-		def dirFileResource = convertFromDropboxResource(entries)
-		for (Entry e : entries.contents) {
-			if (!e.isDeleted) {
-				if(e.isDir) {
-					def directory = convertFromDropboxResource(e)
-					dirFileResourceChildren.add(directory)
-					Entry dirEntries = dropboxApi.metadata(e.path, 0, null, true, null)
-					dirResources.addAll(getFilesInDir(dirEntries))
-				}
-				else {
-					def fileResource = convertFromDropboxResource(e)
-					dirFileResourceChildren.add(fileResource)
-					dirResources.add(fileResource)
-				}
+		def dirFileResource = dropboxFolderToFileResource(dropboxFolder.entry)
+		for (DbxEntry entry : dropboxFolder.children) {
+			if(entry.isFolder()) {
+				def directory = dropboxFolderToFileResource(entry)
+				dirFileResourceChildren.add(directory)
+				def nestedDropboxFolder = dropboxClient.getMetadataWithChildren(entry.path)
+				dirResources.addAll(getFilesInDir(nestedDropboxFolder))
+			}
+			else {
+				def fileResource = dropboxFileToFileResource(entry)
+				dirFileResourceChildren.add(fileResource)
+				dirResources.add(fileResource)
 			}
 		}
 		dirFileResource.fileResources = dirFileResourceChildren
@@ -122,14 +145,25 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return dirResources
 	}
 	
-	private def convertFromDropboxResource(def dropboxResource) {
+	private def dropboxFolderToFileResource(def dropboxFolder) {
 		def fileResource = new FileResource()
-		fileResource.byteSize = dropboxResource.bytes
+		
+		fileResource.path = dropboxFolder.path
+		fileResource.isDir = dropboxFolder.isFolder()
+		fileResource.fileName = dropboxFolder.name
+		
+		return fileResource
+	}
+	
+	private def dropboxFileToFileResource(def dropboxResource) {
+		def fileResource = new FileResource()
+		
+		fileResource.byteSize = dropboxResource.numBytes
 		fileResource.path = dropboxResource.path
-		fileResource.modified = dropboxResource.modified
-		fileResource.isDir = dropboxResource.isDir
+		fileResource.modified = dropboxResource.lastModified
+		fileResource.isDir = dropboxResource.isFolder()
 		fileResource.mimeType = dropboxResource.mimeType
-		fileResource.fileName = dropboxResource.path.substring(dropboxResource.path.lastIndexOf('/')+1)
+		fileResource.fileName = dropboxResource.name
 
 		return fileResource
 	}
@@ -137,7 +171,12 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private def setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
 		cloudStoreInstance.account = account
 	}
-
+	
+	private void setDropboxApiWithCredentials(def credentials) {
+		access_token = credentials.ACCESS_TOKEN
+		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
+		dropboxClient = new DbxClient(requestConfig, access_token)
+	}
 
 	def uploadResource(def credentials, def fileResource) {
 		// TODO Auto-generated method stub
@@ -155,13 +194,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def deleteFromDropbox(def fileResource) {
-		try{
-			dropboxApi.delete(account_secret)
-		}
-		catch(Exception e){
-			//log delete exception
-			print e
-		}
+		// TODO find new way to do this
 	}
 
 	def downloadResource(def credentials, def fileResource) {
@@ -175,18 +208,9 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return downloadedBytes
 	}
 	
-	private void setDropboxApiWithCredentials(def credentials) {
-		AppKeyPair appKeys = new AppKeyPair(APP_KEY, APP_SECRET);
-		account_key = credentials.ACCOUNT_KEY
-		account_secret = credentials.ACCOUNT_SECRET
-		webAuthSession = new WebAuthSession(appKeys, ACCESS_TYPE, new AccessTokenPair(account_key, account_secret));
-		
-		dropboxApi = new DropboxAPI<WebAuthSession>(webAuthSession);
-	}
-	
 	private def getDropboxFileBytes(FileResource fileResource) {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
-		DropboxFileInfo info = dropboxApi.getFile(fileResource.path, null, outputStream, null)
+		DbxEntry entry = dropboxClient.getFile(fileResource.path, null, outputStream)
 		return outputStream.toByteArray()
 	}
 }
