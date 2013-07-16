@@ -183,11 +183,17 @@ class CloudStoreController extends BaseController {
 	}
 	
 	private def softDelete(def storeName, FileResource fileResource) {
+		// Delete parent file resource relationship
 		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/')+1)
 		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath) 
 		parentResource.removeFromFileResources(fileResource)
-		parentResource.save(flush: true)
-		// gotta delete actual file resource brosef
+		parentResource.save()
+		
+		// Delete cloud store relationship
+		Account account = getCurrentAccount()
+		CloudStore cloudStore = account.cloudStores.find { it.storeName == storeName }
+		cloudStore.removeFromFileResources(fileResource)
+		cloudStore.save()
 	}
 	
 	private def deleteFromCloudStore(def storeName, FileResource fileResource) {
@@ -197,12 +203,7 @@ class CloudStoreController extends BaseController {
 		
 		if(storeName == 'dropbox') {
 			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
-			if(fileResource.isDir) {
-				// recursivly delete all under
-			}
-			else {
-				dropboxCloudStore.deleteResource(credentials, fileResource)
-			}
+			dropboxCloudStore.deleteResource(credentials, fileResource)
 		}
 		else if(storeName == 'googledrive') {
 			

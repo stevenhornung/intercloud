@@ -19,4 +19,8 @@ class FileResource {
 		fileResources nullable: true
 		fileName nullable: true
     }
+	
+	static mapping = {
+		fileResources cascade: 'all-delete-orphan', lazy: false
+	}
 }

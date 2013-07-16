@@ -15,18 +15,18 @@ class Account {
 	boolean accountLocked
 	boolean passwordExpired
 	
-	static hasMany = [fileResources: FileResource, cloudStores: CloudStore]
+	static hasMany = [cloudStores: CloudStore]
 	
 	static constraints = {
 		email blank: false, email: true, unique: true
 		password blank: false
 		fullName blank: false
-		fileResources nullable: true
 		cloudStores nullable: true
 	}
 
 	static mapping = {
 		password column: '`password`'
+		cloudStores cascade: 'all-delete-orphan'
 	}
 
 	Set<Role> getAuthorities() {

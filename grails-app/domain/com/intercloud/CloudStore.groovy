@@ -11,6 +11,10 @@ class CloudStore {
 	static hasMany = [fileResources: FileResource]
 
     static constraints = {
-		fileResources: nullable: true
+		fileResources nullable: true
     }
+	
+	static mapping = {
+		fileResources cascade: 'all-delete-orphan', lazy: false
+	}
 }

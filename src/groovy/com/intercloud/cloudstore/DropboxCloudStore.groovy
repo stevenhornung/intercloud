@@ -150,7 +150,18 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	def deleteResource(def credentials, def fileResource) {
-		
+		setDropboxApiWithCredentials(credentials)
+		deleteFromDropbox(fileResource)
+	}
+	
+	private def deleteFromDropbox(def fileResource) {
+		try{
+			dropboxApi.delete(account_secret)
+		}
+		catch(Exception e){
+			//log delete exception
+			print e
+		}
 	}
 
 	def downloadResource(def credentials, def fileResource) {
