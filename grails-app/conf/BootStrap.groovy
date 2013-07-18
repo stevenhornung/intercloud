@@ -8,27 +8,59 @@ class BootStrap {
 		def userRole = Role.findByAuthority('ROLE_USER') ?: new Role(authority: 'ROLE_USER').save(failOnError: true)
 		def adminRole = Role.findByAuthority('ROLE_ADMIN') ?: new Role(authority: 'ROLE_ADMIN').save(failOnError: true)
 
-		def adminUser1 = Account.findByEmail('steven.hornung@icloud.com') ?: new Account(
+		def steveAdmin = Account.findByEmail('steven.hornung@icloud.com') ?: new Account(
 			email: 'steven.hornung@icloud.com',
 			password: 'password',
 			fullName: 'Steven Hornung').save(failOnError: true)
 			
-		if (!adminUser1.authorities.contains(adminRole)) {
-			AccountRole.create adminUser1, adminRole
-			AccountRole.create adminUser1, userRole
+		if (!steveAdmin.authorities.contains(adminRole)) {
+			AccountRole.create steveAdmin, adminRole
+			AccountRole.create steveAdmin, userRole
 		}
 			
-		def adminUser2 = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
+		def shaderAdmin = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
 			email: 'brandon.shader@uky.edu',
 			password: 'password',
 			fullName: 'BrandonShader').save(failOnError: true)
 
-		if (!adminUser2.authorities.contains(adminRole)) {
-			AccountRole.create adminUser2, adminRole
-			AccountRole.create adminUser2, userRole
+		if (!shaderAdmin.authorities.contains(adminRole)) {
+			AccountRole.create shaderAdmin, adminRole
+			AccountRole.create shaderAdmin, userRole
 		}
-
+		
+		createIntercloudCloudStore(steveAdmin)
+		createRootIntercloudFileResource(steveAdmin)
+		createIntercloudCloudStore(shaderAdmin)
+		createRootIntercloudFileResource(shaderAdmin)
     }
+	
     def destroy = {
     }
+	
+	private def createIntercloudCloudStore(Account newAccount) {
+		CloudStore cloudStoreInstance = new CloudStore()
+		
+		cloudStoreInstance.account = newAccount
+		cloudStoreInstance.storeName = 'intercloud'
+		cloudStoreInstance.userId = newAccount.email
+		cloudStoreInstance.spaceUsed = newAccount.spaceUsed
+		cloudStoreInstance.totalSpace = newAccount.totalSpace
+		
+		cloudStoreInstance.save(flush: true)
+	}
+	
+	private def createRootIntercloudFileResource(Account newAccount) {
+		FileResource rootIntercloudFileResource = new FileResource()
+		rootIntercloudFileResource.path = '/'
+		rootIntercloudFileResource.isDir = true
+		rootIntercloudFileResource.fileName = ''
+		rootIntercloudFileResource.save()
+		
+		def storeName = 'intercloud'
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, newAccount)
+		def fileResources = []
+		fileResources.add(rootIntercloudFileResource)
+		cloudStore.fileResources = fileResources
+		cloudStore.save()
+	}
 }

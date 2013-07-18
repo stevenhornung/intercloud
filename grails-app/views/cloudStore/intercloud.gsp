@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Dropbox - InterCloud</title>
+		<title>InterCloud - InterCloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -112,23 +112,23 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Dropbox Files</b></h2>
+					<h2><b>InterCloud Files</b></h2>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>
 								<h3>${fileInstance.fileName }</h3>
 									<div>
 										<p><g:if test="${fileInstance.isDir }">
-												<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
+												<td><a href="/intercloud${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
 												<td><a href="#">Download</a></td>
 												<td><a href="#">Move</a></td>
-												<td><a href="/delete?cloudStore=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+												<td><a href="/delete?cloudStore=intercloud&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 											</g:if>
 											<g:else>
-												<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+												<td><a class="colorbox" href="/intercloud${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 												<td><a href="#">Download</a></td>
 												<td><a href="#">Move</a></td>
-												<td><a href="/delete?cloudStore=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+												<td><a href="/delete?cloudStore=intercloud&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 											</g:else>
 										</p>
 									</div>
@@ -138,7 +138,7 @@
 				</g:if>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>
-				<h1>Display what adding dropbox link can do</h1>
+				<h1>Signup to add your files to the cloud bre</h1>
 			</sec:ifNotLoggedIn>
 		</div>
 		

@@ -113,28 +113,31 @@
 					<br>
 					<hr>
 					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a></h2>
-					<div id="accordion">
-						<g:each in="${cloudStore.value }" var="fileInstance">
-							<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-								<h3>${fileInstance.fileName }</h3>
-								<div>
-									<p><g:if test="${fileInstance.isDir }">
-											<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
-											<td><a href="#">Download</a></td>
-											<td><a href="#">Move</a></td>
-											<td><a href="/delete?cloudStore=dropbox&type=hard&fileResourceId=${fileInstance.id}">Delete</a></td>
-										</g:if>
-										<g:else>
-											<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-											<td><a href="#">Download</a></td>
-											<td><a href="#">Move</a></td>
-											<td><a href="/delete?cloudStore=dropbox&type=hard&fileResourceId=${fileInstance.id}">Delete</a></td>
-										</g:else>
-									</p>
-								</div>
-							</tr>
-						</g:each>
-					</div>
+					<g:if test="${cloudStore.value }">
+						<div id="accordion">
+							<g:each in="${cloudStore.value }" var="fileInstance">
+								<tr>
+									<h3>${fileInstance.fileName }</h3>
+									<div>
+										<p>
+											<g:if test="${fileInstance.isDir }">
+												<td><a href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
+												<td><a href="#">Download</a></td>
+												<td><a href="#">Move</a></td>
+												<td><a href="/delete?cloudStore=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											</g:if>
+											<g:else>
+												<td><a class="colorbox" href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+												<td><a href="#">Download</a></td>
+												<td><a href="#">Move</a></td>
+												<td><a href="/delete?cloudStore=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											</g:else>
+										</p>
+									</div>
+								</tr>
+							</g:each>
+						</div>
+					</g:if>
 				</g:each>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>

@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Home - InterCloud</title>
+		<title>Google Drive - InterCloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -86,18 +86,38 @@
 			<p>side stuff</p>
 		</div>
 		<div id="page-body" role="main">
+			<h1>Welcome to InterCloud</h1>
+			<br>
+			<hr>
 			<sec:ifLoggedIn>
-				<h1>Welcome to InterCloud</h1>
-				<h2><b>Google Drive Files</b></h2>
-				<g:each in="${fileInstanceList}" status="i" var="fileInstance">
-					<tr class="${(i % 2) == 0 ? 'even' : 'odd'}">
-						<td><g:link action="" params="[fileResourceId:fileInstance.id]">${fileInstance.path}</g:link></td>
-						<br/>
-					</tr>
-				</g:each>
+				<g:if test="${fileInstanceList != null }">
+					<h2><b>Google Drive Files</b></h2>
+					<div id="accordion">
+						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
+							<tr>
+								<h3>${fileInstance.fileName }</h3>
+									<div>
+										<p><g:if test="${fileInstance.isDir }">
+												<td><a href="/googledrive${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
+												<td><a href="#">Download</a></td>
+												<td><a href="#">Move</a></td>
+												<td><a href="/delete?cloudStore=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											</g:if>
+											<g:else>
+												<td><a class="colorbox" href="/googledrive${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+												<td><a href="#">Download</a></td>
+												<td><a href="#">Move</a></td>
+												<td><a href="/delete?cloudStore=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											</g:else>
+										</p>
+									</div>
+							</tr>
+						</g:each>
+					</div>
+				</g:if>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>
-				<h1>Non user stuffs</h1>
+				<h1>Signup to add your files to the cloud bre</h1>
 			</sec:ifNotLoggedIn>
 		</div>
 	</body>

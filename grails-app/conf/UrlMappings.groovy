@@ -46,6 +46,24 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 		}
 		
+		"/intercloud" {
+			controller = 'cloudStore'
+			action = [GET: "getCloudStoreResources",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			cloudStore = 'intercloud'
+		}
+		
+		"/intercloud/$fileResourcePath**" {
+			controller = 'cloudStore'
+			action = [GET: "getSpecificCloudStoreResources",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			cloudStore = 'intercloud'
+		}
+		
 		"/dropbox" {
 			controller = 'cloudStore'
 			action = [GET: "getCloudStoreResources",

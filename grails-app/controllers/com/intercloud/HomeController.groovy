@@ -23,7 +23,7 @@ class HomeController extends BaseController {
 		def fileInstanceMap = [:]
 		CLOUD_STORES.each {
 			def fileResources = controller.getHomeCloudStoreResources(it)
-			if(fileResources) {
+			if(fileResources != null) {
 				fileInstanceMap << ["$it" : fileResources]
 			}
 		}

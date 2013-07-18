@@ -9,7 +9,7 @@ class Account {
 	String password
 	String type='basic'
 	String spaceUsed="0"
-	String totalSpace="10737418240" // 10gb
+	String totalSpace="5368709120" // 5gb
 	boolean enabled=true
 	boolean accountExpired
 	boolean accountLocked

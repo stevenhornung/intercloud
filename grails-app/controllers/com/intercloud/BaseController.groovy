@@ -4,7 +4,7 @@ class BaseController {
 	
 	def springSecurityService
 	
-	static final CLOUD_STORES = ['dropbox', 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws']
+	static final CLOUD_STORES = ['intercloud', 'dropbox', 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws']
 	
 	def respondUnauthorized() {
 		flash.message = message(code: 'error.unauthorized')

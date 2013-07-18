@@ -5,8 +5,8 @@ class CloudStore {
 	String storeName
 	Map credentials = new HashMap()
 	String userId
-	Integer spaceUsed
-	Integer totalSpace
+	String spaceUsed
+	String totalSpace
 	
 	static belongsTo = [account: Account]
 	static hasMany = [fileResources: FileResource]

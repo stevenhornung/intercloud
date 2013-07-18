@@ -107,10 +107,20 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources()
+		boolean repeatPath = false
 		for(FileResource fileResource : fileResources) {
-			if(!fileResource.save()) {
-				// TODO: show a better message that a resource couldnt be saved
-				print fileResource.errors.allErrors
+			for(FileResource checkPathResource : fileResources) {
+				if(checkPathResource.path == fileResource.path) {
+					repeatPath = true
+					break
+				}
+			}
+			if(!repeatPath) {
+				repeatPath = false
+				if(!fileResource.save()) {
+					// TODO: show a better message that a resource couldnt be saved
+					print fileResource.errors.allErrors
+				}
 			}
 		}
 		cloudStoreInstance.fileResources = fileResources

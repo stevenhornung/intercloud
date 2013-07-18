@@ -34,6 +34,7 @@ class CloudStoreController extends BaseController {
 	
 	private def getCloudStoreLink(def cloudStoreName) {
 		def cloudStoreLink = null
+		
 		if(cloudStoreName == 'dropbox') {
 			cloudStoreLink = new DropboxCloudStore()
 		}
@@ -160,29 +161,16 @@ class CloudStoreController extends BaseController {
 	def deleteResource() {
 		def storeName = params.cloudStore
 		def fileResource = FileResource.get(params.fileResourceId)
-		def type = params.type
 		
-		if(type == 'hard') {
-			// Delete from intercloud and cloud store
-			hardDelete(storeName, fileResource)
+		deleteFromFileResource(storeName, fileResource)
+		if(storeName != 'intercloud') {
+			deleteFromCloudStoreLink(storeName, fileResource)
 		}
-		else if(type == 'soft') {
-			// Only delete from intercloud
-			softDelete(storeName, fileResource)
-		}
-		else {
-			forward(action: 'getCloudStoreResources')
-		}
+
+		redirect(uri: params.targetUri)
 	}
-	
-	private def hardDelete(def storeName, FileResource fileResource) {
-		softDelete(storeName, fileResource)
-		deleteFromCloudStore(storeName, fileResource)
-		
-		forward(action: 'getCloudStoreResources')
-	}
-	
-	private def softDelete(def storeName, FileResource fileResource) {
+
+	private def deleteFromFileResource(def storeName, FileResource fileResource) {
 		// Delete parent file resource relationship
 		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/')+1)
 		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath) 
@@ -196,7 +184,7 @@ class CloudStoreController extends BaseController {
 		cloudStore.save()
 	}
 	
-	private def deleteFromCloudStore(def storeName, FileResource fileResource) {
+	private def deleteFromCloudStoreLink(def storeName, FileResource fileResource) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		def credentials = cloudStore.credentials
@@ -206,7 +194,8 @@ class CloudStoreController extends BaseController {
 			dropboxCloudStore.deleteResource(credentials, fileResource)
 		}
 		else if(storeName == 'googledrive') {
-			
+			GoogledriveCloudStore googledriveCloudStore = new GoogledriveCloudStore()
+			googledriveCloudStore.deleteResource(credentials, fileResource)
 		}
 		else {
 			// not supported
