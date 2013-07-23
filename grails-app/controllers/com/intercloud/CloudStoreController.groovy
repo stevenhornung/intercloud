@@ -124,19 +124,42 @@ class CloudStoreController extends BaseController {
 		return fileResource?.fileResources
 	}
 	
-	private def retrieveFileResource(def storeName, def fileResource) {
-		def cloudStoreFileData = null
-		cloudStoreFileData = getFileResourceData(storeName, fileResource)
-		
-		if(cloudStoreFileData) {
-			try{
-				response.outputStream << cloudStoreFileData
+	private def retrieveFileResource(def storeName, FileResource fileResource) {
+		if(fileResource.mimeType in RENDER_TYPES) {
+			def cloudStoreFileData = getFileResourceData(storeName, fileResource)
+			if(cloudStoreFileData) {
+				renderBytesToScreen(fileResource, cloudStoreFileData)
 			}
-			catch (Exception) {
-				//Do nothing, Client clicked out during load of data
+			else {
+				forward(controller: 'base', action: 'respondServerError')
 			}
 		}
 		else {
+			renderDownloadLink(fileResource, storeName)
+		}
+	}
+	
+	private def renderBytesToScreen(FileResource fileResource, def cloudStoreFileData) {
+		try{
+			response.contentType = fileResource.mimeType
+			response.contentLength = fileResource.byteSize.toInteger()
+			response.outputStream << cloudStoreFileData
+			response.outputStream.flush()
+		}
+		catch (Exception) {
+			//Do nothing, Client clicked out during load of data
+		}
+	}
+	
+	private def renderDownloadLink(FileResource fileResource, def storeName) {
+		try{
+			def downloadLink = "<html><head></head><body><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download File</a></body></html>"
+
+			//response.contentType = "text/html"
+			response.outputStream << downloadLink
+			response.outputStream.flush()
+		}
+		catch (Exception) {
 			forward(controller: 'base', action: 'respondServerError')
 		}
 	}
@@ -199,6 +222,27 @@ class CloudStoreController extends BaseController {
 		}
 		else {
 			// not supported
+		}
+	}
+	
+	def showDownloadDialog() {
+		FileResource fileResource = FileResource.get(params.fileResourceId)
+		def storeName = params.storeName
+		
+		if(fileResource) {
+			try{
+				response.contentType = fileResource.mimeType 
+				response.contentLength = fileResource.byteSize.toInteger()
+				response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}"
+				response.outputStream << getFileResourceData(storeName, fileResource)
+				response.outputStream.flush()
+			}
+			catch (Exception) {
+				forward(controller: 'base', action: 'respondServerError')
+			}
+		}
+		else {
+			respondPageNotFound()
 		}
 	}
 }

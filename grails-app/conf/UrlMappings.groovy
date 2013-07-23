@@ -105,5 +105,13 @@ class UrlMappings {
 		"/logout"(controller: "logout")
 		
 		"/admin" (controller: 'admin')
+		
+		"/download" {
+			controller = 'cloudStore'
+			action = [GET: 'showDownloadDialog',
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
 	}
 }

@@ -6,6 +6,10 @@ class BaseController {
 	
 	static final CLOUD_STORES = ['intercloud', 'dropbox', 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws']
 	
+	static final RENDER_TYPES = ['text/html', "image/jpeg", "image/png", "text/x-java", "application/pdf", "text/css", 
+							"image/gif", "text/plain", "image/x-icon", "application/xml", "application/json", "text/json",
+							"text/xml", "application/octet-stream", "application/xhtml+xml", "text/csv"]
+	
 	def respondUnauthorized() {
 		flash.message = message(code: 'error.unauthorized')
 		render view: 'error', status: 401
