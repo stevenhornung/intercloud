@@ -134,6 +134,15 @@ class CloudStoreController extends BaseController {
 				forward(controller: 'base', action: 'respondServerError')
 			}
 		}
+		else if(fileResource.mimeType in VIDEO_TYPES){
+			def cloudStoreFileData = getFileResourceData(storeName, fileResource)
+			if(cloudStoreFileData) {
+				displayVideo(fileResource, cloudStoreFileData, storeName /*wont need storename normally*/)
+			}
+			else {
+				forward(controller: 'base', action: 'respondServerError')
+			}
+		}
 		else {
 			renderDownloadLink(fileResource, storeName)
 		}
@@ -149,6 +158,12 @@ class CloudStoreController extends BaseController {
 		catch (Exception) {
 			//Do nothing, Client clicked out during load of data
 		}
+	}
+	
+	private def displayVideo(FileResource fileResource, def cloudStoreFileData, def storeName /*wont need storeName normally*/) {
+		// need to figure out how to buffer video then show render in a video
+		// just allow downloads for now 
+		renderDownloadLink(fileResource, storeName)
 	}
 	
 	private def renderDownloadLink(FileResource fileResource, def storeName) {
@@ -230,19 +245,45 @@ class CloudStoreController extends BaseController {
 		def storeName = params.storeName
 		
 		if(fileResource) {
-			try{
-				response.contentType = fileResource.mimeType 
-				response.contentLength = fileResource.byteSize.toInteger()
-				response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}"
-				response.outputStream << getFileResourceData(storeName, fileResource)
-				response.outputStream.flush()
+			if(fileResource.isDir) {
+				showZippedFolderDownload(storeName, fileResource)
 			}
-			catch (Exception) {
-				forward(controller: 'base', action: 'respondServerError')
+			else {
+				showSingleFileDownload(storeName, fileResource)
 			}
 		}
 		else {
-			respondPageNotFound()
+			forward(controller: 'base', action: 'respondPageNotFound')
+		}
+	}
+	
+	private def showZippedFolderDownload(def storeName, FileResource fileResource) {
+		// have to download all sub files and folders and zip together
+		def fileResourceData = null //zipped file
+		
+		try {
+			response.contentType = "application/octet-stream"
+			response.contentLength = fileResourceData.length()
+			response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}.zip"
+			response.outputStream << fileResourceData
+			response.outputStream.flush()
+		}
+		catch(Exception) {
+			forward(controller: 'base', action: 'respondServerError')
+		}
+	}
+	
+	private def showSingleFileDownload(def storeName, FileResource fileResource) {
+		def fileResourceData = getFileResourceData(storeName, fileResource)
+		try{
+			response.contentType = fileResource.mimeType
+			response.contentLength = fileResource.byteSize.toInteger()
+			response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}"
+			response.outputStream << fileResourceData
+			response.outputStream.flush()
+		}
+		catch (Exception) {
+			forward(controller: 'base', action: 'respondServerError')
 		}
 	}
 }

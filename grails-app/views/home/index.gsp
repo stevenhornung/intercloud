@@ -121,17 +121,14 @@
 									<div>
 										<p>
 											<g:if test="${fileInstance.isDir }">
-												<td><a href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
-												<td><a href="#">Download</a></td>
-												<td><a href="#">Move</a></td>
-												<td><a href="/delete?cloudStore=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+												<td><a href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></t>
 											</g:if>
 											<g:else>
 												<td><a class="colorbox" href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-												<td><a href="#">Download</a></td>
-												<td><a href="#">Move</a></td>
-												<td><a href="/delete?cloudStore=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 											</g:else>
+											<td><a href="/download?fileResourceId=${fileInstance.id}&storeName=${cloudStore.key}">Download</a></td>
+											<td><a href="#">Move</a></td>
+											<td><a href="/delete?cloudStore=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 										</p>
 									</div>
 								</tr>

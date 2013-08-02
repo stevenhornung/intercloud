@@ -99,16 +99,13 @@
 									<div>
 										<p><g:if test="${fileInstance.isDir }">
 												<td><a href="/googledrive${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
-												<td><a href="#">Download</a></td>
-												<td><a href="#">Move</a></td>
-												<td><a href="/delete?cloudStore=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 											</g:if>
 											<g:else>
 												<td><a class="colorbox" href="/googledrive${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-												<td><a href="#">Download</a></td>
-												<td><a href="#">Move</a></td>
-												<td><a href="/delete?cloudStore=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 											</g:else>
+											<td><a href="/download?fileResourceId=${fileInstance.id}&storeName=googledrive">Download</a></td>
+											<td><a href="#">Move</a></td>
+											<td><a href="/delete?cloudStore=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 										</p>
 									</div>
 							</tr>
