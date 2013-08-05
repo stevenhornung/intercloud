@@ -6,10 +6,10 @@ import com.intercloud.FileResource
 import javax.servlet.http.HttpServletRequest
 
 interface CloudStoreInterface {
-	def configure(boolean isAuthRedirect, HttpServletRequest request)
-	def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account)
-	def uploadResource(def credentials, def fileResource)
-	def updateResource(def credentials, def fileResource)
-	def downloadResource(def credentials, def fileResource)
-	def deleteResource(def credentials, def fileResource)
+	public def configure(boolean isAuthRedirect, HttpServletRequest request)
+	public def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account)
+	public def uploadResource(def credentials, FileResource fileResource)
+	public def updateResource(def credentials, FileResource fileResource)
+	public def downloadResource(def credentials, FileResource fileResource)
+	public def deleteResource(def credentials, FileResource fileResource)
 }

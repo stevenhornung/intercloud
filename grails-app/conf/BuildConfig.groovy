@@ -28,8 +28,10 @@ grails.project.dependency.resolution = {
     }
 
     dependencies {
-		build 'com.dropbox.core:dropbox-core-sdk:[1.6,1.7)'
+		build 'com.dropbox.core:dropbox-core-sdk:[1.7,1.8)'
 		build 'com.google.apis:google-api-services-drive:v2-rev77-1.15.0-rc'
+		
+		build 'org.slf4j:slf4j-api:1.7.5'
 		
 		test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
     }

@@ -1,12 +1,17 @@
 package com.intercloud
 
-class HomeController extends BaseController {
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
-	def redirectHome() {
+class HomeController extends BaseController {
+	
+	private static Logger log = LoggerFactory.getLogger(HomeController.class)
+
+	public def redirectHome() {
 		redirect(url: "/home")
 	}
 	
-    def index() {
+    public def index() {
 		if(getCurrentAccount()) {
 			def accountFileResources = retrieveAccountFileResources()
 			[fileInstanceMap : accountFileResources]
@@ -30,12 +35,14 @@ class HomeController extends BaseController {
 		return fileInstanceMap
 	}
 	
-	def loginOrRegister() {
+	public def loginOrRegister() {
 		def submit = params.submit
 		if(submit == 'Login') {
+			log.debug "Logging in"
 			forward(controller: 'login', params: params)
 		}
 		else {
+			log.debug "Registering"
 			forward(controller: 'account', action: 'register', params: params)
 		}
 	}

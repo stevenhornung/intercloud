@@ -5,22 +5,24 @@ class FileResource {
 	String path
 	String fileName
 	String byteSize
-	byte[] bytes
+	String locationOnFileSystem
 	String mimeType
-	boolean isDir=false
+	boolean isDir
 	String modified
 	
-	static hasMany = [fileResources: FileResource]
+	static hasMany = [childFileResources: FileResource]
+	static belongsTo = [parentFileResource: FileResource]
 
     static constraints = {
 		byteSize nullable: true
-		bytes nullable: true
+		locationOnFileSystem nullable: true
 		mimeType nullable: true
 		modified nullable: true
-		fileResources nullable: true
+		childFileResources nullable: true
+		parentFileResource nullable: true
     }
 	
 	static mapping = {
-		fileResources cascade: 'all-delete-orphan', lazy: false
+		childFileResources cascade: 'all-delete-orphan', lazy: false
 	}
 }

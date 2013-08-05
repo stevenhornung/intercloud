@@ -2,36 +2,43 @@ package com.intercloud.cloudstore
 
 import com.intercloud.Account
 import com.intercloud.CloudStore
+import com.intercloud.FileResource
+
 import javax.servlet.http.HttpServletRequest
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 class GoogledriveCloudStore implements CloudStoreInterface{
+	
+	private static Logger log = LoggerFactory.getLogger(GoogledriveCloudStore.class)
 
-	def configure(boolean isAuthRedirect, HttpServletRequest request) {
+	public def configure(boolean isAuthRedirect, HttpServletRequest request) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
+	public def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	def uploadResource(def credentials, def fileResource) {
+	public def uploadResource(def credentials, FileResource fileResource) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	def updateResource(def credentials, def fileResource) {
+	public def updateResource(def credentials, FileResource fileResource) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 
-	def downloadResource(def credentials, def fileResource) {
+	public def downloadResource(def credentials, FileResource fileResource) {
 		// TODO Auto-generated method stub
 		return null;
 	}
 	
-	def deleteResource(def credentials, def fileResource) {
+	public def deleteResource(def credentials, FileResource fileResource) {
 		
 	}
 

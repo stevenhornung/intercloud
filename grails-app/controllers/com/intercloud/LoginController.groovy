@@ -1,10 +1,9 @@
 package com.intercloud
 
 import com.intercloud.BaseController
+
 import grails.converters.JSON
-
 import javax.servlet.http.HttpServletResponse
-
 import org.codehaus.groovy.grails.plugins.springsecurity.SpringSecurityUtils
 
 import org.springframework.security.authentication.AccountExpiredException
@@ -15,7 +14,12 @@ import org.springframework.security.core.context.SecurityContextHolder as SCH
 import org.springframework.security.web.WebAttributes
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 class LoginController extends BaseController{
+	
+	private static Logger log = LoggerFactory.getLogger(LoginController.class)
 
 	/**
 	 * Dependency injection for the authenticationTrustResolver.
@@ -42,7 +46,7 @@ class LoginController extends BaseController{
 	/**
 	 * Show the login page.
 	 */
-	def auth() {
+	public def auth() {
 
 		def config = SpringSecurityUtils.securityConfig
 
@@ -68,13 +72,14 @@ class LoginController extends BaseController{
 	/**
 	 * Show denied page.
 	 */
-	def denied() {
+	public def denied() {
 		if (springSecurityService.isLoggedIn() &&
 				authenticationTrustResolver.isRememberMe(SCH.context?.authentication)) {
 			// have cookie but the page is guarded with IS_AUTHENTICATED_FULLY
 			redirect action: 'full', params: params
 		}
 		else {
+			log.debug "Denied access attempt"
 			forward controller: 'base', action: 'respondUnauthorized'
 		}	
 	}

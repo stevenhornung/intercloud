@@ -5,23 +5,30 @@ import org.codehaus.groovy.grails.plugins.springsecurity.SpringSecurityUtils
 import org.springframework.security.web.WebAttributes
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter
 
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
+
 class AccountController extends BaseController {
 	
-	def index() {
+	private static Logger log = LoggerFactory.getLogger(AccountController.class)
+	
+	public def index() {
 		def account = getCurrentAccount()
 		if(account) {
+			log.debug "Viewing account: {}", account.email
 			render view: 'index', model: [accountInstance: account]
 		}
 		else {
+			log.debug "No account logged in to view"
 			respondServerError()
 		}
 	}
 	
-	def showRegisterErrors() {
+	public def showRegisterErrors() {
 		redirect url:"/login#toregister"
 	}
 	
-	def register() {
+	public def register() {
 		if(!isPasswordMatch()) {
 			flash.message = message(code: 'account.password.mismatch')
 			showRegisterErrors()
@@ -45,6 +52,7 @@ class AccountController extends BaseController {
 		createIntercloudCloudStore(newAccount)
 		createRootIntercloudFileResource(newAccount)
 
+		log.debug "Account: {} created", newAccount.email
 		flash.loginMessage = message(code: 'account.created')
 		redirect(controller: 'login', action: 'auth')
 	}
