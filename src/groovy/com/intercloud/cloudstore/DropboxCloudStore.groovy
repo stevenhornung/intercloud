@@ -173,10 +173,6 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private FileResource getExistingFileResource(DbxEntry dropboxFolder) {
-		
-	}
-	
 	private def dropboxFileToFileResource(def dropboxResource) {
 		def fileResource = new FileResource()
 		
@@ -244,6 +240,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 		String downloadedFolderPath = getDownloadedFolderPath(fileResource)
 		String zipFileName = getSourceZipName(fileResource)
 		
+		if(!doesFolderExistInDropbox(fileResource)) {
+			return []
+		}
+		
 		log.debug "Downloading folder to temp zip storage"
 		downloadFolderToPath(downloadedFolderPath, fileResource)
 		
@@ -275,6 +275,15 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}
 		
 		return sourceZip
+	}
+	
+	private boolean doesFolderExistInDropbox(FileResource fileResource) {
+		if(dropboxClient.getMetadata(fileResource.path) == null) {
+			return false
+		}
+		else {
+			return true
+		}
 	}
 	
 	private void downloadFolderToPath(String path, FileResource fileResource) {
