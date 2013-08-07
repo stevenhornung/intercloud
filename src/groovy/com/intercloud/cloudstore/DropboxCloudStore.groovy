@@ -200,8 +200,6 @@ class DropboxCloudStore implements CloudStoreInterface {
 		
 		// Guess mimeType by file extension
 		fileResource.mimeType = new Tika().detect(fileResource.path)
-		log.error fileResource.path
-		log.error fileResource.mimeType
 
 		return fileResource
 	}
@@ -379,8 +377,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.path = entry.path
 		fileResource.modified = entry.lastModified
 		fileResource.isDir = entry.isFolder()
-		//fileResource.mimeType = entry.mimeType
 		fileResource.fileName = entry.name
+		
+		// Guess mimeType by file extension
+		fileResource.mimeType = new Tika().detect(fileResource.path)
 		
 		return fileResource
 	}
