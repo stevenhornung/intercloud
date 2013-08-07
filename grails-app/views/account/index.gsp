@@ -9,8 +9,8 @@
 			Email: ${accountInstance.email }<br>
 			Name: ${accountInstance.fullName }<br>
 			Account Type: ${accountInstance.type }<br>
-			InterCloud Space Used: ${accountInstance.spaceUsed }<br>
-			InterCloud Total Space: ${accountInstance.totalSpace }
+			InterCloud Space Used: ${ (float)accountInstance.spaceUsed / (float)(1024*1024*1024)} gb<br>
+			InterCloud Total Space: ${accountInstance.totalSpace / (1024*1024*1024) } gb
 		</sec:access>
 	</body>
 </html>

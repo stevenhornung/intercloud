@@ -34,6 +34,8 @@ grails.project.dependency.resolution = {
 		build 'org.slf4j:slf4j-api:1.7.5'
 		
 		test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
+		
+		build 'org.apache.tika:tika-core:0.9'
     }
 
     plugins {

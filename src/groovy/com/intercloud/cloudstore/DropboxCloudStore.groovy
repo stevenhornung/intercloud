@@ -12,12 +12,12 @@ import com.dropbox.core.DbxSessionStore
 import com.dropbox.core.DbxAppInfo
 import com.dropbox.core.DbxRequestConfig
 
+import org.apache.tika.Tika
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
 import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
-
 import org.codehaus.groovy.grails.web.mapping.DefaultUrlMappingParser
 
 import org.slf4j.Logger
@@ -184,6 +184,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.path = dropboxFolder.path
 		fileResource.isDir = dropboxFolder.isFolder()
 		fileResource.fileName = dropboxFolder.name
+		fileResource.mimeType = "application/octet-stream"
 
 		return fileResource
 	}
@@ -195,8 +196,12 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.path = dropboxResource.path
 		fileResource.modified = dropboxResource.lastModified
 		fileResource.isDir = dropboxResource.isFolder()
-		//fileResource.mimeType = dropboxResource.mimeType
 		fileResource.fileName = dropboxResource.name
+		
+		// Guess mimeType by file extension
+		fileResource.mimeType = new Tika().detect(fileResource.path)
+		log.error fileResource.path
+		log.error fileResource.mimeType
 
 		return fileResource
 	}
@@ -364,6 +369,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.path = entry.path
 		fileResource.isDir = entry.isFolder()
 		fileResource.fileName = entry.name
+		fileResource.mimeType = "application/octet-stream"
 		
 		return fileResource
 	}

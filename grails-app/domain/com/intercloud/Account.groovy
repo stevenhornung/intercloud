@@ -7,9 +7,9 @@ class Account {
 	String email
 	String fullName
 	String password
-	String type='basic'
-	String spaceUsed="0"
-	String totalSpace="5368709120" // 5gb
+	String type='trial'
+	long spaceUsed=0
+	long totalSpace=5368709120 // 5gb
 	boolean enabled=true
 	boolean accountExpired
 	boolean accountLocked

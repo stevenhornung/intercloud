@@ -11,7 +11,8 @@ class BootStrap {
 		def steveAdmin = Account.findByEmail('steven.hornung@icloud.com') ?: new Account(
 			email: 'steven.hornung@icloud.com',
 			password: 'password',
-			fullName: 'Steven Hornung').save(failOnError: true)
+			fullName: 'Steven Hornung',
+			type: 'unlimited').save(failOnError: true)
 			
 		if (!steveAdmin.authorities.contains(adminRole)) {
 			AccountRole.create steveAdmin, adminRole
@@ -21,7 +22,8 @@ class BootStrap {
 		def shaderAdmin = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
 			email: 'brandon.shader@uky.edu',
 			password: 'password',
-			fullName: 'BrandonShader').save(failOnError: true)
+			fullName: 'BrandonShader',
+			type: 'unlimited').save(failOnError: true)
 
 		if (!shaderAdmin.authorities.contains(adminRole)) {
 			AccountRole.create shaderAdmin, adminRole
