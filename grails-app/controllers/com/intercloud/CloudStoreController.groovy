@@ -53,15 +53,17 @@ class CloudStoreController extends BaseController {
 	def authRedirect = {
 		log.debug "Auth redirect"
 		def currentCloudStoreLink = flash.currentCloudStoreLink
+		
 		currentCloudStoreLink.configure(true, request)
 		saveCloudStoreInstance(currentCloudStoreLink)
-		
+
 		redirect(controller: 'home', action:'index')
 	}
 	
 	private def saveCloudStoreInstance(def currentCloudStoreLink) {
 		CloudStore cloudStoreInstance = new CloudStore()
 		Account account = getCurrentAccount()
+
 		currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
 
 		if(!cloudStoreInstance.save(flush: true)) {
@@ -290,5 +292,38 @@ class CloudStoreController extends BaseController {
 			log.debug "File could not be sent to output stream: {}", Exception
 			forward(controller: 'base', action: 'respondServerError')
 		}
+	}
+	
+	public def updateResources() {
+		String cloudStoreName = params.cloudStore
+		if(cloudStoreName) {
+			log.debug "Manually updating {} file resources", cloudStoreName
+			def cloudStoreLink = getCloudStoreLink(cloudStoreName)
+			if(cloudStoreLink) {
+				updateSingleCloudStore(cloudStoreName, cloudStoreLink)
+			}
+			else {
+				log.debug "Bad cloud store specified when running manual update: {}", cloudStoreName
+			}
+		}
+		else {
+			log.debug "Manually updating all cloud store file resources"
+			CLOUD_STORES.each {
+				def cloudStoreLink = getCloudStoreLink(it)
+				updateSingleCloudStore(it, cloudStoreLink)
+			}
+		}
+	}
+	
+	private def updateSingleCloudStore(String storeName, def cloudStoreLink) {
+		Account account = getCurrentAccount()
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		def credentials = cloudStore.credentials
+		String updateCursor = cloudStore.updateCursor
+		def currentFileResources = cloudStore.fileResources
+		
+		def newUpdateCursor = cloudStoreLink.updateResources(credentials, updateCursor, currentFileResources)
+		cloudStore.updateCursor = newUpdateCursor
+		cloudStore.save()
 	}
 }

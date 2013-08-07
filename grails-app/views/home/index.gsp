@@ -103,16 +103,20 @@
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div id="status" role="complementary">
-			<p>side panel? mehbe</p>
-		</div>
+		<sec:ifLoggedIn>
+			<div id="status" role="complementary">
+				<ul>
+					<li><a href="/update">Sync All Files</a></li>
+				</ul>
+			</div>
+		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
 				<h1>Welcome to InterCloud</h1>
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
 					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a></h2>
+					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a>	| <a href="/update?cloudStore=${cloudStore.key}">Sync</a></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion">
 							<g:each in="${cloudStore.value }" var="fileInstance">

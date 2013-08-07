@@ -43,6 +43,6 @@ class BaseController {
 	}
 	
 	public def getCurrentAccount() {
-		return springSecurityService?.currentUser
+		return springSecurityService.currentUser
 	}
 }

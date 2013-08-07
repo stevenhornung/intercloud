@@ -7,12 +7,14 @@ class CloudStore {
 	String userId
 	String spaceUsed
 	String totalSpace
+	String updateCursor
 	
 	static belongsTo = [account: Account]
 	static hasMany = [fileResources: FileResource]
 
     static constraints = {
 		fileResources nullable: true
+		updateCursor nullable: true
     }
 	
 	static mapping = {

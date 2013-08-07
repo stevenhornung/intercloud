@@ -112,7 +112,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Dropbox Files</b></h2>
+					<h2><b>Dropbox Files | <a href="/update?cloudStore=dropbox">Sync</a></b></h2>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>

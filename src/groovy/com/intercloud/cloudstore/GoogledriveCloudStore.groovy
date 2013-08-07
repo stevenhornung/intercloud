@@ -28,11 +28,6 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return null;
 	}
 
-	public def updateResource(def credentials, FileResource fileResource) {
-		// TODO Auto-generated method stub
-		return null;
-	}
-
 	public def downloadResource(def credentials, FileResource fileResource) {
 		// TODO Auto-generated method stub
 		return null;
@@ -40,6 +35,11 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	
 	public def deleteResource(def credentials, FileResource fileResource) {
 		
+	}
+	
+	public def updateResources(def credentials, String updateCursor, def currentFileResources) {
+		// TODO Auto-generated method stub
+		return null;
 	}
 
 }

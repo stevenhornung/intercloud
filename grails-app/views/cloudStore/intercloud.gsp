@@ -112,7 +112,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>InterCloud Files</b></h2>
+					<h2><b>InterCloud Files | <a href="/update?cloudStore=intercloud">Sync</a></b></h2>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>
