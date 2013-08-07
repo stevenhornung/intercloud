@@ -296,6 +296,7 @@ class CloudStoreController extends BaseController {
 	
 	public def updateResources() {
 		String cloudStoreName = params.cloudStore
+
 		if(cloudStoreName) {
 			log.debug "Manually updating {} file resources", cloudStoreName
 			def cloudStoreLink = getCloudStoreLink(cloudStoreName)
@@ -313,11 +314,14 @@ class CloudStoreController extends BaseController {
 				updateSingleCloudStore(it, cloudStoreLink)
 			}
 		}
+		
+		redirect(controller: 'home', action: 'index')
 	}
 	
 	private def updateSingleCloudStore(String storeName, def cloudStoreLink) {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		
 		def credentials = cloudStore.credentials
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources

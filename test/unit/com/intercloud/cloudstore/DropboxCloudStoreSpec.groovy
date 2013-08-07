@@ -101,6 +101,7 @@ class DropboxCloudStoreSpec extends Specification {
 	
 	private def setup() {
 		dropboxCloudStore = new DropboxCloudStore()
+		dropboxCloudStore.STORE_NAME = "dropbox"
 		dropboxCloudStore.APP_KEY = "ujdofnwh516yrg0"
 		dropboxCloudStore.APP_SECRET = "43itigcfb9y59dy"
 		dropboxCloudStore.REDIRECT_URL = "http://localhost:8080/auth_redirect"

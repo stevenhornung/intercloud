@@ -23,24 +23,25 @@ import org.codehaus.groovy.grails.web.mapping.DefaultUrlMappingParser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import com.intercloud.*
 import com.intercloud.util.ZipUtilities
+import com.intercloud.Account
+import com.intercloud.CloudStore
+import com.intercloud.FileResource
 
 class DropboxCloudStore implements CloudStoreInterface {
 	
 	private static Logger log = LoggerFactory.getLogger(DropboxCloudStore.class)
 	
-	final static STORE_NAME = "dropbox"
+	static String STORE_NAME
 	static String APP_KEY
 	static String APP_SECRET
 	static String REDIRECT_URL
 	static String ZIP_TEMP_STORAGE_PATH
 	
-	static DbxWebAuth auth
-	static DbxAuthInfo authInfo
-	static DbxClient dropboxClient
-	
-	static String access_token
+	private DbxWebAuth auth
+	private DbxAuthInfo authInfo
+	private DbxClient dropboxClient
+	private String access_token
 	
 	public def configure(boolean isAuthRedirect, HttpServletRequest request) {
 		if(!isAuthRedirect) {
@@ -60,8 +61,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 		HttpSession session = request.getSession(true)
 		String sessionKey = "dropbox-auth-csrf-token"
 		DbxSessionStore csrfTokenStore = new DbxStandardSessionStore(session, sessionKey);
-		auth = new DbxWebAuth(requestConfig, appInfo, REDIRECT_URL, csrfTokenStore)
 		
+		auth = new DbxWebAuth(requestConfig, appInfo, REDIRECT_URL, csrfTokenStore)
 		return auth.start()
 	}
 	
@@ -107,7 +108,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStoreInstance.spaceUsed = accountInfo.quota.normal
 		cloudStoreInstance.totalSpace = accountInfo.quota.total
 		
-		String updateCursor = getUpdateCursor()
+		String updateCursor = getInitialUpdateCursor()
 		cloudStoreInstance.updateCursor = updateCursor
 	}
 	
@@ -119,7 +120,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return dropboxAccountInfo
 	}
 	
-	private String getUpdateCursor() {
+	private String getInitialUpdateCursor() {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
 		
@@ -220,6 +221,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	public def deleteResource(def credentials, FileResource fileResource) {
+		log.debug "Deleting resource {}", fileResource.path
 		setDropboxApiWithCredentials(credentials)
 		deleteFromDropbox(fileResource)
 	}
@@ -323,6 +325,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	public def updateResources(def credentials, String updateCursor, def currentFileResources) {
+		log.debug "Updating dropbox file resources"
 		setDropboxApiWithCredentials(credentials)
 		
 		DbxDelta delta = dropboxClient.getDelta(updateCursor)
@@ -337,19 +340,25 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private void addNewEntries(def entries, def currentFileResources) {
 		for(entry in entries) {
 			if(entry.metadata) {
-				boolean isUpdated = false
-				for(FileResource fileResource : currentFileResources) {
-					if(entry.metadata.path == fileResource.path) {
-						updateChangedFileResource(fileResource, entry.metadata)
-						isUpdated = true
-						break
-					}
-				}
-				if(!isUpdated) {
-					currentFileResources = addNewFileResource(entry.metadata, currentFileResources)
+				boolean isEntryUpdated = updateEntryIfExists(entry, currentFileResources)
+				if(!isEntryUpdated) {
+					currentFileResources = addToFileResources(entry.metadata, currentFileResources)
 				}
 			}
 		}
+	}
+	
+	private boolean updateEntryIfExists(def entry, def currentFileResources) {
+		boolean isEntryUpdated = false
+		for(FileResource fileResource : currentFileResources) {
+			if(entry.metadata.path == fileResource.path) {
+				updateChangedFileResource(fileResource, entry.metadata)
+				isEntryUpdated = true
+				break
+			}
+		}
+		
+		return isEntryUpdated
 	}
 	
 	private void updateChangedFileResource(FileResource currentFileResource, def updatedEntry) {
@@ -385,7 +394,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private def addNewFileResource(def entry, def currentFileResources) {
+	private def addToFileResources(def entry, def currentFileResources) {
 		FileResource fileResource = new FileResource()
 		if(entry.isFolder()) {
 			fileResource = setFolderFileResourceProperties(fileResource, entry)
@@ -403,54 +412,84 @@ class DropboxCloudStore implements CloudStoreInterface {
 		boolean parentFound = false
 
 		if(pathParts.size() == 1) {
-			for(FileResource currentResource : currentFileResources) {
-				if(currentResource.path == "/") {
-					currentResource.childFileResources.add(fileResource)
-					fileResource.parentFileResource = currentResource
-					currentResource.save(flush: true)
-					fileResource.save(flush: true)
-					parentFound = true
-					break
-				}
-			}
+			parentFound = setIfParentIsRoot(fileResource, currentFileResources)
 		}
 		
 		if(!parentFound) {
-			String parentPath = pathParts.join("/")
-			parentPath = "/" + parentPath
-			parentPath = parentPath.substring(0, parentPath.lastIndexOf("/"))
-			for(FileResource currentResource : currentFileResources) {
-				if(currentResource.path == parentPath) {
-					if(currentResource.childFileResources == null) {
-						def fileResources = [fileResource]
-						currentResource.childFileResources = fileResources
-					}
-					else {
-						currentResource.childFileResources.add(fileResource)
-					}
-					fileResource.parentFileResource = currentResource
-					currentResource.save(flush: true)
-					fileResource.save(flush: true)
-					parentFound = true
-					break
-				}
-			}
+			parentFound = setIfParentExists(fileResource, currentFileResources, pathParts)
 		}
 		
 		if(!parentFound) {
-			pathParts.pop()
-			FileResource parentFileResource = createParentDirectory(pathParts)
+			FileResource parentFileResource = createParentAndSetAllProperties(fileResource, pathParts)
 			currentFileResources.add(parentFileResource)
-			def childFileResources = [fileResource]
-			parentFileResource.childFileResources = childFileResources
-			fileResource.parentFileResource = parentFileResource
-			parentFileResource.save(flush: true)
-			fileResource.save(flush: true)
+			
 			currentFileResources = setParentAndChildFileResources(parentFileResource, currentFileResources)
 		}
 		
 		currentFileResources.add(fileResource)
 		return currentFileResources
+	}
+	
+	private boolean setIfParentIsRoot(FileResource fileResource, def currentFileResources) {
+		boolean parentFound = false
+		for(FileResource currentResource : currentFileResources) {
+			if(currentResource.path == "/") {
+				currentResource.childFileResources.add(fileResource)
+				fileResource.parentFileResource = currentResource
+				currentResource.save(flush: true)
+				fileResource.save(flush: true)
+				parentFound = true
+				break
+			}
+		}
+		
+		return parentFound
+	}
+	
+	private boolean setIfParentExists(FileResource fileResource, def currentFileResources, def pathParts) {
+		boolean parentFound = false
+		
+		String parentPath = getParentPath(pathParts)
+		for(FileResource currentResource : currentFileResources) {
+			if(currentResource.path == parentPath) {
+				if(currentResource.childFileResources == null) {
+					def fileResources = [fileResource]
+					currentResource.childFileResources = fileResources
+				}
+				else {
+					currentResource.childFileResources.add(fileResource)
+				}
+				fileResource.parentFileResource = currentResource
+				currentResource.save(flush: true)
+				fileResource.save(flush: true)
+				parentFound = true
+				break
+			}
+		}
+		
+		return parentFound
+	}
+	
+	private String getParentPath(def pathParts) {
+		String parentPath = pathParts.join("/")
+		parentPath = "/" + parentPath
+		parentPath = parentPath.substring(0, parentPath.lastIndexOf("/"))
+		
+		return parentPath
+	}
+	
+	private FileResource createParentAndSetAllProperties(FileResource fileResource, def pathParts) {
+		pathParts.pop()
+		
+		FileResource parentFileResource = createParentDirectory(pathParts)
+		def childFileResources = [fileResource]
+		parentFileResource.childFileResources = childFileResources
+		fileResource.parentFileResource = parentFileResource
+		
+		parentFileResource.save(flush: true)
+		fileResource.save(flush: true)
+		
+		return parentFileResource
 	}
 	
 	private FileResource createParentDirectory(def pathParts) {
