@@ -226,7 +226,7 @@ class CloudStoreController extends BaseController {
 		def storeName = params.cloudStore
 		def fileResource = FileResource.get(params.fileResourceId)
 		
-		deleteFromFileResource(storeName, fileResource)
+		deleteFromDatabase(storeName, fileResource)
 		if(storeName != 'intercloud') {
 			deleteFromCloudStoreLink(storeName, fileResource)
 		}
@@ -234,11 +234,14 @@ class CloudStoreController extends BaseController {
 		redirect(uri: params.targetUri)
 	}
 
-	private def deleteFromFileResource(String storeName, FileResource fileResource) {
+	private def deleteFromDatabase(String storeName, FileResource fileResource) {
 		// Delete parent file resource relationship
-		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/')+1)
-		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath) 
-		parentResource.removeFromFileResources(fileResource)
+		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/'))
+		if(!parentDirPath) {
+			parentDirPath = '/'
+		}
+		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath)
+		parentResource.removeFromChildFileResources(fileResource)
 		parentResource.save()
 		
 		// Delete cloud store relationship
@@ -284,7 +287,12 @@ class CloudStoreController extends BaseController {
 		try{
 			response.contentType = fileResource.mimeType
 			response.contentLength = fileResourceData.length
-			response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}"
+			if(fileResource.isDir) {
+				response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}.zip"
+			}
+			else {
+				response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}"
+			}
 			response.outputStream << fileResourceData
 			response.outputStream.flush()
 		}

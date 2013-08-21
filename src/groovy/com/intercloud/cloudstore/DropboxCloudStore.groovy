@@ -262,7 +262,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		log.debug "Downloading folder to temp zip storage"
 		downloadFolderToPath(downloadedFolderPath, fileResource)
 		
-		log.debug "Zipping downloaded folder"
+		log.debug "Zipping downloaded folder to '{}'", zipFileName
 		ZipUtilities.zipDownloadedFolder(downloadedFolderPath, zipFileName)
 		
 		String zipFileLocation = downloadedFolderPath.substring(0, downloadedFolderPath.lastIndexOf('/'))
