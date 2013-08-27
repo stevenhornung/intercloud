@@ -23,6 +23,7 @@ import org.codehaus.groovy.grails.web.mapping.DefaultUrlMappingParser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import com.intercloud.util.CloudStoreUtilities
 import com.intercloud.util.ZipUtilities
 import com.intercloud.Account
 import com.intercloud.CloudStore
@@ -343,6 +344,22 @@ class DropboxCloudStore implements CloudStoreInterface {
 				boolean isEntryUpdated = updateEntryIfExists(entry, currentFileResources)
 				if(!isEntryUpdated) {
 					currentFileResources = addToFileResources(entry.metadata, currentFileResources)
+				}
+			}
+			else {
+				// File was deleted
+				FileResource fileResource = null
+				for(FileResource currentFileResource : currentFileResources) {
+					if(entry.lcPath == currentFileResource.path.toLowerCase()) {
+						fileResource = currentFileResource
+						break
+					}
+				}
+				if(fileResource) {
+					CloudStoreUtilities.deleteFromDatabase("dropbox", fileResource)
+				}
+				else {
+					// previously deleted file that dropbox is still tracking so doesn't concern us
 				}
 			}
 		}

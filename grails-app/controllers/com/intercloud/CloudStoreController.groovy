@@ -1,6 +1,7 @@
 package com.intercloud
 
 import com.intercloud.cloudstore.*
+import com.intercloud.util.CloudStoreUtilities
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -74,14 +75,14 @@ class CloudStoreController extends BaseController {
 	
 	public def getHomeCloudStoreResources(String storeName) {
 		def dir = "/"
-		def fileResource = getFileResourceFromPath(storeName, dir)
+		def fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, dir)
 		return retrieveFilesInDir(fileResource)	
 	}
 	
 	public def getCloudStoreResources() {
 		def storeName = params.cloudStore
 		def dir = "/"
-		def fileResource = getFileResourceFromPath(storeName, dir)
+		def fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, dir)
 
 		renderFilesInFileResourceFolder(storeName, fileResource)
 	}
@@ -90,7 +91,7 @@ class CloudStoreController extends BaseController {
 		def storeName = params.cloudStore
 		def fileResourcePath = '/' + params.fileResourcePath
 		
-		FileResource fileResource = getFileResourceFromPath(storeName, fileResourcePath)
+		FileResource fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, fileResourcePath)
 		if(fileResource) {
 			if(fileResource.isDir) {
 				renderFilesInFileResourceFolder(storeName, fileResource)
@@ -102,15 +103,6 @@ class CloudStoreController extends BaseController {
 		else {
 			log.debug "Could not find specific cloud store resources: {}", fileResourcePath
 			forward(controller: 'base', action: 'respondPageNotFound')
-		}
-	}
-	
-	private def getFileResourceFromPath(String storeName, String fileResourcePath) {
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		if(cloudStore) {
-			def fileResources = cloudStore.fileResources
-			return cloudStore.fileResources.find { it.path == fileResourcePath }
 		}
 	}
 	
@@ -226,29 +218,12 @@ class CloudStoreController extends BaseController {
 		def storeName = params.cloudStore
 		def fileResource = FileResource.get(params.fileResourceId)
 		
-		deleteFromDatabase(storeName, fileResource)
+		CloudStoreUtilities.deleteFromDatabase(storeName, fileResource)
 		if(storeName != 'intercloud') {
 			deleteFromCloudStoreLink(storeName, fileResource)
 		}
 
 		redirect(uri: params.targetUri)
-	}
-
-	private def deleteFromDatabase(String storeName, FileResource fileResource) {
-		// Delete parent file resource relationship
-		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/'))
-		if(!parentDirPath) {
-			parentDirPath = '/'
-		}
-		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath)
-		parentResource.removeFromChildFileResources(fileResource)
-		parentResource.save()
-		
-		// Delete cloud store relationship
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = account.cloudStores.find { it.storeName == storeName }
-		cloudStore.removeFromFileResources(fileResource)
-		cloudStore.save()
 	}
 	
 	private def deleteFromCloudStoreLink(String storeName, FileResource fileResource) {
