@@ -113,22 +113,34 @@
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
 					<h2><b>Dropbox Files | <a href="/update?cloudStore=dropbox">Sync</a></b></h2>
+					<h3><a href="/">Home </a>
+					<g:if test="${params.fileResourcePath }">
+						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
+						<g:set var="backPath" value="/dropbox" scope="request" />
+						-&gt <a href="${backPath}">Dropbox</a>
+						<g:each in="${pathList }" status="i" var="pathPiece">
+							<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
+							-&gt <a href="${backPath}">${pathPiece}</a>
+						</g:each>
+					</g:if>
+					</h3>
+					<br/>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>
 								<h3>${fileInstance.fileName }</h3>
-									<div>
-										<p><g:if test="${fileInstance.isDir }">
-												<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
-											</g:if>
-											<g:else>
-												<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-											</g:else>
-											<td><a href="/download?fileResourceId=${fileInstance.id}&storeName=dropbox">Download</a></td>
-											<td><a href="#">Move</a></td>
-											<td><a href="/delete?cloudStore=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
-										</p>
-									</div>
+								<div>
+									<p><g:if test="${fileInstance.isDir }">
+											<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
+										</g:if>
+										<g:else>
+											<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
+										</g:else>
+										<td><a href="/download?fileResourceId=${fileInstance.id}&storeName=dropbox">Download</a></td>
+										<td><a href="#">Move</a></td>
+										<td><a href="/delete?cloudStore=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+									</p>
+								</div>
 							</tr>
 						</g:each>
 					</div>
