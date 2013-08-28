@@ -130,7 +130,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
-		def fileResources = getAllDropboxResources()
+		def fileResources = getAllDropboxResources(cloudStoreInstance)
 		boolean repeatPath = false
 		for(FileResource fileResource : fileResources) {
 			for(FileResource checkPathResource : fileResources) {
@@ -149,27 +149,27 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStoreInstance.fileResources = fileResources
 	}
 	
-	private def getAllDropboxResources() {
+	private def getAllDropboxResources(CloudStore cloudStoreInstance) {
 		String rootPath = "/"
 		def rootDropboxFolder = dropboxClient.getMetadataWithChildren(rootPath)
-		FileResource parentFileResource = dropboxFolderToFileResource(rootDropboxFolder.entry)
-		def fileResources = getFilesInDir(rootDropboxFolder, parentFileResource)
+		FileResource parentFileResource = dropboxFolderToFileResource(rootDropboxFolder.entry, cloudStoreInstance)
+		def fileResources = getFilesInDir(rootDropboxFolder, parentFileResource, cloudStoreInstance)
 		return fileResources
 	}
 	
-	private def getFilesInDir(def dropboxFolder, FileResource parentFileResource) {
+	private def getFilesInDir(def dropboxFolder, FileResource parentFileResource, CloudStore cloudStoreInstance) {
 		def dirResources = []
 		def dirFileResourceChildren = []
 		for (DbxEntry entry : dropboxFolder.children) {
 			if(entry.isFolder()) {
-				FileResource dirFileResource = dropboxFolderToFileResource(entry)
+				FileResource dirFileResource = dropboxFolderToFileResource(entry, cloudStoreInstance)
 				dirFileResource.parentFileResource = parentFileResource
 				dirFileResourceChildren.add(dirFileResource)
 				def nestedDropboxFolder = dropboxClient.getMetadataWithChildren(entry.path)
-				dirResources.addAll(getFilesInDir(nestedDropboxFolder, dirFileResource))
+				dirResources.addAll(getFilesInDir(nestedDropboxFolder, dirFileResource, cloudStoreInstance))
 			}
 			else {
-				FileResource fileResource = dropboxFileToFileResource(entry)
+				FileResource fileResource = dropboxFileToFileResource(entry, cloudStoreInstance)
 				fileResource.parentFileResource = parentFileResource
 				dirFileResourceChildren.add(fileResource)
 				dirResources.add(fileResource)
@@ -180,9 +180,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return dirResources
 	}
 	
-	private def dropboxFolderToFileResource(DbxEntry dropboxFolder) {
+	private def dropboxFolderToFileResource(DbxEntry dropboxFolder, CloudStore cloudStoreInstance) {
 		FileResource fileResource = new FileResource()
 		
+		fileResource.cloudStore = cloudStoreInstance
 		fileResource.path = dropboxFolder.path
 		fileResource.isDir = dropboxFolder.isFolder()
 		fileResource.fileName = dropboxFolder.name
@@ -191,9 +192,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private def dropboxFileToFileResource(def dropboxResource) {
+	private def dropboxFileToFileResource(def dropboxResource, CloudStore cloudStoreInstance) {
 		FileResource fileResource = new FileResource()
 		
+		fileResource.cloudStore = cloudStoreInstance
 		fileResource.byteSize = dropboxResource.numBytes
 		fileResource.path = dropboxResource.path
 		fileResource.modified = dropboxResource.lastModified

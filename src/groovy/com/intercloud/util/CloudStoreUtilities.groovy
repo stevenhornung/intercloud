@@ -9,21 +9,12 @@ class CloudStoreUtilities {
 	
 	public static def deleteFromDatabase(String storeName, FileResource fileResource) {
 		// Delete parent file resource relationship if parent not already deleted
-		def parentDirPath = fileResource.path.substring(0, fileResource.path.lastIndexOf('/'))
-		if(!parentDirPath) {
-			parentDirPath = '/'
-		}
-		FileResource parentResource = getFileResourceFromPath(storeName, parentDirPath)
-		if(parentResource) {
-			parentResource.removeFromChildFileResources(fileResource)
-			parentResource.save()
-		}
+		fileResource.parentFileResource?.removeFromChildFileResources(fileResource)
+		fileResource.parentFileResource?.save()
 		
 		// Delete cloud store relationship
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = account.cloudStores.find { it.storeName == storeName }
-		cloudStore.removeFromFileResources(fileResource)
-		cloudStore.save()
+		fileResource.cloudStore?.removeFromFileResources(fileResource)
+		fileResource.cloudStore?.save()
 		
 		// Delete any children relationships
 		fileResource.childFileResources.each { def childFileResource ->
@@ -43,7 +34,6 @@ class CloudStoreUtilities {
 	
 	private static def getCurrentAccount() {
 		BaseController baseController = new BaseController()
-		Account account = baseController.getCurrentAccount()
-		return account
+		return baseController.getCurrentAccount()
 	}
 }

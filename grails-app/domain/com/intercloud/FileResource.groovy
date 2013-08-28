@@ -11,7 +11,7 @@ class FileResource {
 	String modified
 	
 	static hasMany = [childFileResources: FileResource]
-	static belongsTo = [parentFileResource: FileResource]
+	static belongsTo = [cloudStore: CloudStore, parentFileResource: FileResource]
 
     static constraints = {
 		byteSize nullable: true
@@ -20,6 +20,7 @@ class FileResource {
 		modified nullable: true
 		childFileResources nullable: true
 		parentFileResource nullable: true
+		cloudStore nullable:true
     }
 	
 	static mapping = {

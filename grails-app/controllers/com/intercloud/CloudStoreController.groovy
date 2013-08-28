@@ -173,8 +173,7 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def getFileResourceData(String storeName, FileResource fileResource) {
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		CloudStore cloudStore = fileResource.cloudStore
 		
 		byte[] resourceData = null
 		String locationOnFileSystem = fileResource.locationOnFileSystem
@@ -227,8 +226,7 @@ class CloudStoreController extends BaseController {
 	}
 	
 	private def deleteFromCloudStoreLink(String storeName, FileResource fileResource) {
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		CloudStore cloudStore = fileResource.cloudStore
 		def credentials = cloudStore.credentials
 		
 		if(storeName == 'dropbox') {
