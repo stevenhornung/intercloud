@@ -100,13 +100,16 @@ class AccountController extends BaseController {
 	
 	private def createRootIntercloudFileResource(Account newAccount) {
 		FileResource rootIntercloudFileResource = new FileResource()
+		
+		def storeName = 'intercloud'
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, newAccount)
+		
+		rootIntercloudFileResource.cloudStore = cloudStore
 		rootIntercloudFileResource.path = '/'
 		rootIntercloudFileResource.isDir = true
 		rootIntercloudFileResource.fileName = ''
 		rootIntercloudFileResource.save()
 		
-		def storeName = 'intercloud'
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, newAccount)
 		def fileResources = []
 		fileResources.add(rootIntercloudFileResource)
 		cloudStore.fileResources = fileResources

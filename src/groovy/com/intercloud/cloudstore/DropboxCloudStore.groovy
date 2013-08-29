@@ -186,7 +186,12 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.cloudStore = cloudStoreInstance
 		fileResource.path = dropboxFolder.path
 		fileResource.isDir = dropboxFolder.isFolder()
-		fileResource.fileName = dropboxFolder.name
+		if(!dropboxFolder.path == "/") {
+			fileResource.fileName = "DropboxRoot"
+		}
+		else {
+			fileResource.fileName = dropboxFolder.name
+		}
 		fileResource.mimeType = "application/octet-stream"
 
 		return fileResource
@@ -262,7 +267,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			return []
 		}
 		
-		log.debug "Downloading folder to temp zip storage"
+		log.debug "Downloading folder to temporary zip storage"
 		downloadFolderToPath(downloadedFolderPath, fileResource)
 		
 		log.debug "Zipping downloaded folder to '{}'", zipFileName

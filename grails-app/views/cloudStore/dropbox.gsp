@@ -104,7 +104,7 @@
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
 		<div id="status" role="complementary">
-			<p>side stuff</p>
+			<p><a href="/download?storeName=dropbox">Download Entire Dropbox</a></p>
 		</div>
 		<div id="page-body" role="main">
 			<h1>Welcome to InterCloud</h1>
@@ -112,7 +112,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Dropbox Files | <a href="/update?cloudStore=dropbox">Sync</a></b></h2>
+					<h2><b>Dropbox Files | <a href="/update?cloudStore=dropbox&targetUri=${request.forwardURI }">Sync</a></b></h2>
 					<h3><a href="/">Home </a>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />

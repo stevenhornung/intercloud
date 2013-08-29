@@ -243,15 +243,25 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def showDownloadDialog() {
-		FileResource fileResource = FileResource.get(params.fileResourceId)
 		def storeName = params.storeName
+		if(params.fileResourceId) {
+			FileResource fileResource = FileResource.get(params.fileResourceId)
 		
-		if(fileResource) {
-			showFileResourceDownload(storeName, fileResource)
+			if(fileResource) {
+				showFileResourceDownload(storeName, fileResource)
+			}
+			else {
+				log.debug "File resource not found from download dialog"
+				forward(controller: 'base', action: 'respondPageNotFound')
+			}
 		}
 		else {
-			log.debug "File resource not found from download dialog"
-			forward(controller: 'base', action: 'respondPageNotFound')
+			// Download entire root as zip
+			Account account = getCurrentAccount()
+			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+			FileResource rootFileResource = cloudStore.fileResources.find {it.path == "/"}
+			
+			showFileResourceDownload(storeName, rootFileResource)
 		}
 	}
 	
@@ -296,7 +306,7 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		
-		redirect(controller: 'home', action: 'index')
+		redirect uri: params.targetUri
 	}
 	
 	private def updateSingleCloudStore(String storeName, def cloudStoreLink) {

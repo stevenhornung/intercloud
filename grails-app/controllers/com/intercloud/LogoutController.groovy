@@ -1,13 +1,15 @@
 package com.intercloud
+
 import org.codehaus.groovy.grails.plugins.springsecurity.SpringSecurityUtils
+
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 
 class LogoutController {
 
-	/**
-	 * Index action. Redirects to the Spring security logout uri.
-	 */
+	private static Logger log = LoggerFactory.getLogger(LogoutController.class)
+	
 	def index = {
-		// TODO put any pre-logout code here
 		redirect uri: SpringSecurityUtils.securityConfig.logout.filterProcessesUrl
 	}
 }

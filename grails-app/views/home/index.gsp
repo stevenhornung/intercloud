@@ -116,7 +116,7 @@
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
 					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a>	| <a href="/update?cloudStore=${cloudStore.key}">Sync</a></h2>
+					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a>	| <a href="/update?cloudStore=${cloudStore.key}&targetUri=/home">Sync</a></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion">
 							<g:each in="${cloudStore.value }" var="fileInstance">

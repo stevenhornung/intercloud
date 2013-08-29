@@ -9,6 +9,6 @@ beans = {
 		APP_KEY = "ujdofnwh516yrg0"
 		APP_SECRET = "43itigcfb9y59dy"
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
-		ZIP_TEMP_STORAGE_PATH = "/Users/stevenhornung/storage/tempZipStorage"
+		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
 	}
 }
