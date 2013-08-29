@@ -186,7 +186,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.cloudStore = cloudStoreInstance
 		fileResource.path = dropboxFolder.path
 		fileResource.isDir = dropboxFolder.isFolder()
-		if(!dropboxFolder.path == "/") {
+		if(dropboxFolder.path == "/") {
 			fileResource.fileName = "DropboxRoot"
 		}
 		else {
@@ -347,6 +347,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private void addNewEntries(def entries, def currentFileResources) {
 		for(entry in entries) {
+			log.debug "Dropbox entry changed: '{}'", entry.lcPath
 			if(entry.metadata) {
 				boolean isEntryUpdated = updateEntryIfExists(entry, currentFileResources)
 				if(!isEntryUpdated) {
@@ -366,7 +367,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 					CloudStoreUtilities.deleteFromDatabase("dropbox", fileResource)
 				}
 				else {
-					// previously deleted file that dropbox is still tracking so doesn't concern us
+					// we previously deleted file. Dropbox doesn't know so is still informing, ignore this
 				}
 			}
 		}

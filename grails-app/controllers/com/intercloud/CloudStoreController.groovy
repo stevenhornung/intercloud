@@ -226,7 +226,8 @@ class CloudStoreController extends BaseController {
 	}
 	
 	private def deleteFromCloudStoreLink(String storeName, FileResource fileResource) {
-		CloudStore cloudStore = fileResource.cloudStore
+		Account account = getCurrentAccount()
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		def credentials = cloudStore.credentials
 		
 		if(storeName == 'dropbox') {
