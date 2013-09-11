@@ -7,7 +7,7 @@ import com.intercloud.FileResource;
 
 class CloudStoreUtilities {
 	
-	public static def deleteFromDatabase(String storeName, FileResource fileResource) {
+	public static void deleteFromDatabase(FileResource fileResource) {
 		// Delete parent file resource relationship if parent not already deleted
 		fileResource.parentFileResource?.removeFromChildFileResources(fileResource)
 		fileResource.parentFileResource?.save()
@@ -18,7 +18,7 @@ class CloudStoreUtilities {
 		
 		// Delete any children relationships
 		fileResource.childFileResources.each { def childFileResource ->
-			deleteFromDatabase(storeName, childFileResource)
+			deleteFromDatabase(childFileResource)
 		}
 	}
 	

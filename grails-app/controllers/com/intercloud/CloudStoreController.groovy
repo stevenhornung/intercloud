@@ -217,7 +217,7 @@ class CloudStoreController extends BaseController {
 		def storeName = params.cloudStore
 		def fileResource = FileResource.get(params.fileResourceId)
 		
-		CloudStoreUtilities.deleteFromDatabase(storeName, fileResource)
+		CloudStoreUtilities.deleteFromDatabase(fileResource)
 		if(storeName != 'intercloud') {
 			deleteFromCloudStoreLink(storeName, fileResource)
 		}
@@ -321,5 +321,51 @@ class CloudStoreController extends BaseController {
 		def newUpdateCursor = cloudStoreLink.updateResources(credentials, updateCursor, currentFileResources)
 		cloudStore.updateCursor = newUpdateCursor
 		cloudStore.save()
+	}
+	
+	public def uploadResources() {
+		String cloudStoreName = params.cloudStore
+		log.debug "Uploading file to {}", cloudStoreName
+		
+		def uploadedFile = request.getFile('file')
+		uploadFileToCloudStore(cloudStoreName, uploadedFile)
+
+		response.sendError(200)
+	}
+	
+	private void uploadFileToCloudStore(String cloudStoreName, def uploadedFile) {
+		Account account = getCurrentAccount()
+		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
+		def credentials = cloudStore.credentials
+		
+		createFileResourceFromUploadedFile(cloudStore, uploadedFile)
+		
+		if(cloudStore.storeName == 'dropbox') {
+			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
+			dropboxCloudStore.uploadResource(credentials, uploadedFile)
+		}
+		else if(cloudStore.storeName == 'googledrive') {
+			
+		}
+		else {
+			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
+		}
+	}
+	
+	private void createFileResourceFromUploadedFile(CloudStore cloudStore, def uploadedFile) {
+		String filePath = "/" + uploadedFile.originalFilename
+		FileResource fileResource = new FileResource()
+		
+		fileResource.path = filePath
+		fileResource.fileName = uploadedFile.originalFilename
+		fileResource.byteSize = uploadedFile.size
+		fileResource.mimeType = uploadedFile.contentType
+		fileResource.isDir = false
+		fileResource.cloudStore = cloudStore
+		
+		FileResource parentFileResource = FileResource.findByCloudStoreAndPath(cloudStore, '/')
+		fileResource.parentFileResource = parentFileResource
+		
+		fileResource.save()
 	}
 }

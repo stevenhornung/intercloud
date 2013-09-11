@@ -11,6 +11,7 @@ import com.dropbox.core.DbxAuthInfo
 import com.dropbox.core.DbxSessionStore
 import com.dropbox.core.DbxAppInfo
 import com.dropbox.core.DbxRequestConfig
+import com.dropbox.core.DbxWriteMode
 
 import org.apache.tika.Tika
 import javax.servlet.http.HttpServletRequest
@@ -224,8 +225,21 @@ class DropboxCloudStore implements CloudStoreInterface {
 		dropboxClient = new DbxClient(requestConfig, access_token)
 	}
 
-	public def uploadResource(def credentials, FileResource fileResource) {
-		// TODO Auto-generated method stub
+	public def uploadResource(def credentials, def uploadedFile) {
+		setDropboxApiWithCredentials(credentials)
+		uploadToDropbox(uploadedFile)
+	}
+	
+	private void uploadToDropbox(def uploadedFile) {
+		String filePath = "/" + uploadedFile.originalFilename
+		
+		try {
+			dropboxClient.uploadFile(filePath, DbxWriteMode.add(), uploadedFile.size, uploadedFile.inputStream)
+			log.debug "Successfully uploaded file '{}' to dropbox", filePath
+		}
+		catch(DbxException) {
+			log.warn "File could not be uploaded to dropbox. Exception {}", DbxException
+		}
 	}
 	
 	public def deleteResource(def credentials, FileResource fileResource) {
@@ -329,6 +343,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private byte[] getDropboxFileBytes(FileResource fileResource) {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
 		DbxEntry entry = dropboxClient.getFile(fileResource.path, null, outputStream)
+		log.debug "Downloaded file '{}' from dropbox", fileResource.fileName
+		
 		return outputStream.toByteArray()
 	}
 	

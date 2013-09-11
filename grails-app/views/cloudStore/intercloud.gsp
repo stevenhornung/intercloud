@@ -124,7 +124,7 @@
 											<g:else>
 												<td><a class="colorbox" href="/intercloud${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 											</g:else>
-											<td><a href="/download?fileResourceId=${fileInstance.id}&storeName=intercloud">Download</a></td>
+											<td><a href="/download?fileResourceId=${fileInstance.id}">Download</a></td>
 											<td><a href="#">Move</a></td>
 											<td><a href="/delete?cloudStore=intercloud&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 										</p>

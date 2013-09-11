@@ -23,7 +23,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return null;
 	}
 
-	public def uploadResource(def credentials, FileResource fileResource) {
+	public def uploadResource(def credentials, def uploadedFile) {
 		// TODO Auto-generated method stub
 		return null;
 	}
