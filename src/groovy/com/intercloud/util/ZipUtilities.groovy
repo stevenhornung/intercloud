@@ -87,8 +87,8 @@ class ZipUtilities {
 	}
 	
 	public static  byte[] getBytesFromZipFile(String path, String zipFileName) {
-		 String fullPathToZip = path + "/" + zipFileName
-		 File zipFile = new File(fullPathToZip)
-		 return zipFile.getBytes()
+		String fullPathToZip = path + "/" + zipFileName
+		File zipFile = new File(fullPathToZip)
+		return zipFile.getBytes()
 	}
 }
