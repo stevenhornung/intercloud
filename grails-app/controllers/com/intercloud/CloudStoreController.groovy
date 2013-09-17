@@ -284,6 +284,7 @@ class CloudStoreController extends BaseController {
 	
 	public def updateResources() {
 		String cloudStoreName = params.storeName
+		String targetUri = params.targetUri ?: "/home"
 
 		if(cloudStoreName) {
 			log.debug "Manually updating {} file resources", cloudStoreName
@@ -298,12 +299,14 @@ class CloudStoreController extends BaseController {
 		else {
 			log.debug "Manually updating all cloud store file resources"
 			CLOUD_STORES.each {
-				def cloudStoreLink = getCloudStoreLink(it)
-				updateSingleCloudStore(it, cloudStoreLink)
+				if(it != 'intercloud') {
+					def cloudStoreLink = getCloudStoreLink(it)
+					updateSingleCloudStore(it, cloudStoreLink)
+				}
 			}
 		}
 		
-		redirect uri: params.targetUri
+		redirect uri: targetUri
 	}
 	
 	private def updateSingleCloudStore(String storeName, def cloudStoreLink) {

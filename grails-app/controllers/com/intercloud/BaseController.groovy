@@ -9,7 +9,7 @@ class BaseController {
 	
 	def springSecurityService
 	
-	static final CLOUD_STORES = ['intercloud', 'dropbox', 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws']
+	static final CLOUD_STORES = ['intercloud', 'dropbox'/*, 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws'*/]
 	
 	static final RENDER_TYPES = ['text/html', "image/jpeg", "image/png", "image/bmp", "text/x-java", "application/pdf", 
 							"text/css", "image/gif", "text/plain", "image/x-icon", "application/xml", "application/json", 
