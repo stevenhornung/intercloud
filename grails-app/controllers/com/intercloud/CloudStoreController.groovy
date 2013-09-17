@@ -215,11 +215,19 @@ class CloudStoreController extends BaseController {
 		def fileResource = FileResource.get(params.fileResourceId)
 		
 		CloudStoreUtilities.deleteFromDatabase(fileResource)
-		if(storeName != 'intercloud') {
+		if(storeName == 'intercloud') {
+			deleteFromLocalFileSystem(fileResource)
+		}
+		else {
 			deleteFromCloudStoreLink(storeName, fileResource)
 		}
 
 		redirect(uri: params.targetUri)
+	}
+	
+	private void deleteFromLocalFileSystem(FileResource fileResource) {
+		File file = new File(fileResource.locationOnFileSystem)
+		file.delete()
 	}
 	
 	private def deleteFromCloudStoreLink(String storeName, FileResource fileResource) {
@@ -369,7 +377,10 @@ class CloudStoreController extends BaseController {
 		
 		if(cloudStore.storeName == 'intercloud') {
 			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
-			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + uploadedFile.getOriginalFilename()
+			String accountEmail = getCurrentAccount().email
+			String dirLocationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail
+			new File(dirLocationOnFileSystem).mkdirs()
+			String locationOnFileSystem = dirLocationOnFileSystem + '/' + uploadedFile.originalFilename
 			fileResource.locationOnFileSystem = locationOnFileSystem
 			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
 		}
