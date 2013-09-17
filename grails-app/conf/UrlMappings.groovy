@@ -52,7 +52,7 @@ class UrlMappings {
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
-			cloudStore = 'intercloud'
+			storeName = 'intercloud'
 		}
 		
 		"/intercloud/$fileResourcePath**" {
@@ -61,7 +61,7 @@ class UrlMappings {
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
-			cloudStore = 'intercloud'
+			storeName = 'intercloud'
 		}
 		
 		"/dropbox" {
@@ -70,7 +70,7 @@ class UrlMappings {
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
-			cloudStore = 'dropbox'
+			storeName = 'dropbox'
 		}
 		
 		"/dropbox/$fileResourcePath**" {
@@ -79,7 +79,7 @@ class UrlMappings {
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
-			cloudStore = 'dropbox'
+			storeName = 'dropbox'
 		}
 		
 		"/delete" {

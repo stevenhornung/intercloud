@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Dropbox - InterCloud</title>
+		<title>InterCloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -111,7 +111,7 @@
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=dropbox">Download Entire Dropbox</a></p>
-					<form action="/upload?cloudStore=dropbox" class="dropzone">
+					<form action="/upload?storeName=dropbox" class="dropzone">
 					  <div class="fallback">
 					    <input name="file" type="file" multiple />
 					  </div>
@@ -126,7 +126,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Dropbox Files | <a href="/update?cloudStore=dropbox&targetUri=${request.forwardURI }">Sync</a></b></h2>
+					<h2><b>Dropbox Files | <a href="/update?storeName=dropbox&targetUri=${request.forwardURI }">Sync</a></b></h2>
 					<h3><a href="/">Home </a>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
@@ -150,9 +150,9 @@
 										<g:else>
 											<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 										</g:else>
-										<td><a href="/download?fileResourceId=${fileInstance.id}">Download</a></td>
+										<td><a href="/download?storeName=googledrive&fileResourceId=${fileInstance.id}">Download</a></td>
 										<td><a href="#">Move</a></td>
-										<td><a href="/delete?cloudStore=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+										<td><a href="/delete?storeName=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 									</p>
 								</div>
 							</tr>

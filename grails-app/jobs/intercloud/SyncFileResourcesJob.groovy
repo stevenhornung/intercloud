@@ -5,7 +5,6 @@ import org.slf4j.LoggerFactory
 
 import com.intercloud.Account
 import com.intercloud.CloudStore
-
 import com.intercloud.cloudstore.DropboxCloudStore
 
 class SyncFileResourcesJob {
@@ -17,6 +16,7 @@ class SyncFileResourcesJob {
     }
 
     def execute() {
+		log.debug "Starting SyncFileResources job"
         syncAllUsersCloudStores()
     }
 	
@@ -40,6 +40,8 @@ class SyncFileResourcesJob {
 	}
 	
 	private void runDropboxUpdater(CloudStore cloudStore) {
+		log.debug "Running auto dropbox updater for user '{}'", cloudStore.account.email
+		
 		def credentials = cloudStore.credentials
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources

@@ -9,11 +9,13 @@ import org.slf4j.LoggerFactory
 class CloudStoreController extends BaseController {
 	
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
+	static String INTERCLOUD_STORAGE_PATH
 	
 	public def index() {
 		if(getCurrentAccount()) {
-			if(params.cloudStore) {
-				requestClientAccessToCloudStore(params.cloudStore)
+			if(params.storeName) {
+				log.debug "Adding cloud store '{}'", params.storeName
+				requestClientAccessToCloudStore(params.storeName)
 			}
 			else {
 				redirect(controller: 'home', action: 'index')
@@ -80,7 +82,7 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def getCloudStoreResources() {
-		def storeName = params.cloudStore
+		def storeName = params.storeName
 		def dir = "/"
 		def fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, dir)
 
@@ -88,7 +90,7 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def getSpecificCloudStoreResources() {
-		def storeName = params.cloudStore
+		def storeName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
 		
 		FileResource fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, fileResourcePath)
@@ -117,9 +119,9 @@ class CloudStoreController extends BaseController {
 	
 	private def retrieveFileResource(String storeName, FileResource fileResource) {
 		if(fileResource.mimeType in RENDER_TYPES) {
-			def cloudStoreFileData = getFileResourceData(storeName, fileResource)
-			if(cloudStoreFileData) {
-				renderBytesToScreen(fileResource, cloudStoreFileData)
+			def cloudStoreFileStream = getFileResourceStream(storeName, fileResource)
+			if(cloudStoreFileStream) {
+				renderBytesToScreen(fileResource, cloudStoreFileStream)
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
@@ -127,9 +129,9 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else if(fileResource.mimeType in VIDEO_TYPES){
-			def cloudStoreFileData = getFileResourceData(storeName, fileResource)
-			if(cloudStoreFileData) {
-				displayVideo(fileResource, cloudStoreFileData, storeName /*wont need storename normally*/)
+			def cloudStoreFileStream = getFileResourceStream(storeName, fileResource)
+			if(cloudStoreFileStream) {
+				displayVideo(fileResource, cloudStoreFileStream, storeName /*wont need storename normally*/)
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
@@ -141,11 +143,11 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	private def renderBytesToScreen(FileResource fileResource, byte[] cloudStoreFileData) {
+	private def renderBytesToScreen(FileResource fileResource, InputStream cloudStoreFileStream) {
 		try{
 			response.contentType = fileResource.mimeType
 			response.contentLength = fileResource.byteSize.toInteger()
-			response.outputStream << cloudStoreFileData
+			response.outputStream << cloudStoreFileStream
 			response.outputStream.flush()
 		}
 		catch (Exception) {
@@ -172,30 +174,24 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	public def getFileResourceData(String storeName, FileResource fileResource) {
-		CloudStore cloudStore = fileResource.cloudStore
-		
-		byte[] resourceData = null
-		String locationOnFileSystem = fileResource.locationOnFileSystem
-		
-		if(locationOnFileSystem) {
-			resourceData = getBytesFromFileLocation(locationOnFileSystem)
+	public def getFileResourceStream(String storeName, FileResource fileResource) {
+		def resourceDataStream = null
+		if(storeName == 'intercloud') {
+			String locationOnFileSystem = fileResource.locationOnFileSystem
+			resourceDataStream = getStreamFromFileLocation(locationOnFileSystem)
 		}
 		else {
-			resourceData = downloadFileResourceFromCloudStore(cloudStore, fileResource)
+			CloudStore cloudStore = fileResource.cloudStore
+			resourceDataStream = downloadFileResourceFromCloudStore(cloudStore, fileResource)
 		}
 		
-		return resourceData
+		return resourceDataStream
 	}
 	
-	private byte[] getBytesFromFileLocation(String locationOnFileSystem) {
-		File file = new File(locationOnFileSystem)
-		byte[] resourceData = new Byte[(int) file.length()]
-		
+	private InputStream getStreamFromFileLocation(String locationOnFileSystem) {
+		InputStream inputStream = null
 		try {
-			FileInputStream fileInputStream = new FileInputStream(file)
-			fileInputStream.read(resourceData)
-			// need to build zip file
+			inputStream = new FileInputStream(locationOnFileSystem)
 		}
 		catch(FileNotFoundException) {
 			log.warn "File not found on file system"
@@ -204,17 +200,17 @@ class CloudStoreController extends BaseController {
 			log.warn "File could not be read on file system"
 		}
 		
-		return resourceData
+		return inputStream
 	}
 	
-	private def downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
+	private InputStream downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
 		def cloudStoreLink = getCloudStoreLink(cloudStore.storeName)
-		def downloadedFile = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
-		return downloadedFile
+		InputStream downloadedFileStream = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
+		return downloadedFileStream
 	}
 	
 	public def deleteResource() {
-		def storeName = params.cloudStore
+		def storeName = params.storeName
 		def fileResource = FileResource.get(params.fileResourceId)
 		
 		CloudStoreUtilities.deleteFromDatabase(fileResource)
@@ -267,17 +263,16 @@ class CloudStoreController extends BaseController {
 	}
 	
 	private def showFileResourceDownload(String storeName, FileResource fileResource) {
-		byte[] fileResourceData = getFileResourceData(storeName, fileResource)
+		InputStream fileResourceStream = getFileResourceStream(storeName, fileResource)
 		try{
 			response.contentType = fileResource.mimeType
-			response.contentLength = fileResourceData.length
 			if(fileResource.isDir) {
 				response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}.zip"
 			}
 			else {
 				response.setHeader "Content-disposition", "attachment;filename=${fileResource.fileName}"
 			}
-			response.outputStream << fileResourceData
+			response.outputStream << fileResourceStream
 			response.outputStream.flush()
 		}
 		catch (Exception) {
@@ -287,7 +282,7 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def updateResources() {
-		String cloudStoreName = params.cloudStore
+		String cloudStoreName = params.storeName
 
 		if(cloudStoreName) {
 			log.debug "Manually updating {} file resources", cloudStoreName
@@ -324,7 +319,7 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def uploadResources() {
-		String cloudStoreName = params.cloudStore
+		String cloudStoreName = params.storeName
 		log.debug "Uploading file to {}", cloudStoreName
 		
 		def uploadedFile = request.getFile('file')
@@ -339,8 +334,10 @@ class CloudStoreController extends BaseController {
 		def credentials = cloudStore.credentials
 		
 		createFileResourceFromUploadedFile(cloudStore, uploadedFile)
-		
-		if(cloudStore.storeName == 'dropbox') {
+		if(cloudStore.storeName == 'intercloud') {
+			// only need to create file resource so just pass
+		}
+		else if(cloudStore.storeName == 'dropbox') {
 			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
 			dropboxCloudStore.uploadResource(credentials, uploadedFile)
 		}
@@ -366,6 +363,41 @@ class CloudStoreController extends BaseController {
 		FileResource parentFileResource = FileResource.findByCloudStoreAndPath(cloudStore, '/')
 		fileResource.parentFileResource = parentFileResource
 		
+		if(cloudStore.storeName == 'intercloud') {
+			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
+			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + uploadedFile.getOriginalFilename()
+			fileResource.locationOnFileSystem = locationOnFileSystem
+			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
+		}
+		
 		fileResource.save()
+	}
+	
+	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {
+		byte[] buffer = new byte[1024]
+		int read = 0
+		InputStream inputStream = null
+		OutputStream outputStream = null
+		try {
+			inputStream = newFile.getInputStream()
+			outputStream = new FileOutputStream(new File(pathToSaveFile))
+			
+			while((read = inputStream.read(buffer)) != -1) {
+				outputStream.write(buffer, 0, read)
+			}
+			
+			log.debug "Wrote file '{}' to local file system", pathToSaveFile
+		}
+		catch(IOException) {
+			log.warn "Could not save file to local file system. Exception: {}", IOException
+		}
+		finally {
+			if(inputStream != null) {
+				inputStream.close()
+			}
+			if(outputStream != null) {
+				outputStream.close()
+			}
+		}
 	}
 }

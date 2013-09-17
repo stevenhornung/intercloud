@@ -11,4 +11,8 @@ beans = {
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
 		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
 	}
+	
+	"com.intercloud.CloudStoreController" (CloudStoreController) { bean ->
+		INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
+	}
 }

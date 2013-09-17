@@ -20,7 +20,6 @@ import java.util.UUID
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 import org.codehaus.groovy.grails.web.mapping.DefaultUrlMappingParser
-
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -102,13 +101,13 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def setCloudStoreInfo(CloudStore cloudStoreInstance) {
-		DbxAccountInfo accountInfo = getAccountInfo()
+		//DbxAccountInfo accountInfo = getAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
 		cloudStoreInstance.credentials.put('ACCESS_TOKEN', access_token)
-		cloudStoreInstance.userId = accountInfo.userId
-		cloudStoreInstance.spaceUsed = accountInfo.quota.normal
-		cloudStoreInstance.totalSpace = accountInfo.quota.total
+		cloudStoreInstance.userId = 'blah'//accountInfo.userId
+		cloudStoreInstance.spaceUsed = 100//accountInfo.quota.normal
+		cloudStoreInstance.totalSpace = 1000//accountInfo.quota.total
 		
 		String updateCursor = getInitialUpdateCursor()
 		cloudStoreInstance.updateCursor = updateCursor
@@ -117,7 +116,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private def getAccountInfo() {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
-		DbxAccountInfo dropboxAccountInfo = dropboxClient.accountInfo
+		DbxAccountInfo dropboxAccountInfo = dropboxClient.getAccountInfo()
 		
 		return dropboxAccountInfo
 	}
@@ -260,20 +259,20 @@ class DropboxCloudStore implements CloudStoreInterface {
 	public def downloadResource(def credentials, FileResource fileResource) {
 		setDropboxApiWithCredentials(credentials)
 		
-		byte[] downloadedBytes = null
+		def downloadedStream = null
 		if(fileResource.isDir) {
 			log.debug "Downloading folder and building zip from dropbox"
-			downloadedBytes = getZippedDropboxFolderBytes(fileResource)
+			downloadedStream = getZippedDropboxFolderStream(fileResource)
 		}
 		else {
 			log.debug "Downloading file from dropbox"
-			downloadedBytes = getDropboxFileBytes(fileResource)
+			downloadedStream = getDropboxFileStream(fileResource)
 		}
 		
-		return downloadedBytes
+		return downloadedStream
 	}
 	
-	private byte[] getZippedDropboxFolderBytes(FileResource fileResource) {
+	private InputStream getZippedDropboxFolderStream(FileResource fileResource) {
 		String downloadedFolderPath = getDownloadedFolderPath(fileResource)
 		String zipFileName = getSourceZipName(fileResource)
 		
@@ -288,11 +287,11 @@ class DropboxCloudStore implements CloudStoreInterface {
 		ZipUtilities.zipDownloadedFolder(downloadedFolderPath, zipFileName)
 		
 		String zipFileLocation = downloadedFolderPath.substring(0, downloadedFolderPath.lastIndexOf('/'))
-		byte[] zippedFolderBytes = ZipUtilities.getBytesFromZipFile(zipFileLocation, zipFileName)
+		InputStream zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
 		
 		ZipUtilities.removeTempDownloadFolder(zipFileLocation)
 		
-		return zippedFolderBytes
+		return zippedFolderInputStream
 	}
 	
 	private String getDownloadedFolderPath(FileResource fileResource) {
@@ -331,21 +330,26 @@ class DropboxCloudStore implements CloudStoreInterface {
 				downloadFolderToPath(updatedPath, childResource)
 			}
 			else {
-				byte[] resourceData = getDropboxFileBytes(childResource)
+				InputStream resourceDataStream = getDropboxFileStream(childResource)
 				String fullFilePath = path + "/" + childResource.fileName
 				FileOutputStream outputStream =  new FileOutputStream(fullFilePath)
-				outputStream.write(resourceData)
+				byte[] buffer = new byte[1024]
+				int bytesRead
+				while((bytesRead = resourceDataStream.read(buffer)) != -1) {
+					outputStream.write(buffer, 0, bytesRead)
+				}
 				outputStream.close()
 			}
 		}
 	}
 	
-	private byte[] getDropboxFileBytes(FileResource fileResource) {
+	private InputStream getDropboxFileStream(FileResource fileResource) {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
 		DbxEntry entry = dropboxClient.getFile(fileResource.path, null, outputStream)
 		log.debug "Downloaded file '{}' from dropbox", fileResource.fileName
 		
-		return outputStream.toByteArray()
+		InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())
+		return inputStream
 	}
 	
 	public def updateResources(def credentials, String updateCursor, def currentFileResources) {
@@ -380,7 +384,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 					}
 				}
 				if(fileResource) {
-					CloudStoreUtilities.deleteFromDatabase("dropbox", fileResource)
+					CloudStoreUtilities.deleteFromDatabase(fileResource)
 				}
 				else {
 					// we previously deleted file. Dropbox doesn't know so is still informing, ignore this

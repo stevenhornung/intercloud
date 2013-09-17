@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Google Drive - InterCloud</title>
+		<title>InterCloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -91,7 +91,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Google Drive Files | <a href="/update?cloudStore=googledrive">Sync</a></b></h2>
+					<h2><b>Google Drive Files | <a href="/update?storeName=googledrive">Sync</a></b></h2>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>
@@ -103,9 +103,9 @@
 											<g:else>
 												<td><a class="colorbox" href="/googledrive${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 											</g:else>
-											<td><a href="/download?fileResourceId=${fileInstance.id}">Download</a></td>
+											<td><a href="/download?storeName=googledrive&fileResourceId=${fileInstance.id}">Download</a></td>
 											<td><a href="#">Move</a></td>
-											<td><a href="/delete?cloudStore=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											<td><a href="/delete?storeName=googledrive&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 										</p>
 									</div>
 							</tr>

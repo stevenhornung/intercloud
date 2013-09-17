@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>InterCloud - InterCloud</title>
+		<title>InterCloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -87,6 +87,9 @@
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'dropzone.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'dropzone.js')}" type="text/javascript"></script>
+		
 		<script>
 			$(document).ready(function(){
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
@@ -103,16 +106,38 @@
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<div id="status" role="complementary">
-			<p>side stuff</p>
-		</div>
+		<sec:ifLoggedIn>
+			<g:if test="${fileInstanceList != null }">
+				<div id="status" role="complementary">
+					<p><a href="/download?storeName=intercloud">Download Entire InterCloud</a></p>
+					<form action="/upload?storeName=intercloud" class="dropzone">
+					  <div class="fallback">
+					    <input name="file" type="file" multiple />
+					  </div>
+					</form>
+					
+				</div>
+			</g:if>
+		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<h1>Welcome to InterCloud</h1>
 			<br>
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>InterCloud Files | <a href="/update?cloudStore=intercloud">Sync</a></b></h2>
+					<h2><b>InterCloud Files</b></h2>
+					<h3><a href="/">Home </a>
+					<g:if test="${params.fileResourcePath }">
+						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
+						<g:set var="backPath" value="/intercloud" scope="request" />
+						-&gt <a href="${backPath}">InterCloud</a>
+						<g:each in="${pathList }" status="i" var="pathPiece">
+							<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
+							-&gt <a href="${backPath}">${pathPiece}</a>
+						</g:each>
+					</g:if>
+					</h3>
+					<br/>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>
@@ -124,9 +149,9 @@
 											<g:else>
 												<td><a class="colorbox" href="/intercloud${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 											</g:else>
-											<td><a href="/download?fileResourceId=${fileInstance.id}">Download</a></td>
+											<td><a href="/download?storeName=intercloud&fileResourceId=${fileInstance.id}">Download</a></td>
 											<td><a href="#">Move</a></td>
-											<td><a href="/delete?cloudStore=intercloud&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											<td><a href="/delete?storeName=intercloud&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 										</p>
 									</div>
 							</tr>
@@ -135,7 +160,7 @@
 				</g:if>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>
-				<h1>Signup to add your files to the cloud bre</h1>
+				<h1>Signup to access all your files from one location</h1>
 			</sec:ifNotLoggedIn>
 		</div>
 		

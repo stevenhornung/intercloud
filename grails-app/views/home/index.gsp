@@ -95,7 +95,17 @@
 		
 		<script>
 		  $(function() {
-		    $( "#accordion" ).accordion({
+		    $( "#accordion_intercloud" ).accordion({
+		      collapsible: true
+		    });
+		  });
+		  $(function() {
+		    $( "#accordion_dropbox" ).accordion({
+		      collapsible: true
+		    });
+		  });
+		  $(function() {
+		    $( "#accordion_googledrive" ).accordion({
 		      collapsible: true
 		    });
 		  });
@@ -116,9 +126,9 @@
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
 					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a>	| <a href="/update?cloudStore=${cloudStore.key}&targetUri=/home">Sync</a></h2>
+					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a><g:if test="${cloudStore.key != 'intercloud' }">	| <a href="/update?storeName=${cloudStore.key}&targetUri=/home">Sync</a></g:if></h2>
 					<g:if test="${cloudStore.value }">
-						<div id="accordion">
+						<div id="accordion_${cloudStore.key }">
 							<g:each in="${cloudStore.value }" var="fileInstance">
 								<tr>
 									<h3>${fileInstance.fileName }</h3>
@@ -130,9 +140,9 @@
 											<g:else>
 												<td><a class="colorbox" href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 											</g:else>
-											<td><a href="/download?fileResourceId=${fileInstance.id}&storeName=${cloudStore.key}">Download</a></td>
+											<td><a href="/download?storeName=${cloudStore.key}&fileResourceId=${fileInstance.id}">Download</a></td>
 											<td><a href="#">Move</a></td>
-											<td><a href="/delete?cloudStore=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
+											<td><a href="/delete?storeName=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 										</p>
 									</div>
 								</tr>
