@@ -13,9 +13,10 @@ class CloudStoreController extends BaseController {
 	
 	public def index() {
 		if(getCurrentAccount()) {
-			if(params.storeName) {
-				log.debug "Adding cloud store '{}'", params.storeName
-				requestClientAccessToCloudStore(params.storeName)
+			String storeName = params.storeName
+			if(storeName) {
+				log.debug "Adding cloud store '{}'", storeName
+				requestClientAccessToCloudStore(storeName)
 			}
 			else {
 				redirect(controller: 'home', action: 'index')

@@ -101,13 +101,13 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 	
 	private def setCloudStoreInfo(CloudStore cloudStoreInstance) {
-		//DbxAccountInfo accountInfo = getAccountInfo()
+		DbxAccountInfo accountInfo = getAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
 		cloudStoreInstance.credentials.put('ACCESS_TOKEN', access_token)
-		cloudStoreInstance.userId = 'blah'//accountInfo.userId
-		cloudStoreInstance.spaceUsed = 100//accountInfo.quota.normal
-		cloudStoreInstance.totalSpace = 1000//accountInfo.quota.total
+		cloudStoreInstance.userId = accountInfo.userId
+		cloudStoreInstance.spaceUsed = accountInfo.quota.normal
+		cloudStoreInstance.totalSpace = accountInfo.quota.total
 		
 		String updateCursor = getInitialUpdateCursor()
 		cloudStoreInstance.updateCursor = updateCursor

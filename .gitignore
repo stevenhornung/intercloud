@@ -7,3 +7,4 @@ target-eclipse/
 /bin
 .DS_STORE
 cobertura.ser
+storage/
