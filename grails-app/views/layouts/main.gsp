@@ -108,7 +108,7 @@
 						<div class="left">
 							<!-- Add Cloud Store -->
 							<h1>Link Cloud Account</h1><br>
-							<a href="cloudstore?storeName=dropbox">Link Dropbox Account</a><br>
+							<a href="/cloudstore?storeName=dropbox">Link Dropbox Account</a><br>
 							<g:link controller="cloudStore" action="index" params="[storeName:'googledrive']">Link Google Drive Account</g:link><br>
 							<g:link controller="cloudStore" action="index" params="[storeName:'box']">Link Box Account</g:link><br>
 							<g:link controller="cloudStore" action="index" params="[storeName:'skydrvie']">Link Microsoft SkyDrive Account</g:link><br>

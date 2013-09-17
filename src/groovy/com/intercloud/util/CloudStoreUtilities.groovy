@@ -21,19 +21,4 @@ class CloudStoreUtilities {
 			deleteFromDatabase(childFileResource)
 		}
 	}
-	
-	public static def getFileResourceFromPath(String storeName, String fileResourcePath) {
-		BaseController baseController = new BaseController()
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		if(cloudStore) {
-			def fileResources = cloudStore.fileResources
-			return cloudStore.fileResources.find { it.path == fileResourcePath }
-		}
-	}
-	
-	private static def getCurrentAccount() {
-		BaseController baseController = new BaseController()
-		return baseController.getCurrentAccount()
-	}
 }

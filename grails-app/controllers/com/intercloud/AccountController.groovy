@@ -96,6 +96,9 @@ class AccountController extends BaseController {
 		cloudStoreInstance.totalSpace = newAccount.totalSpace
 		
 		cloudStoreInstance.save(flush: true)
+		
+		newAccount.cloudStores = [cloudStoreInstance]
+		newAccount.save()
 	}
 	
 	private def createRootIntercloudFileResource(Account newAccount) {

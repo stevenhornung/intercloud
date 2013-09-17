@@ -215,6 +215,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private def setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
 		cloudStoreInstance.account = account
+		account.addToCloudStores(cloudStoreInstance)
 	}
 	
 	private void setDropboxApiWithCredentials(def credentials) {

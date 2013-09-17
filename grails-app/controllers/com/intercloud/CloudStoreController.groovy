@@ -23,7 +23,8 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else {
-			redirect(controller: 'home', action: 'index')
+			log.warn "Passed spring security as logged in user but getCurrentAccount returned null"
+			forward(controller: 'base', action: 'respondServerError')
 		}
 	}
 
@@ -76,25 +77,35 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	public def getHomeCloudStoreResources(String storeName) {
+	public def getHomeCloudStoreResources(Account account, String storeName) {
 		def dir = "/"
-		def fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, dir)
+		def fileResource = getFileResourceFromPath(account, storeName, dir)
 		return retrieveFilesInDir(fileResource)	
 	}
 	
+	private def getFileResourceFromPath(Account account, String storeName, String fileResourcePath) {
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		if(cloudStore) {
+			def fileResources = cloudStore.fileResources
+			return cloudStore.fileResources.find { it.path == fileResourcePath }
+		}
+	}
+	
 	public def getCloudStoreResources() {
+		Account account = getCurrentAccount()
 		def storeName = params.storeName
 		def dir = "/"
-		def fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, dir)
+		def fileResource = getFileResourceFromPath(account, storeName, dir)
 
 		renderFilesInFileResourceFolder(storeName, fileResource)
 	}
 	
 	public def getSpecificCloudStoreResources() {
+		Account account = getCurrentAccount()
 		def storeName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
 		
-		FileResource fileResource = CloudStoreUtilities.getFileResourceFromPath(storeName, fileResourcePath)
+		FileResource fileResource = getFileResourceFromPath(account, storeName, fileResourcePath)
 		if(fileResource) {
 			if(fileResource.isDir) {
 				renderFilesInFileResourceFolder(storeName, fileResource)
@@ -156,7 +167,7 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	private def displayVideo(FileResource fileResource, byte[] cloudStoreFileData, String storeName /*wont need storeName normally*/) {
+	private def displayVideo(FileResource fileResource, InputStream cloudStoreFileStream, String storeName /*wont need storeName normally*/) {
 		// need to figure out how to buffer video then show render in a video
 		// just allow downloads for now 
 		renderDownloadLink(fileResource, storeName)

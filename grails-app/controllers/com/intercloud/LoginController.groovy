@@ -27,11 +27,6 @@ class LoginController extends BaseController{
 	def authenticationTrustResolver
 
 	/**
-	 * Dependency injection for the springSecurityService.
-	 */
-	def springSecurityService
-
-	/**
 	 * Default action; redirects to 'defaultTargetUrl' if logged in, /login/auth otherwise.
 	 */
 	def index = {

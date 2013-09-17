@@ -15,7 +15,7 @@ import grails.plugins.springsecurity.SecurityConfigType
 // }
 
 grails.project.groupId = appName // change this to alter the default package name and Maven publishing destination
-grails.mime.file.extensions = false // enables the parsing of file extensions from URLs into the request format
+grails.mime.file.extensions = true // enables the parsing of file extensions from URLs into the request format
 grails.mime.use.accept.header = false
 grails.mime.types = [
     all:           '*/*',
@@ -99,6 +99,7 @@ grails.plugins.springsecurity.userLookup.userDomainClassName = 'com.intercloud.A
 grails.plugins.springsecurity.userLookup.authorityJoinClassName = 'com.intercloud.AccountRole'
 grails.plugins.springsecurity.authority.className = 'com.intercloud.Role'
 
+grails.plugins.springsecurity.successHandler.defaultTargetUrl = '/home'
 grails.plugins.springsecurity.auth.loginFormUrl = '/login'
 grails.plugins.springsecurity.failureHandler.defaultFailureUrl = '/login/authfail'
 grails.plugins.springsecurity.adh.errorPage = '/denied'

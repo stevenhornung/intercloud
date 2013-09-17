@@ -49,6 +49,8 @@ class BootStrap {
 		cloudStoreInstance.totalSpace = newAccount.totalSpace
 		
 		cloudStoreInstance.save(flush: true)
+		
+		newAccount.cloudStores = [cloudStoreInstance]
 	}
 	
 	private def createRootIntercloudFileResource(Account newAccount) {

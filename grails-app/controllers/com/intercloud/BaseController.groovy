@@ -6,7 +6,6 @@ import org.slf4j.LoggerFactory
 class BaseController {
 	
 	private static Logger log = LoggerFactory.getLogger(BaseController.class)
-	
 	def springSecurityService
 	
 	static final CLOUD_STORES = ['intercloud', 'dropbox'/*, 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws'*/]
@@ -42,7 +41,7 @@ class BaseController {
 		render view: 'error', status: 500
 	}
 	
-	public def getCurrentAccount() {
-		return springSecurityService?.currentUser
+	public Account getCurrentAccount() {
+		return springSecurityService?.getCurrentUser()
 	}
 }

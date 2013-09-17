@@ -12,22 +12,23 @@ class HomeController extends BaseController {
 	}
 	
     public def index() {
-		if(getCurrentAccount()) {
-			def accountFileResources = retrieveAccountFileResources()
+		Account account = getCurrentAccount()
+		if(account) {
+			def accountFileResources = retrieveAccountFileResources(account)
 			[fileInstanceMap : accountFileResources]
 		}
 	}
 	
-	private def retrieveAccountFileResources() {
+	private def retrieveAccountFileResources(Account account) {
 		CloudStoreController controller = new CloudStoreController()
-		def accountFileResources = getFilesForEachCloudStore(controller)
+		def accountFileResources = getFilesForEachCloudStore(controller, account)
 		return accountFileResources
 	}
 	
-	private def getFilesForEachCloudStore(CloudStoreController controller) {
+	private def getFilesForEachCloudStore(CloudStoreController controller, Account account) {
 		def fileInstanceMap = [:]
 		CLOUD_STORES.each {
-			def fileResources = controller.getHomeCloudStoreResources(it)
+			def fileResources = controller.getHomeCloudStoreResources(account, it)
 			if(fileResources != null) {
 				fileInstanceMap << ["$it" : fileResources]
 			}
