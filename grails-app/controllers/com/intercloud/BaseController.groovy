@@ -7,7 +7,7 @@ class BaseController {
 	
 	private static Logger log = LoggerFactory.getLogger(BaseController.class)
 	def springSecurityService
-	
+
 	static final CLOUD_STORES = ['intercloud', 'dropbox'/*, 'googledrive', 'box', 'skydrive', 'azure', 'amazonaws'*/]
 	
 	static final RENDER_TYPES = ['text/html', "image/jpeg", "image/png", "image/bmp", "text/x-java", "application/pdf", 
@@ -42,6 +42,6 @@ class BaseController {
 	}
 	
 	public Account getCurrentAccount() {
-		return springSecurityService?.getCurrentUser()
+		return springSecurityService?.currentUser
 	}
 }

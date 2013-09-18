@@ -117,6 +117,9 @@
 			<div id="status" role="complementary">
 				<ul>
 					<li><a href="/update">Sync All Files</a></li>
+					<li><a href="/intercloud">View all InterCloud Files</a></li>
+					<li><a href="/dropbox">View all Dropbox Files</a></li>
+					<li><a href="/googledrive">View all Google Drive Files</a></li>
 				</ul>
 			</div>
 		</sec:ifLoggedIn>
