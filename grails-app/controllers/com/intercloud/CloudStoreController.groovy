@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 class CloudStoreController extends BaseController {
 	
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
-	static String INTERCLOUD_STORAGE_PATH
+	static String INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
 	
 	public def index() {
 		if(getCurrentAccount()) {
