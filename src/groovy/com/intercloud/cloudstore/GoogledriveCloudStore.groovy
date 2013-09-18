@@ -37,7 +37,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		
 	}
 	
-	public def updateResources(def credentials, String updateCursor, def currentFileResources) {
+	public def updateResources(CloudStore cloudStore, def credentials, String updateCursor, def currentFileResources) {
 		// TODO Auto-generated method stub
 		return null;
 	}

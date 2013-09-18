@@ -227,15 +227,22 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 	public def uploadResource(def credentials, def uploadedFile) {
 		setDropboxApiWithCredentials(credentials)
-		uploadToDropbox(uploadedFile)
+		def dropboxUpload = uploadToDropbox(uploadedFile)
+		return dropboxUpload
 	}
 	
-	private void uploadToDropbox(def uploadedFile) {
+	private def uploadToDropbox(def uploadedFile) {
 		String filePath = "/" + uploadedFile.originalFilename
 		
 		try {
-			dropboxClient.uploadFile(filePath, DbxWriteMode.add(), uploadedFile.size, uploadedFile.inputStream)
-			log.debug "Successfully uploaded file '{}' to dropbox", filePath
+			def dropboxUpload = dropboxClient.uploadFile(filePath, DbxWriteMode.add(), uploadedFile.size, uploadedFile.inputStream)
+			log.debug "Successfully uploaded file '{}' to dropbox", dropboxUpload.path
+			if(filePath != dropboxUpload.path) {
+				return dropboxUpload
+			}
+			else {
+				return null
+			}
 		}
 		catch(DbxException) {
 			log.warn "File could not be uploaded to dropbox. Exception {}", DbxException
@@ -353,26 +360,26 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return inputStream
 	}
 	
-	public def updateResources(def credentials, String updateCursor, def currentFileResources) {
+	public def updateResources(CloudStore cloudStore, def credentials, String updateCursor, def currentFileResources) {
 		log.debug "Updating dropbox file resources"
 		setDropboxApiWithCredentials(credentials)
 		
 		DbxDelta delta = dropboxClient.getDelta(updateCursor)
 		if(!delta.entries.empty) {
 			log.debug "Updates to dropbox found. Syncing updates"
-			addNewEntries(delta.entries, currentFileResources)
+			addNewEntries(cloudStore, delta.entries, currentFileResources)
 		}
 		
 		return delta.cursor
 	}
 	
-	private void addNewEntries(def entries, def currentFileResources) {
+	private void addNewEntries(CloudStore cloudStore, def entries, def currentFileResources) {
 		for(entry in entries) {
 			log.debug "Dropbox entry changed: '{}'", entry.lcPath
 			if(entry.metadata) {
-				boolean isEntryUpdated = updateEntryIfExists(entry, currentFileResources)
+				boolean isEntryUpdated = updateEntryIfExists(cloudStore, entry, currentFileResources)
 				if(!isEntryUpdated) {
-					currentFileResources = addToFileResources(entry.metadata, currentFileResources)
+					currentFileResources = addToFileResources(cloudStore, entry.metadata, currentFileResources)
 				}
 			}
 			else {
@@ -394,11 +401,11 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}
 	}
 	
-	private boolean updateEntryIfExists(def entry, def currentFileResources) {
+	private boolean updateEntryIfExists(CloudStore cloudStore, def entry, def currentFileResources) {
 		boolean isEntryUpdated = false
 		for(FileResource fileResource : currentFileResources) {
 			if(entry.metadata.path == fileResource.path) {
-				updateChangedFileResource(fileResource, entry.metadata)
+				updateChangedFileResource(cloudStore, fileResource, entry.metadata)
 				isEntryUpdated = true
 				break
 			}
@@ -407,18 +414,19 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return isEntryUpdated
 	}
 	
-	private void updateChangedFileResource(FileResource currentFileResource, def updatedEntry) {
+	private void updateChangedFileResource(CloudStore cloudStore, FileResource currentFileResource, def updatedEntry) {
 		if(updatedEntry.isFolder()) {
-			currentFileResource = setFolderFileResourceProperties(currentFileResource, updatedEntry)
+			currentFileResource = setFolderFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
 		}
 		else {
-			currentFileResource = setFileResourceProperties(currentFileResource, updatedEntry)
+			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
 		}
 		
 		currentFileResource.save()
 	}
 	
-	private FileResource setFolderFileResourceProperties(FileResource fileResource, def entry) {
+	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
+		fileResource.cloudStore = cloudStore
 		fileResource.path = entry.path
 		fileResource.isDir = entry.isFolder()
 		fileResource.fileName = entry.name
@@ -427,7 +435,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private FileResource setFileResourceProperties(FileResource fileResource, def entry) {
+	private FileResource setFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
+		fileResource.cloudStore = cloudStore
 		fileResource.byteSize = entry.numBytes
 		fileResource.path = entry.path
 		fileResource.modified = entry.lastModified
@@ -440,14 +449,15 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private def addToFileResources(def entry, def currentFileResources) {
+	private def addToFileResources(CloudStore cloudStore, def entry, def currentFileResources) {
 		FileResource fileResource = new FileResource()
 		if(entry.isFolder()) {
-			fileResource = setFolderFileResourceProperties(fileResource, entry)
+			fileResource = setFolderFileResourceProperties(cloudStore, fileResource, entry)
 		}
 		else {
-			fileResource = setFileResourceProperties(fileResource, entry)
+			fileResource = setFileResourceProperties(cloudStore, fileResource, entry)
 		}
+		cloudStore.addToFileResources(fileResource)
 		
 		currentFileResources = setParentAndChildFileResources(fileResource, currentFileResources)
 		return currentFileResources

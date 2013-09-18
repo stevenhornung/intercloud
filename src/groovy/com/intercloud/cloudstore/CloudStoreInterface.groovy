@@ -11,5 +11,5 @@ interface CloudStoreInterface {
 	public def uploadResource(def credentials, def uploadedFile)
 	public def downloadResource(def credentials, FileResource fileResource)
 	public def deleteResource(def credentials, FileResource fileResource)
-	public def updateResources(def credentials, String updateCursor, def currentFileResources)
+	public def updateResources(CloudStore cloudStore, def credentials, String updateCursor, def currentFileResources)
 }

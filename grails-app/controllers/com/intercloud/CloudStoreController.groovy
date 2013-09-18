@@ -15,7 +15,7 @@ class CloudStoreController extends BaseController {
 		if(getCurrentAccount()) {
 			String storeName = params.storeName
 			if(storeName) {
-				log.debug "Adding cloud store '{}'", storeName
+				log.debug "Adding cloud store '{}' to account '{}'", storeName, getCurrentAccount()
 				requestClientAccessToCloudStore(storeName)
 			}
 			else {
@@ -336,7 +336,7 @@ class CloudStoreController extends BaseController {
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
 		
-		def newUpdateCursor = cloudStoreLink.updateResources(credentials, updateCursor, currentFileResources)
+		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, credentials, updateCursor, currentFileResources)
 		cloudStore.updateCursor = newUpdateCursor
 		cloudStore.save()
 	}
@@ -355,29 +355,49 @@ class CloudStoreController extends BaseController {
 		Account account = getCurrentAccount()
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
 		def credentials = cloudStore.credentials
+		String newFileName = null
 		
-		createFileResourceFromUploadedFile(cloudStore, uploadedFile)
 		if(cloudStore.storeName == 'intercloud') {
 			// only need to create file resource so just pass
 		}
 		else if(cloudStore.storeName == 'dropbox') {
 			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
-			dropboxCloudStore.uploadResource(credentials, uploadedFile)
+			
+			log.debug "Checking for updates before upload to dropbox"
+			String updateCursor = cloudStore.updateCursor
+			def currentFileResources = cloudStore.fileResources
+			dropboxCloudStore.updateResources(cloudStore, credentials, updateCursor, currentFileResources)
+			
+			def dropboxUpload = dropboxCloudStore.uploadResource(credentials, uploadedFile)
+			if(dropboxUpload) {
+				newFileName = dropboxUpload.name
+			}
 		}
 		else if(cloudStore.storeName == 'googledrive') {
 			
 		}
 		else {
 			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
+			return
 		}
+		
+		createFileResourceFromUploadedFile(cloudStore, uploadedFile, newFileName)
 	}
 	
-	private void createFileResourceFromUploadedFile(CloudStore cloudStore, def uploadedFile) {
-		String filePath = "/" + uploadedFile.originalFilename
+	private void createFileResourceFromUploadedFile(CloudStore cloudStore, def uploadedFile, String newFileName) {
 		FileResource fileResource = new FileResource()
+		String filePath
+		
+		if(newFileName) {
+			filePath = "/" + newFileName
+			fileResource.fileName = newFileName
+		}
+		else {
+			filePath = "/" + uploadedFile.originalFilename
+			fileResource.fileName = uploadedFile.originalFilename
+		}
 		
 		fileResource.path = filePath
-		fileResource.fileName = uploadedFile.originalFilename
 		fileResource.byteSize = uploadedFile.size
 		fileResource.mimeType = uploadedFile.contentType
 		fileResource.isDir = false
