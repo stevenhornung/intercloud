@@ -141,7 +141,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			}
 			if(!repeatPath) {
 				repeatPath = false
-				if(!fileResource.save()) {
+				if(!fileResource.save(flush:true)) {
 					log.debug "Couldn't save a file resource, repeat path"
 				}
 			}
@@ -225,9 +225,13 @@ class DropboxCloudStore implements CloudStoreInterface {
 		dropboxClient = new DbxClient(requestConfig, access_token)
 	}
 
-	public def uploadResource(def credentials, def uploadedFile) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
+		def credentials = cloudStore.credentials
 		setDropboxApiWithCredentials(credentials)
 		def dropboxUpload = uploadToDropbox(uploadedFile)
+		
+		updateDropboxSpace(cloudStore)
+		
 		return dropboxUpload
 	}
 	
@@ -249,10 +253,24 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}
 	}
 	
-	public def deleteResource(def credentials, FileResource fileResource) {
+	private void updateDropboxSpace(CloudStore cloudStore) {
+		log.debug "Updating dropbox space"
+		
+		DbxAccountInfo accountInfo = getAccountInfo()
+		
+		cloudStore.spaceUsed = accountInfo.quota.normal
+		cloudStore.totalSpace = accountInfo.quota.total
+		
+		cloudStore.save(flush:true)
+	}
+	
+	public def deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
+		def credentials = cloudStore.credentials
 		setDropboxApiWithCredentials(credentials)
 		deleteFromDropbox(fileResource)
+		
+		updateDropboxSpace(cloudStore)
 	}
 	
 	private def deleteFromDropbox(FileResource fileResource) {
@@ -282,7 +300,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private InputStream getZippedDropboxFolderStream(FileResource fileResource) {
 		String downloadedFolderPath = getDownloadedFolderPath(fileResource)
-		String zipFileName = getSourceZipName(fileResource)
+		String zipFileName = ZipUtilities.getSourceZipName("dropbox", fileResource)
 		
 		if(!doesFolderExistInDropbox(fileResource)) {
 			return []
@@ -292,12 +310,12 @@ class DropboxCloudStore implements CloudStoreInterface {
 		downloadFolderToPath(downloadedFolderPath, fileResource)
 		
 		log.debug "Zipping downloaded folder to '{}'", zipFileName
-		ZipUtilities.zipDownloadedFolder(downloadedFolderPath, zipFileName)
+		ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
 		
 		String zipFileLocation = downloadedFolderPath.substring(0, downloadedFolderPath.lastIndexOf('/'))
 		InputStream zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
 		
-		ZipUtilities.removeTempDownloadFolder(zipFileLocation)
+		ZipUtilities.removeTempFromFileSystem(zipFileLocation)
 		
 		return zippedFolderInputStream
 	}
@@ -307,18 +325,6 @@ class DropboxCloudStore implements CloudStoreInterface {
 		String fullPath = ZIP_TEMP_STORAGE_PATH + "/" + uniqueFolderId + "/downloadedFiles"
 		new File(fullPath).mkdirs()
 		return fullPath
-	}
-	
-	private String getSourceZipName(FileResource fileResource) {
-		String sourceZip
-		if(!fileResource.fileName) {
-			sourceZip = "DropboxRoot.zip"
-		}
-		else {
-			sourceZip = fileResource.fileName + ".zip"
-		}
-		
-		return sourceZip
 	}
 	
 	private boolean doesFolderExistInDropbox(FileResource fileResource) {
@@ -360,8 +366,9 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return inputStream
 	}
 	
-	public def updateResources(CloudStore cloudStore, def credentials, String updateCursor, def currentFileResources) {
-		log.debug "Updating dropbox file resources"
+	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {
+		log.debug "Updating dropbox file resources for account '{}'", cloudStore.account.email
+		def credentials = cloudStore.credentials
 		setDropboxApiWithCredentials(credentials)
 		
 		DbxDelta delta = dropboxClient.getDelta(updateCursor)
@@ -369,6 +376,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 			log.debug "Updates to dropbox found. Syncing updates"
 			addNewEntries(cloudStore, delta.entries, currentFileResources)
 		}
+		
+		updateDropboxSpace(cloudStore)
 		
 		return delta.cursor
 	}
@@ -422,7 +431,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
 		}
 		
-		currentFileResource.save()
+		currentFileResource.save(flush:true)
 	}
 	
 	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
@@ -458,6 +467,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			fileResource = setFileResourceProperties(cloudStore, fileResource, entry)
 		}
 		cloudStore.addToFileResources(fileResource)
+		cloudStore.save(flush:true)
 		
 		currentFileResources = setParentAndChildFileResources(fileResource, currentFileResources)
 		return currentFileResources
@@ -492,8 +502,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 			if(currentResource.path == "/") {
 				currentResource.childFileResources.add(fileResource)
 				fileResource.parentFileResource = currentResource
-				currentResource.save(flush: true)
-				fileResource.save(flush: true)
+				currentResource.save(flush:true)
+				fileResource.save(flush:true)
 				parentFound = true
 				break
 			}
@@ -516,8 +526,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 					currentResource.childFileResources.add(fileResource)
 				}
 				fileResource.parentFileResource = currentResource
-				currentResource.save(flush: true)
-				fileResource.save(flush: true)
+				currentResource.save(flush:true)
+				fileResource.save(flush:true)
 				parentFound = true
 				break
 			}
@@ -542,8 +552,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 		parentFileResource.childFileResources = childFileResources
 		fileResource.parentFileResource = parentFileResource
 		
-		parentFileResource.save(flush: true)
-		fileResource.save(flush: true)
+		parentFileResource.save(flush:true)
+		fileResource.save(flush:true)
 		
 		return parentFileResource
 	}

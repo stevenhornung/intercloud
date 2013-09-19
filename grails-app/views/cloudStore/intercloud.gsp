@@ -125,7 +125,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>InterCloud Files</b></h2>
+					<h2><b>InterCloud Files  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
 					<h3><a href="/">Home </a>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />

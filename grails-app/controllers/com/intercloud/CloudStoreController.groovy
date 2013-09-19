@@ -9,16 +9,27 @@ import org.slf4j.LoggerFactory
 class CloudStoreController extends BaseController {
 	
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
-	static String INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
+	
+	def cloudStoreService
 	
 	public def index() {
 		if(getCurrentAccount()) {
 			String storeName = params.storeName
 			if(storeName) {
-				log.debug "Adding cloud store '{}' to account '{}'", storeName, getCurrentAccount()
-				requestClientAccessToCloudStore(storeName)
+				log.debug "Adding cloud store '{}' to account '{}'", storeName, getCurrentAccount().email
+				def cloudStoreLink = cloudStoreService.getCloudStoreLink(storeName)
+				if(cloudStoreLink) {
+					def clientAccessRequestUrl = cloudStoreService.getClientAccessRequestUrl(cloudStoreLink, request)
+					flash.cloudStoreLink = cloudStoreLink
+					redirect(url : clientAccessRequestUrl)
+				}
+				else {
+					log.debug "Bad cloud store specified to link"
+					redirect(controller: 'home', action: 'index')
+				}
 			}
 			else {
+				log.debug "No store name specified to link to"
 				redirect(controller: 'home', action: 'index')
 			}
 		}
@@ -27,91 +38,54 @@ class CloudStoreController extends BaseController {
 			forward(controller: 'base', action: 'respondServerError')
 		}
 	}
-
-    private def requestClientAccessToCloudStore(String cloudStoreToAdd) {
-		def currentCloudStoreLink = getCloudStoreLink(cloudStoreToAdd)
-		if(currentCloudStoreLink) {
-			def clientAccessRequestUrl = currentCloudStoreLink.configure(false, request)
-			flash.currentCloudStoreLink = currentCloudStoreLink
-			
-			redirect(url : clientAccessRequestUrl)
-		}
-		else {
-			// Bad Cloud Store
-			redirect(controller: 'home', action: 'index')
-		}
-	}
-	
-	private def getCloudStoreLink(String cloudStoreName) {
-		def cloudStoreLink = null
-		
-		if(cloudStoreName == 'dropbox') {
-			cloudStoreLink = new DropboxCloudStore()
-		}
-		else if(cloudStoreName == 'googledrive') {
-			cloudStoreLink = new GoogledriveCloudStore()
-		}
-		
-		return cloudStoreLink
-	}
 	
 	def authRedirect = {
 		log.debug "Auth redirect"
-		def currentCloudStoreLink = flash.currentCloudStoreLink
+		Account account = getCurrentAccount()
+		def cloudStoreLink = flash.cloudStoreLink
+		cloudStoreService.authRedirect(account, cloudStoreLink, request)
 		
-		currentCloudStoreLink.configure(true, request)
-		saveCloudStoreInstance(currentCloudStoreLink)
-
 		redirect(controller: 'home', action:'index')
 	}
 	
-	private def saveCloudStoreInstance(def currentCloudStoreLink) {
-		CloudStore cloudStoreInstance = new CloudStore()
-		Account account = getCurrentAccount()
-
-		currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
-
-		if(!cloudStoreInstance.save(flush: true)) {
-			// show message that cloud store link failed, and ask to retry
-			log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
-		}
-	}
-	
 	public def getHomeCloudStoreResources(Account account, String storeName) {
-		def dir = "/"
-		def fileResource = getFileResourceFromPath(account, storeName, dir)
-		return retrieveFilesInDir(fileResource)	
+		def homeCloudStoreResources = cloudStoreService.getHomeCloudStoreResources(account, storeName)
+		return homeCloudStoreResources
 	}
 	
-	private def getFileResourceFromPath(Account account, String storeName, String fileResourcePath) {
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		if(cloudStore) {
-			def fileResources = cloudStore.fileResources
-			return cloudStore.fileResources.find { it.path == fileResourcePath }
-		}
-	}
-	
-	public def getCloudStoreResources() {
+	public def getAllCloudStoreResources() {
 		Account account = getCurrentAccount()
 		def storeName = params.storeName
-		def dir = "/"
-		def fileResource = getFileResourceFromPath(account, storeName, dir)
+		def cloudStoreResources = cloudStoreService.getAllCloudStoreResources(account, storeName)
+		if(cloudStoreResources != null) {
+			def cloudStore = cloudStoreService.getAccountCloudStore(account, storeName)
+			def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
+			def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
 
-		renderFilesInFileResourceFolder(storeName, fileResource)
+			render (view : storeName, model: [fileInstanceList: cloudStoreResources, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
+		}
+		else {
+			render (view : storeName, model: [fileInstanceList: cloudStoreResources])
+		}
 	}
 	
-	public def getSpecificCloudStoreResources() {
+	public def getSpecificCloudStoreResource() {
 		Account account = getCurrentAccount()
 		def storeName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
+		def specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, storeName, fileResourcePath)
 		
-		FileResource fileResource = getFileResourceFromPath(account, storeName, fileResourcePath)
-		if(fileResource) {
-			if(fileResource.isDir) {
-				renderFilesInFileResourceFolder(storeName, fileResource)
+		if(specificCloudStoreResource) {
+			if(specificCloudStoreResource.isDir) {
+				def directoryResources = cloudStoreService.retrieveFilesInDir(specificCloudStoreResource)
+				def cloudStore = cloudStoreService.getAccountCloudStore(account, storeName)
+				def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
+				def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
+				
+				render (view : storeName, model: [fileInstanceList: directoryResources, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
 			}
 			else {
-				retrieveFileResource(storeName, fileResource)
+				renderFileResource(storeName, specificCloudStoreResource)
 			}
 		}
 		else {
@@ -120,18 +94,9 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	private def renderFilesInFileResourceFolder(String storeName, FileResource fileResource) {
-		def cloudStoreFiles = retrieveFilesInDir(fileResource)
-		render (view : storeName, model: [fileInstanceList: cloudStoreFiles])
-	}
-	
-	private def retrieveFilesInDir(FileResource fileResource) {
-		return fileResource?.childFileResources
-	}
-	
-	private def retrieveFileResource(String storeName, FileResource fileResource) {
+	private void renderFileResource(String storeName, FileResource fileResource) {
 		if(fileResource.mimeType in RENDER_TYPES) {
-			def cloudStoreFileStream = getFileResourceStream(storeName, fileResource)
+			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
 			if(cloudStoreFileStream) {
 				renderBytesToScreen(fileResource, cloudStoreFileStream)
 			}
@@ -141,7 +106,7 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else if(fileResource.mimeType in VIDEO_TYPES){
-			def cloudStoreFileStream = getFileResourceStream(storeName, fileResource)
+			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
 			if(cloudStoreFileStream) {
 				displayVideo(fileResource, cloudStoreFileStream, storeName /*wont need storename normally*/)
 			}
@@ -186,84 +151,19 @@ class CloudStoreController extends BaseController {
 		}
 	}
 	
-	public def getFileResourceStream(String storeName, FileResource fileResource) {
-		def resourceDataStream = null
-		if(storeName == 'intercloud') {
-			String locationOnFileSystem = fileResource.locationOnFileSystem
-			resourceDataStream = getStreamFromFileLocation(locationOnFileSystem)
-		}
-		else {
-			CloudStore cloudStore = fileResource.cloudStore
-			resourceDataStream = downloadFileResourceFromCloudStore(cloudStore, fileResource)
-		}
-		
-		return resourceDataStream
-	}
-	
-	private InputStream getStreamFromFileLocation(String locationOnFileSystem) {
-		InputStream inputStream = null
-		try {
-			inputStream = new FileInputStream(locationOnFileSystem)
-		}
-		catch(FileNotFoundException) {
-			log.warn "File not found on file system"
-		}
-		catch(IOException) {
-			log.warn "File could not be read on file system"
-		}
-		
-		return inputStream
-	}
-	
-	private InputStream downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
-		def cloudStoreLink = getCloudStoreLink(cloudStore.storeName)
-		InputStream downloadedFileStream = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
-		return downloadedFileStream
-	}
-	
 	public def deleteResource() {
-		def storeName = params.storeName
-		def fileResource = FileResource.get(params.fileResourceId)
-		
-		CloudStoreUtilities.deleteFromDatabase(fileResource)
-		if(storeName == 'intercloud') {
-			deleteFromLocalFileSystem(fileResource)
-		}
-		else {
-			deleteFromCloudStoreLink(storeName, fileResource)
-		}
-
-		redirect(uri: params.targetUri)
-	}
-	
-	private void deleteFromLocalFileSystem(FileResource fileResource) {
-		File file = new File(fileResource.locationOnFileSystem)
-		file.delete()
-	}
-	
-	private def deleteFromCloudStoreLink(String storeName, FileResource fileResource) {
 		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		def credentials = cloudStore.credentials
+		def storeName = params.storeName
+		String fileResourceId = params.fileResourceId
+		cloudStoreService.deleteResource(account, storeName, fileResourceId)
 		
-		if(storeName == 'dropbox') {
-			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
-			dropboxCloudStore.deleteResource(credentials, fileResource)
-		}
-		else if(storeName == 'googledrive') {
-			GoogledriveCloudStore googledriveCloudStore = new GoogledriveCloudStore()
-			googledriveCloudStore.deleteResource(credentials, fileResource)
-		}
-		else {
-			log.debug "Attempt to delete from unsuppored cloud store"
-		}
+		redirect(uri: params.targetUri)
 	}
 	
 	public def showDownloadDialog() {
 		def storeName = params.storeName
 		if(params.fileResourceId) {
 			FileResource fileResource = FileResource.get(params.fileResourceId)
-		
 			if(fileResource) {
 				showFileResourceDownload(storeName, fileResource)
 			}
@@ -273,17 +173,17 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else {
-			// Download entire root as zip
+			log.debug "Downloading entire cloud store root as zip"
 			Account account = getCurrentAccount()
-			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-			FileResource rootFileResource = cloudStore.fileResources.find {it.path == "/"}
-			
+			String fileResourcePath = '/'
+			FileResource rootFileResource = cloudStoreService.getFileResourceFromPath(account, storeName, fileResourcePath)
+
 			showFileResourceDownload(storeName, rootFileResource)
 		}
 	}
 	
 	private def showFileResourceDownload(String storeName, FileResource fileResource) {
-		InputStream fileResourceStream = getFileResourceStream(storeName, fileResource)
+		InputStream fileResourceStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
 		try{
 			response.contentType = fileResource.mimeType
 			if(fileResource.isDir) {
@@ -302,148 +202,23 @@ class CloudStoreController extends BaseController {
 	}
 	
 	public def updateResources() {
+		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
 		String targetUri = params.targetUri ?: "/home"
-
-		if(cloudStoreName) {
-			log.debug "Manually updating {} file resources", cloudStoreName
-			def cloudStoreLink = getCloudStoreLink(cloudStoreName)
-			if(cloudStoreLink) {
-				updateSingleCloudStore(cloudStoreName, cloudStoreLink)
-			}
-			else {
-				log.debug "Bad cloud store specified when running manual update: {}", cloudStoreName
-			}
-		}
-		else {
-			log.debug "Manually updating all cloud store file resources"
-			CLOUD_STORES.each {
-				if(it != 'intercloud') {
-					def cloudStoreLink = getCloudStoreLink(it)
-					updateSingleCloudStore(it, cloudStoreLink)
-				}
-			}
-		}
 		
+		cloudStoreService.updateResources(account, cloudStoreName)
+
 		redirect uri: targetUri
 	}
 	
-	private def updateSingleCloudStore(String storeName, def cloudStoreLink) {
+	public def uploadResource() {
 		Account account = getCurrentAccount()
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		
-		def credentials = cloudStore.credentials
-		String updateCursor = cloudStore.updateCursor
-		def currentFileResources = cloudStore.fileResources
-		
-		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, credentials, updateCursor, currentFileResources)
-		cloudStore.updateCursor = newUpdateCursor
-		cloudStore.save()
-	}
-	
-	public def uploadResources() {
 		String cloudStoreName = params.storeName
 		log.debug "Uploading file to {}", cloudStoreName
 		
 		def uploadedFile = request.getFile('file')
-		uploadFileToCloudStore(cloudStoreName, uploadedFile)
+		cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile)
 
 		response.sendError(200)
-	}
-	
-	private void uploadFileToCloudStore(String cloudStoreName, def uploadedFile) {
-		Account account = getCurrentAccount()
-		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
-		def credentials = cloudStore.credentials
-		String newFileName = null
-		
-		if(cloudStore.storeName == 'intercloud') {
-			// only need to create file resource so just pass
-		}
-		else if(cloudStore.storeName == 'dropbox') {
-			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
-			
-			log.debug "Checking for updates before upload to dropbox"
-			String updateCursor = cloudStore.updateCursor
-			def currentFileResources = cloudStore.fileResources
-			dropboxCloudStore.updateResources(cloudStore, credentials, updateCursor, currentFileResources)
-			
-			def dropboxUpload = dropboxCloudStore.uploadResource(credentials, uploadedFile)
-			if(dropboxUpload) {
-				newFileName = dropboxUpload.name
-			}
-		}
-		else if(cloudStore.storeName == 'googledrive') {
-			
-		}
-		else {
-			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
-			return
-		}
-		
-		createFileResourceFromUploadedFile(cloudStore, uploadedFile, newFileName)
-	}
-	
-	private void createFileResourceFromUploadedFile(CloudStore cloudStore, def uploadedFile, String newFileName) {
-		FileResource fileResource = new FileResource()
-		String filePath
-		
-		if(newFileName) {
-			filePath = "/" + newFileName
-			fileResource.fileName = newFileName
-		}
-		else {
-			filePath = "/" + uploadedFile.originalFilename
-			fileResource.fileName = uploadedFile.originalFilename
-		}
-		
-		fileResource.path = filePath
-		fileResource.byteSize = uploadedFile.size
-		fileResource.mimeType = uploadedFile.contentType
-		fileResource.isDir = false
-		fileResource.cloudStore = cloudStore
-		
-		FileResource parentFileResource = FileResource.findByCloudStoreAndPath(cloudStore, '/')
-		fileResource.parentFileResource = parentFileResource
-		
-		if(cloudStore.storeName == 'intercloud') {
-			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
-			String accountEmail = getCurrentAccount().email
-			String dirLocationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail
-			new File(dirLocationOnFileSystem).mkdirs()
-			String locationOnFileSystem = dirLocationOnFileSystem + '/' + uploadedFile.originalFilename
-			fileResource.locationOnFileSystem = locationOnFileSystem
-			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
-		}
-		
-		fileResource.save()
-	}
-	
-	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {
-		byte[] buffer = new byte[1024]
-		int read = 0
-		InputStream inputStream = null
-		OutputStream outputStream = null
-		try {
-			inputStream = newFile.getInputStream()
-			outputStream = new FileOutputStream(new File(pathToSaveFile))
-			
-			while((read = inputStream.read(buffer)) != -1) {
-				outputStream.write(buffer, 0, read)
-			}
-			
-			log.debug "Wrote file '{}' to local file system", pathToSaveFile
-		}
-		catch(IOException) {
-			log.warn "Could not save file to local file system. Exception: {}", IOException
-		}
-		finally {
-			if(inputStream != null) {
-				inputStream.close()
-			}
-			if(outputStream != null) {
-				outputStream.close()
-			}
-		}
 	}
 }

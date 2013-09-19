@@ -91,7 +91,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Google Drive Files | <a href="/update?storeName=googledrive">Sync</a></b></h2>
+					<h2><b>Google Drive Files | <a href="/update?storeName=googledrive">Sync</a>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
 					<div id="accordion">
 						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
 							<tr>

@@ -33,7 +33,7 @@ class SyncFileResourcesJob {
 					runGoogledriveUpdater(cloudStore)
 				}
 				else {
-					// non supported store name yet
+					// intercloud cloud store, no sync needed
 				}
 			}
 		}
@@ -46,7 +46,7 @@ class SyncFileResourcesJob {
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
 		
-		String newUpdateCursor = new DropboxCloudStore().updateResources(credentials, updateCursor, currentFileResources)
+		String newUpdateCursor = new DropboxCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
 		cloudStore.updateCursor = newUpdateCursor
 		cloudStore.save()
 	}

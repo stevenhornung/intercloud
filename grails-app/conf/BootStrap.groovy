@@ -36,9 +36,6 @@ class BootStrap {
 		createRootIntercloudFileResource(shaderAdmin)
     }
 	
-    def destroy = {
-    }
-	
 	private def createIntercloudCloudStore(Account newAccount) {
 		CloudStore cloudStoreInstance = new CloudStore()
 		
@@ -60,8 +57,13 @@ class BootStrap {
 		
 		rootIntercloudFileResource.cloudStore = cloudStore
 		rootIntercloudFileResource.path = '/'
+		
+		String locationOnFileSystem = "storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+		new File(locationOnFileSystem).mkdirs()
+		rootIntercloudFileResource.locationOnFileSystem = locationOnFileSystem
+		
 		rootIntercloudFileResource.isDir = true
-		rootIntercloudFileResource.fileName = ''
+		rootIntercloudFileResource.fileName = 'InterCloudRoot'
 		rootIntercloudFileResource.save()
 		
 		def fileResources = []
@@ -69,4 +71,7 @@ class BootStrap {
 		cloudStore.fileResources = fileResources
 		cloudStore.save()
 	}
+	
+	def destroy = {}
+	
 }

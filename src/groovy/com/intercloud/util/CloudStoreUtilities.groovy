@@ -10,11 +10,11 @@ class CloudStoreUtilities {
 	public static void deleteFromDatabase(FileResource fileResource) {
 		// Delete parent file resource relationship if parent not already deleted
 		fileResource.parentFileResource?.removeFromChildFileResources(fileResource)
-		fileResource.parentFileResource?.save()
+		fileResource.parentFileResource?.save(flush:true)
 		
 		// Delete cloud store relationship
 		fileResource.cloudStore?.removeFromFileResources(fileResource)
-		fileResource.cloudStore?.save()
+		fileResource.cloudStore?.save(flush:true)
 		
 		// Delete any children relationships
 		fileResource.childFileResources.each { def childFileResource ->

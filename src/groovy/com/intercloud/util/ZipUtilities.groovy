@@ -7,11 +7,34 @@ import java.util.zip.ZipOutputStream
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import com.google.api.services.drive.Drive.Files;
+import com.intercloud.FileResource;
+
 class ZipUtilities {
 	
 	private static Logger log = LoggerFactory.getLogger(ZipUtilities.class)
 	
-	public static void zipDownloadedFolder(String directory, String zipFileName) {
+	public static String getSourceZipName(String storeName, FileResource fileResource) {
+		String sourceZip
+		if(!fileResource.fileName) {
+			if(storeName == 'intercloud') {
+				sourceZip = 'InterCloudRoot.zip'
+			}
+			else if(storeName == 'dropbox') {
+				sourceZip = "DropboxRoot.zip"
+			}
+			else {
+				// other cloud stores
+			}
+		}
+		else {
+			sourceZip = fileResource.fileName + ".zip"
+		}
+		
+		return sourceZip
+	}
+	
+	public static void zipFolder(String directory, String zipFileName) {
 		try {
 			String zipPath = directory.substring(0, directory.lastIndexOf('/'))
 			String fullZipPath = zipPath + "/" + zipFileName
@@ -77,9 +100,16 @@ class ZipUtilities {
 		}
 	}
 	
-	public static void removeTempDownloadFolder(String path) {
-		File tempDir = new File(path)
-		boolean ret = tempDir.deleteDir()
+	public static void removeTempFromFileSystem(String path) {
+		boolean ret = false
+		File fileToDelete = new File(path)
+		
+		if(fileToDelete.isDirectory()) {
+			ret = fileToDelete.deleteDir()
+		}
+		else {
+			ret = fileToDelete.delete()
+		}
 		
 		if(!ret) {
 			log.warn "Could not delete temporary download folder: {}", path
@@ -90,5 +120,15 @@ class ZipUtilities {
 		String fullPathToZip = path + "/" + zipFileName
 		InputStream inputStream = new FileInputStream(fullPathToZip)
 		return inputStream
+	}
+	
+	public static void removeZippedFolder(String locationOnFileSystem, String zipFileName) {
+		log.debug "Deleting zipped file from file system '{}'", zipFileName
+		String path = locationOnFileSystem + '/' + zipFileName
+		File zippedFolder = new File(path)
+		boolean ret = zippedFolder.delete()
+		if(!ret) {
+			log.warn "Could not delete downloaded zip file from file system: {}", path
+		}
 	}
 }

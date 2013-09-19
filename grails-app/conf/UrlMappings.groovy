@@ -48,7 +48,7 @@ class UrlMappings {
 		
 		"/intercloud" {
 			controller = 'cloudStore'
-			action = [GET: "getCloudStoreResources",
+			action = [GET: "getAllCloudStoreResources",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -57,7 +57,7 @@ class UrlMappings {
 		
 		"/intercloud/$fileResourcePath**" {
 			controller = 'cloudStore'
-			action = [GET: "getSpecificCloudStoreResources",
+			action = [GET: "getSpecificCloudStoreResource",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -66,7 +66,7 @@ class UrlMappings {
 		
 		"/dropbox" {
 			controller = 'cloudStore'
-			action = [GET: "getCloudStoreResources",
+			action = [GET: "getAllCloudStoreResources",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -75,7 +75,7 @@ class UrlMappings {
 		
 		"/dropbox/$fileResourcePath**" {
 			controller = 'cloudStore'
-			action = [GET: "getSpecificCloudStoreResources",
+			action = [GET: "getSpecificCloudStoreResource",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
@@ -125,7 +125,7 @@ class UrlMappings {
 		"/upload" {
 			controller = "cloudStore"
 			action = [GET: 'respondInvalidAction',
-						POST: 'uploadResources',
+						POST: 'uploadResource',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}

@@ -23,7 +23,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return null;
 	}
 
-	public def uploadResource(def credentials, def uploadedFile) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
 		// TODO Auto-generated method stub
 		return null;
 	}
@@ -33,11 +33,11 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return null;
 	}
 	
-	public def deleteResource(def credentials, FileResource fileResource) {
+	public def deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		
 	}
 	
-	public def updateResources(CloudStore cloudStore, def credentials, String updateCursor, def currentFileResources) {
+	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {
 		// TODO Auto-generated method stub
 		return null;
 	}

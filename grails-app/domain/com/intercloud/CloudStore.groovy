@@ -5,8 +5,8 @@ class CloudStore {
 	String storeName
 	Map credentials = new HashMap()
 	String userId
-	String spaceUsed
-	String totalSpace
+	BigDecimal spaceUsed
+	BigDecimal totalSpace
 	String updateCursor
 	
 	static belongsTo = [account: Account]
