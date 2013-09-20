@@ -1,4 +1,4 @@
-package intercloud
+package com.intercloud
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -12,7 +12,7 @@ class SyncFileResourcesJob {
 	private static Logger log = LoggerFactory.getLogger(SyncFileResourcesJob.class)
 	
     static triggers = {
-      simple name: 'syncFileResources', startDelay: 300000, repeatInterval: 300000 // execute job after 5 min, every 5 min
+      simple name: 'syncFileResources', startDelay: 180000, repeatInterval: 180000 // execute job after 3 min, every 3 min
     }
 
     def execute() {

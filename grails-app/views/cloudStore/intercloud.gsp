@@ -103,6 +103,14 @@
 		    });
 		  });
 		</script>
+		
+		<script>
+			Dropzone.options.dropzone = {
+				parallelUploads: 1,
+				maxFilesize: 3072 // 3 gb
+					}
+		</script>
+		
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
@@ -110,7 +118,7 @@
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=intercloud">Download Entire InterCloud</a></p>
-					<form action="/upload?storeName=intercloud" class="dropzone">
+					<form id="dropzone" action="/upload?storeName=intercloud" class="dropzone">
 					  <div class="fallback">
 					    <input name="file" type="file" multiple />
 					  </div>

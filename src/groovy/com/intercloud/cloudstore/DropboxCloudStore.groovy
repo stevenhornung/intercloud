@@ -261,7 +261,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStore.spaceUsed = accountInfo.quota.normal
 		cloudStore.totalSpace = accountInfo.quota.total
 		
-		cloudStore.save(flush:true)
+		cloudStore.save()
 	}
 	
 	public def deleteResource(CloudStore cloudStore, FileResource fileResource) {
@@ -431,7 +431,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
 		}
 		
-		currentFileResource.save(flush:true)
+		currentFileResource.save()
 	}
 	
 	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
@@ -467,7 +467,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			fileResource = setFileResourceProperties(cloudStore, fileResource, entry)
 		}
 		cloudStore.addToFileResources(fileResource)
-		cloudStore.save(flush:true)
+		cloudStore.save()
 		
 		currentFileResources = setParentAndChildFileResources(fileResource, currentFileResources)
 		return currentFileResources
@@ -502,8 +502,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 			if(currentResource.path == "/") {
 				currentResource.childFileResources.add(fileResource)
 				fileResource.parentFileResource = currentResource
-				currentResource.save(flush:true)
-				fileResource.save(flush:true)
+				currentResource.save()
+				fileResource.save()
 				parentFound = true
 				break
 			}
@@ -526,8 +526,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 					currentResource.childFileResources.add(fileResource)
 				}
 				fileResource.parentFileResource = currentResource
-				currentResource.save(flush:true)
-				fileResource.save(flush:true)
+				currentResource.save()
+				fileResource.save()
 				parentFound = true
 				break
 			}
@@ -552,8 +552,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 		parentFileResource.childFileResources = childFileResources
 		fileResource.parentFileResource = parentFileResource
 		
-		parentFileResource.save(flush:true)
-		fileResource.save(flush:true)
+		parentFileResource.save()
+		fileResource.save()
 		
 		return parentFileResource
 	}

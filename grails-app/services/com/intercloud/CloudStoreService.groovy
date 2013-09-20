@@ -225,7 +225,7 @@ class CloudStoreService {
 		
 		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
 		cloudStore.updateCursor = newUpdateCursor
-		cloudStore.save(flush:true)
+		cloudStore.save()
 	}
 	
 	public void uploadResource(Account account, String cloudStoreName, def uploadedFile) {
@@ -241,7 +241,9 @@ class CloudStoreService {
 			log.debug "Checking for updates before upload to dropbox"
 			String updateCursor = cloudStore.updateCursor
 			def currentFileResources = cloudStore.fileResources
-			dropboxCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
+			def newUpdateCursor = dropboxCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
+			cloudStore.updateCursor = newUpdateCursor
+			cloudStore.save()
 			
 			def dropboxUpload = dropboxCloudStore.uploadResource(cloudStore, uploadedFile)
 			if(dropboxUpload) {
@@ -257,6 +259,12 @@ class CloudStoreService {
 		}
 		
 		createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, newFileName)
+		
+		if(cloudStore.storeName == 'intercloud') {
+			log.debug "Updating intercloud space"
+			cloudStore.spaceUsed += uploadedFile.getSize()
+			cloudStore.save() 
+		}
 	}
 	
 	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, String newFileName) {
@@ -277,6 +285,7 @@ class CloudStoreService {
 		fileResource.mimeType = uploadedFile.contentType
 		fileResource.isDir = false
 		fileResource.cloudStore = cloudStore
+		fileResource.modified = new Date()
 		
 		FileResource parentFileResource = FileResource.findByCloudStoreAndPath(cloudStore, '/')
 		fileResource.parentFileResource = parentFileResource
@@ -290,12 +299,7 @@ class CloudStoreService {
 			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
 		}
 		
-		fileResource.save(flush:true)
-		
-		parentFileResource.addToChildFileResources(fileResource)
-		parentFileResource.save(flush:true)
-		cloudStore.addToFileResources(fileResource)
-		cloudStore.save(flush:true)
+		fileResource.save()
 	}
 	
 	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {

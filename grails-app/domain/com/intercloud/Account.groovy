@@ -8,8 +8,6 @@ class Account {
 	String fullName
 	String password
 	String type='trial'
-	BigDecimal spaceUsed=0
-	BigDecimal totalSpace=5368709120 // 5gb
 	boolean enabled=true
 	boolean accountExpired
 	boolean accountLocked
