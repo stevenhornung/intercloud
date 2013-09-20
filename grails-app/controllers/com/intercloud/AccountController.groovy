@@ -92,8 +92,6 @@ class AccountController extends BaseController {
 		cloudStoreInstance.account = newAccount
 		cloudStoreInstance.storeName = 'intercloud'
 		cloudStoreInstance.userId = newAccount.email
-		cloudStoreInstance.spaceUsed = newAccount.spaceUsed
-		cloudStoreInstance.totalSpace = newAccount.totalSpace
 		
 		cloudStoreInstance.save(flush: true)
 		
