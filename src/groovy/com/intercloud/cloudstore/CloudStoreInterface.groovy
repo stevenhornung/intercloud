@@ -7,9 +7,9 @@ import javax.servlet.http.HttpServletRequest
 
 interface CloudStoreInterface {
 	public def configure(boolean isAuthRedirect, HttpServletRequest request)
-	public def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account)
+	public void setCloudStoreProperties(CloudStore cloudStoreInstance, Account account)
 	public def uploadResource(CloudStore cloudStore, def uploadedFile)
-	public def downloadResource(def credentials, FileResource fileResource)
-	public def deleteResource(CloudStore cloudStore, FileResource fileResource)
+	public InputStream downloadResource(def credentials, FileResource fileResource)
+	public void deleteResource(CloudStore cloudStore, FileResource fileResource)
 	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources)
 }

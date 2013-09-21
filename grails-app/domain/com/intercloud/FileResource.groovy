@@ -9,6 +9,7 @@ class FileResource {
 	String mimeType
 	boolean isDir
 	String modified
+	String extraMetadata
 	
 	static hasMany = [childFileResources: FileResource]
 	static belongsTo = [cloudStore: CloudStore, parentFileResource: FileResource]
@@ -21,6 +22,8 @@ class FileResource {
 		childFileResources nullable: true
 		parentFileResource nullable: true
 		cloudStore nullable:true
+		path nullable:true
+		extraMetadata nullable:true
     }
 	
 	static mapping = {

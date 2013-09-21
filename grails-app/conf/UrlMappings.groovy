@@ -82,6 +82,24 @@ class UrlMappings {
 			storeName = 'dropbox'
 		}
 		
+		"/googledrive" {
+			controller = 'cloudStore'
+			action = [GET: "getAllCloudStoreResources",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			storeName = 'googledrive'
+		}
+		
+		"/googledrive/$fileResourcePath**" {
+			controller = 'cloudStore'
+			action = [GET: "getSpecificCloudStoreResource",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			storeName = 'googledrive'
+		}
+		
 		"/delete" {
 			controller = 'cloudStore'
 			action = [GET: 'deleteResource',

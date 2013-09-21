@@ -82,29 +82,28 @@ class DropboxCloudStore implements CloudStoreInterface {
 		DbxAuthFinish authFinish
 		try {
 			authFinish = auth.finish(request.parameterMap)
+			setAccessTokenForConfigure(authFinish)
 		}
 		catch(Exception) {
 			log.warn "Dropbox authorization failed: {}", Exception
 		} 
-		
-		setAccessTokenForConfigure(authFinish)
 	}
 
 	private def setAccessTokenForConfigure(def authFinish) {
 		access_token = authFinish?.accessToken
 	}
 	
-	public def setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
+	public void setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
 		setCloudStoreInfo(cloudStoreInstance)
 		setCloudStoreFileResources(cloudStoreInstance)
 		setCloudStoreAccount(cloudStoreInstance, account)
 	}
 	
-	private def setCloudStoreInfo(CloudStore cloudStoreInstance) {
+	private void setCloudStoreInfo(CloudStore cloudStoreInstance) {
 		DbxAccountInfo accountInfo = getAccountInfo()
 		
 		cloudStoreInstance.storeName = STORE_NAME
-		cloudStoreInstance.credentials.put('ACCESS_TOKEN', access_token)
+		cloudStoreInstance.credentials << ['ACCESS_TOKEN': access_token]
 		cloudStoreInstance.userId = accountInfo.userId
 		cloudStoreInstance.spaceUsed = accountInfo.quota.normal
 		cloudStoreInstance.totalSpace = accountInfo.quota.total
@@ -131,21 +130,6 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources(cloudStoreInstance)
-		boolean repeatPath = false
-		for(FileResource fileResource : fileResources) {
-			for(FileResource checkPathResource : fileResources) {
-				if(checkPathResource.path == fileResource.path) {
-					repeatPath = true
-					break
-				}
-			}
-			if(!repeatPath) {
-				repeatPath = false
-				if(!fileResource.save(flush:true)) {
-					log.debug "Couldn't save a file resource, repeat path"
-				}
-			}
-		}
 		cloudStoreInstance.fileResources = fileResources
 	}
 	
@@ -159,23 +143,19 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private def getFilesInDir(def dropboxFolder, FileResource parentFileResource, CloudStore cloudStoreInstance) {
 		def dirResources = []
-		def dirFileResourceChildren = []
 		for (DbxEntry entry : dropboxFolder.children) {
 			if(entry.isFolder()) {
 				FileResource dirFileResource = dropboxFolderToFileResource(entry, cloudStoreInstance)
 				dirFileResource.parentFileResource = parentFileResource
-				dirFileResourceChildren.add(dirFileResource)
 				def nestedDropboxFolder = dropboxClient.getMetadataWithChildren(entry.path)
 				dirResources.addAll(getFilesInDir(nestedDropboxFolder, dirFileResource, cloudStoreInstance))
 			}
 			else {
 				FileResource fileResource = dropboxFileToFileResource(entry, cloudStoreInstance)
 				fileResource.parentFileResource = parentFileResource
-				dirFileResourceChildren.add(fileResource)
 				dirResources.add(fileResource)
 			}
 		}
-		parentFileResource.childFileResources = dirFileResourceChildren
 		dirResources.add(parentFileResource)
 		return dirResources
 	}
@@ -264,7 +244,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStore.save()
 	}
 	
-	public def deleteResource(CloudStore cloudStore, FileResource fileResource) {
+	public void deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
 		def credentials = cloudStore.credentials
 		setDropboxApiWithCredentials(credentials)
@@ -282,7 +262,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}
 	}
 
-	public def downloadResource(def credentials, FileResource fileResource) {
+	public InputStream downloadResource(def credentials, FileResource fileResource) {
 		setDropboxApiWithCredentials(credentials)
 		
 		def downloadedStream = null

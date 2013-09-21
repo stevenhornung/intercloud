@@ -37,11 +37,11 @@ class CloudStoreService {
 		saveCloudStoreInstance(account, cloudStoreLink)
 	}
 	
-	private def saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
+	private void saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
 		CloudStore cloudStoreInstance = new CloudStore()
 		currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
 
-		if(!cloudStoreInstance.save(flush:true)) {
+		if(!cloudStoreInstance.save()) {
 			// show message that cloud store link failed, and ask to retry
 			log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
 		}
@@ -168,6 +168,10 @@ class CloudStoreService {
 		CloudStoreUtilities.deleteFromDatabase(fileResource)
 		if(storeName == 'intercloud') {
 			deleteFromLocalFileSystem(fileResource)
+			
+			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+			BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
+			updateIntercloudSpace(cloudStore, spaceToDelete)
 		}
 		else {
 			deleteFromCloudStoreLink(account, storeName, fileResource)
@@ -251,7 +255,19 @@ class CloudStoreService {
 			}
 		}
 		else if(cloudStore.storeName == 'googledrive') {
+			GoogledriveCloudStore googledriveCloudStore = new GoogledriveCloudStore()
 			
+			log.debug "Checking for updates before upload to google drive"
+			String updateCursor = cloudStore.updateCursor
+			def currentFileResources = cloudStore.fileResources
+			def newUpdateCursor = googledriveCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
+			cloudStore.updateCursor = newUpdateCursor
+			cloudStore.save()
+			
+			def googledriveUpload = googledriveCloudStore.uploadResource(cloudStore, uploadedFile)
+			if(googledriveUpload) {
+				newFileName = googledriveUpload.name
+			}
 		}
 		else {
 			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
@@ -259,11 +275,9 @@ class CloudStoreService {
 		}
 		
 		createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, newFileName)
-		
 		if(cloudStore.storeName == 'intercloud') {
-			log.debug "Updating intercloud space"
-			cloudStore.spaceUsed += uploadedFile.getSize()
-			cloudStore.save() 
+			BigInteger spaceToAdd = uploadedFile.getSize()
+			updateIntercloudSpace(cloudStore, spaceToAdd)
 		}
 	}
 	
@@ -328,5 +342,11 @@ class CloudStoreService {
 				outputStream.close()
 			}
 		}
+	}
+	
+	private void updateIntercloudSpace(CloudStore cloudStore, BigInteger spaceToChange) {
+		log.debug "Updating intercloud space"
+		cloudStore.spaceUsed += spaceToChange
+		cloudStore.save()
 	}
 }
