@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory
 import com.intercloud.Account
 import com.intercloud.CloudStore
 import com.intercloud.cloudstore.DropboxCloudStore
+import com.intercloud.cloudstore.GoogledriveCloudStore
 
 class SyncFileResourcesJob {
 	
@@ -27,10 +28,10 @@ class SyncFileResourcesJob {
 			def accountCloudStores = account.cloudStores
 			for(CloudStore cloudStore : accountCloudStores) {
 				if(cloudStore.storeName == 'dropbox') {
-					runDropboxUpdater(cloudStore)
+					runDropboxUpdater(cloudStore, account)
 				}
 				else if(cloudStore.storeName == 'googledrive') {
-					runGoogledriveUpdater(cloudStore)
+					runGoogledriveUpdater(cloudStore, account)
 				}
 				else {
 					// intercloud cloud store, no sync needed
@@ -39,19 +40,37 @@ class SyncFileResourcesJob {
 		}
 	}
 	
-	private void runDropboxUpdater(CloudStore cloudStore) {
-		log.debug "Running auto dropbox updater for user '{}'", cloudStore.account.email
+	private void runDropboxUpdater(CloudStore cloudStore, Account account) {
+		log.debug "Running auto dropbox updater for user '{}'", account.email
 		
 		def credentials = cloudStore.credentials
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
 		
 		String newUpdateCursor = new DropboxCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
-		cloudStore.updateCursor = newUpdateCursor
-		cloudStore.save()
+		
+		// Get clean cloud store and save properties in case of stale properties
+		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == 'dropbox' }
+		cleanCloudStore.properties = cloudStore.properties
+		
+		cleanCloudStore.updateCursor = newUpdateCursor
+		cleanCloudStore.save(flush:true)
 	}
 	
-	private void runGoogledriveUpdater(CloudStore cloudStore) {
+	private void runGoogledriveUpdater(CloudStore cloudStore, Account account) {
+		log.debug "Running auto google drive updater for user '{}'", account.email
+		
 		def credentials = cloudStore.credentials
+		String updateCursor = cloudStore.updateCursor
+		def currentFileResources = cloudStore.fileResources
+		
+		String newUpdateCursor = new GoogledriveCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
+		
+		// Get clean cloud store and save properties in case of stale properties
+		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == 'googledrive' }
+		cleanCloudStore.properties = cloudStore.properties
+		
+		cleanCloudStore.updateCursor = newUpdateCursor
+		cleanCloudStore.save(flush:true)
 	}
 }

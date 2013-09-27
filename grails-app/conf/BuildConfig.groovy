@@ -28,8 +28,11 @@ grails.project.dependency.resolution = {
     }
 
     dependencies {
-		build 'com.dropbox.core:dropbox-core-sdk:[1.7,1.8)'
-		build 'com.google.apis:google-api-services-drive:v2-rev65-1.13.2-beta'
+		compile 'com.dropbox.core:dropbox-core-sdk:[1.7,1.8)'
+		compile 'com.google.apis:google-api-services-drive:v2-rev100-1.17.0-rc'
+		compile 'com.google.api-client:google-api-client-servlet:1.17.0-rc'
+		
+		compile 'org.apache.tika:tika-core:0.7'
 		
 		build 'org.slf4j:slf4j-api:1.7.5'
 		

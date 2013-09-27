@@ -41,7 +41,7 @@ class CloudStoreService {
 		CloudStore cloudStoreInstance = new CloudStore()
 		currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
 
-		if(!cloudStoreInstance.save()) {
+		if(!cloudStoreInstance.save(flush:true)) {
 			// show message that cloud store link failed, and ask to retry
 			log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
 		}
@@ -56,7 +56,6 @@ class CloudStoreService {
 	private def getFileResourceFromPath(Account account, String storeName, String fileResourcePath) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		if(cloudStore) {
-			def fileResources = cloudStore.fileResources
 			return cloudStore.fileResources.find { it.path == fileResourcePath }
 		}
 	}
@@ -176,6 +175,7 @@ class CloudStoreService {
 		else {
 			deleteFromCloudStoreLink(account, storeName, fileResource)
 		}
+		
 	}
 	
 	private void deleteFromLocalFileSystem(FileResource fileResource) {
@@ -197,6 +197,13 @@ class CloudStoreService {
 		else {
 			log.debug "Attempt to delete from unsuppored cloud store"
 		}
+		
+		// Get clean cloud store and save properties in case of stale properties
+		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == storeName }
+		//cleanCloudStore.properties = cloudStore.properties
+
+		cleanCloudStore.save(flush:true)
+		cloudStore.save(flush:true)
 	}
 	
 	public void updateResources(Account account, String cloudStoreName) {
@@ -228,41 +235,43 @@ class CloudStoreService {
 		def currentFileResources = cloudStore.fileResources
 		
 		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
-		cloudStore.updateCursor = newUpdateCursor
-		cloudStore.save()
+		
+		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == storeName }
+		//cleanCloudStore.properties = cloudStore.properties
+		
+		cleanCloudStore.updateCursor = newUpdateCursor
+		cleanCloudStore.save(flush:true)
 	}
 	
 	public void uploadResource(Account account, String cloudStoreName, def uploadedFile) {
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
 		String newFileName = null
+		def newUpdateCursor
 		
-		if(cloudStore.storeName == 'intercloud') {
+		if(cloudStoreName == 'intercloud') {
 			// only need to create file resource so just pass
 		}
-		else if(cloudStore.storeName == 'dropbox') {
+		else if(cloudStoreName == 'dropbox') {
 			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
 			
 			log.debug "Checking for updates before upload to dropbox"
 			String updateCursor = cloudStore.updateCursor
 			def currentFileResources = cloudStore.fileResources
-			def newUpdateCursor = dropboxCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
-			cloudStore.updateCursor = newUpdateCursor
-			cloudStore.save()
+			newUpdateCursor = dropboxCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
 			
 			def dropboxUpload = dropboxCloudStore.uploadResource(cloudStore, uploadedFile)
 			if(dropboxUpload) {
 				newFileName = dropboxUpload.name
 			}
 		}
-		else if(cloudStore.storeName == 'googledrive') {
+		else if(cloudStoreName == 'googledrive') {
 			GoogledriveCloudStore googledriveCloudStore = new GoogledriveCloudStore()
 			
 			log.debug "Checking for updates before upload to google drive"
 			String updateCursor = cloudStore.updateCursor
 			def currentFileResources = cloudStore.fileResources
-			def newUpdateCursor = googledriveCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
+			newUpdateCursor = googledriveCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
 			cloudStore.updateCursor = newUpdateCursor
-			cloudStore.save()
 			
 			def googledriveUpload = googledriveCloudStore.uploadResource(cloudStore, uploadedFile)
 			if(googledriveUpload) {
@@ -279,6 +288,13 @@ class CloudStoreService {
 			BigInteger spaceToAdd = uploadedFile.getSize()
 			updateIntercloudSpace(cloudStore, spaceToAdd)
 		}
+		
+		// Get clean cloud store and save properties in case of stale properties
+		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == cloudStoreName }
+		//cleanCloudStore.properties = cloudStore.properties
+		
+		cleanCloudStore.updateCursor = newUpdateCursor
+		cleanCloudStore.save(flush:true)
 	}
 	
 	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, String newFileName) {
@@ -347,6 +363,6 @@ class CloudStoreService {
 	private void updateIntercloudSpace(CloudStore cloudStore, BigInteger spaceToChange) {
 		log.debug "Updating intercloud space"
 		cloudStore.spaceUsed += spaceToChange
-		cloudStore.save()
+		cloudStore.save(flush:true)
 	}
 }

@@ -13,24 +13,28 @@ import com.google.api.client.json.jackson2.JacksonFactory
 import com.google.api.services.drive.Drive
 import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.About
-import com.intercloud.Account
-import com.intercloud.CloudStore
-import com.intercloud.FileResource
+import com.google.api.services.drive.model.ChangeList
+import com.google.api.services.drive.model.FileList
 
 import javax.servlet.http.HttpServletRequest
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import com.intercloud.Account
+import com.intercloud.CloudStore
+import com.intercloud.FileResource
+import com.intercloud.util.ZipUtilities
+import com.intercloud.util.CloudStoreUtilities
+
 class GoogledriveCloudStore implements CloudStoreInterface{
 	
 	private static Logger log = LoggerFactory.getLogger(GoogledriveCloudStore.class)
 	
-	String STORE_NAME = 'googledrive'
-	String CLIENT_ID = "887098665005.apps.googleusercontent.com"
-	String CLIENT_SECRET = "OZQKsV0dGM04h-FtNt-VpGIF"
-	String REDIRECT_URL = "http://localhost:8080/auth_redirect"
-	String ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
+	static String STORE_NAME
+	static String CLIENT_ID
+	static String CLIENT_SECRET
+	static String REDIRECT_URL
 	
 	private GoogleAuthorizationCodeFlow flow
 	private Drive driveService
@@ -113,15 +117,16 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	
 	private def getAllGoogledriveResources(CloudStore cloudStoreInstance) {
 		def fileResources = []
-		Map driveFileIds = [:]
+		def driveFileIds = []
 		
 		FileResource rootFileResource = createRootResource(cloudStoreInstance)
 		fileResources.add(rootFileResource)
-		driveFileIds << ["root":rootFileResource.id]
+		driveFileIds.add(['driveFileId': 'root', 'fileResourceId' :rootFileResource.id])
 		
-		def googleDriveResources = driveService.files().list().execute().getItems()
+		String queryString = "trashed=false"
+		def googleDriveResources = getGoogledriveResources(queryString)
 		for(googleDriveResource in googleDriveResources) {
-			if(googleDriveResource.shared || googleDriveResource.labels.trashed) {
+			if(googleDriveResource.shared) {
 				continue
 			}
 			if(googleDriveResource.mimeType == 'application/vnd.google-apps.folder') {
@@ -153,6 +158,32 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return fileResource
 	}
 	
+	private def getGoogledriveResources(def queryString) {
+		def googledriveResources = []
+		def googledriveRequest = driveService.files().list()
+		googledriveRequest.setQ(queryString)
+		
+		getPageOfFiles(googledriveResources, googledriveRequest)
+		
+		while(googledriveRequest.getPageToken() != null && googledriveRequest.getPageToken().length() > 0) {
+			getPageOfFiles(googledriveResources, googledriveRequest)
+		}
+		
+		return googledriveResources
+	}
+	
+	private void getPageOfFiles(def googledriveResources, def googledriveRequest) {
+		try {
+			FileList fileList = googledriveRequest.execute()
+			
+			googledriveResources.addAll(fileList.getItems())
+			googledriveRequest.setPageToken(fileList.getNextPageToken())
+		} catch (IOException e) {
+			log.warn "An error occured when getting changes for google drive, Exception: {}", e
+			googledriveRequest.setPageToken(null);
+		}
+	}
+	
 	private FileResource createFolderFileResource(CloudStore cloudStoreInstance, def googleDriveResource, def driveFileIds, def fileResources) {
 		FileResource fileResource = new FileResource()
 
@@ -171,7 +202,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.save()
 
 		String driveFileId = googleDriveResource.id.toString()
-		driveFileIds << [(driveFileId):fileResource.id]
+		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
 		
 		return fileResource
 	}
@@ -195,7 +226,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.save()
 		
 		String driveFileId = googleDriveResource.id.toString()
-		driveFileIds << [(driveFileId):fileResource.id]
+		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
 		
 		return fileResource
 	}
@@ -208,9 +239,9 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 				continue
 			}
 			for(fileId in driveFileIds) {
-				if(fileResource.id == fileId.value) {
-					FileResource childFileResource = fileResources.find { it.id == fileId.value }
-					def parentFileResourceId = getParentFileResourceId(fileId.key, googleDriveResources, fileResources, driveFileIds)
+				if(fileResource.id == fileId.fileResourceId) {
+					FileResource childFileResource = fileResources.find { it.id == fileId.fileResourceId }
+					def parentFileResourceId = getParentFileResourceId(fileId.driveFileId, googleDriveResources, fileResources, driveFileIds)
 					childFileResource.parentFileResource = FileResource.get(parentFileResourceId)
 					updatedResources.add(childFileResource)
 					break
@@ -220,17 +251,22 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return updatedResources
 	}
 	
-	private long getParentFileResourceId(def driveFileId, def googleDriveResources, def fileResources, def driveFileIds) {
+	private Long getParentFileResourceId(def driveFileId, def googleDriveResources, def fileResources, def driveFileIds) {
+		Long parentFileResourceId = null
 		for(driveResource in googleDriveResources) {
 			if(driveResource.id == driveFileId) {
 				def parentId = driveResource.parents[0].id
 				for(fileId in driveFileIds) {
-					if(fileId.key == parentId) {
-						return fileId.value
+					if(fileId.driveFileId == parentId) {
+						parentFileResourceId = fileId.fileResourceId
 					}
 				}
 			}
 		}
+		if(!parentFileResourceId) {
+			parentFileResourceId = driveFileIds.find { it.driveFileId == "root" }.fileResourceId
+		}
+		return parentFileResourceId
 	}
 	
 	private def setPathOfFileResource(def fileResources) {
@@ -288,31 +324,327 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	public InputStream downloadResource(def credentials, FileResource fileResource) {
 		setGoogledriveApiWithCredentials(credentials)
 		
+		def downloadedStream = null
+		if(fileResource.isDir) {
+			log.debug "Downloading folder and building zip from google drive"
+			downloadedStream = getZippedGoogledriveFolderStream(fileResource)
+		}
+		else {
+			log.debug "Downloading file from google drive"
+			downloadedStream = getGoogledriveFileStream(fileResource)
+		}
+		
+		return downloadedStream
+	}
+	
+	private InputStream getZippedGoogledriveFolderStream(FileResource fileResource) {
+		String downloadedFolderPath = ZipUtilities.getDownloadedFolderPath(fileResource)
+		String zipFileName = ZipUtilities.getSourceZipName(STORE_NAME, fileResource)
+		
+		if(!doesFolderExistInGoogledrive(fileResource)) {
+			return null
+		}
+		
+		log.debug "Downloading folder to temporary zip storage"
+		downloadFolderToPath(downloadedFolderPath, fileResource)
+		
+		log.debug "Zipping downloaded folder to '{}'", zipFileName
+		ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
+		
+		String zipFileLocation = getZipFileLocation(downloadedFolderPath)
+		InputStream zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
+		
+		ZipUtilities.removeTempFromFileSystem(zipFileLocation)
+		
+		return zippedFolderInputStream
+	}
+	
+	private boolean doesFolderExistInGoogledrive(FileResource fileResource) {
+		if(fileResource.path == '/') {
+			return true
+		}
+		
+		String fileId = fileResource.extraMetadata
+		def file = driveService.files().get(fileId)
+		
+		if(file == null) {
+			return false
+		}
+		else {
+			return true
+		}
+	}
+	
+	private void downloadFolderToPath(String path, FileResource fileResource) {
+		for(FileResource childResource : fileResource.childFileResources) {
+			if(childResource.isDir) {
+				String updatedPath = path + "/" + childResource.fileName
+				new File(updatedPath).mkdir()
+				downloadFolderToPath(updatedPath, childResource)
+			}
+			else {
+				InputStream resourceDataStream = getGoogledriveFileStream(childResource)
+				if(resourceDataStream != null) {
+					String fullFilePath = path + "/" + childResource.fileName
+					FileOutputStream outputStream =  new FileOutputStream(fullFilePath)
+					byte[] buffer = new byte[1024]
+					int bytesRead
+					while((bytesRead = resourceDataStream.read(buffer)) != -1) {
+						outputStream.write(buffer, 0, bytesRead)
+					}
+					outputStream.close()
+				}
+			}
+		}
+	}
+	
+	private InputStream getGoogledriveFileStream(FileResource fileResource) {
+		InputStream inputStream = null
+		
 		String fileId = fileResource.extraMetadata
 		def file = driveService.files().get(fileId).execute()
 		
 		if (file.downloadUrl != null && file.downloadUrl.length() > 0) {
 			try {
 				HttpResponse resp = driveService.getRequestFactory().buildGetRequest(new GenericUrl(file.downloadUrl)).execute();
-				InputStream downloadedStream = resp.getContent()
-				return downloadedStream
+				inputStream = resp.getContent()
+				log.debug "Downloaded file '{}' from google drive", fileResource.fileName
 			} catch (IOException e) {
-			  	log.warn "An error occured when downloading file from google drive, Exception: {}", e
-				return null
+				log.warn "An error occured when downloading file from google drive, Exception: {}", e
 			}
-		} 
-		else {
-			return null
-		 }
+		}
+		
+		return inputStream
+	}
+	
+	private String getZipFileLocation(String path) {
+		String zipFileLocation = path.substring(0, path.lastIndexOf('/'))
+		return zipFileLocation
 	}
 	
 	public void deleteResource(CloudStore cloudStore, FileResource fileResource) {
+		log.debug "Deleting resource {}", fileResource.path
+		def credentials = cloudStore.credentials
+		setGoogledriveApiWithCredentials(credentials)
 		
+		deleteFromGoogledrive(fileResource)
+		
+		updateGoogledriveSpace(cloudStore)
+	}
+	
+	private void deleteFromGoogledrive(FileResource fileResource) {
+		String fileId = fileResource.extraMetadata
+		
+		try {
+			driveService.files().delete(fileId).execute();
+		} catch (IOException e) {
+		  	log.warn "File could not be deleted from google drive: {}", e
+		}
+	}
+	
+	private void updateGoogledriveSpace(CloudStore cloudStore) {
+		log.debug "Updating google drive space"
+		
+		About accountInfo = getAccountInfo()
+		
+		cloudStore.spaceUsed = accountInfo.getQuotaBytesUsed()
+		cloudStore.totalSpace = accountInfo.getQuotaBytesTotal()
 	}
 	
 	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {
-		// TODO Auto-generated method stub
-		return null;
+		log.debug "Updating google drive file resources for account '{}'", cloudStore.account.email
+		def credentials = cloudStore.credentials
+		setGoogledriveApiWithCredentials(credentials)
+		
+		def changes = getChanges(updateCursor)
+		def newUpdateCursor = changes.get(0)
+		def changedResources = changes.get(1)
+		
+		if(changedResources) {
+			log.debug "Updates to google drive found. Syncing updates"
+			addNewEntries(cloudStore, changedResources, currentFileResources)
+		}
+		
+		updateGoogledriveSpace(cloudStore)
+		
+		return newUpdateCursor
 	}
+	
+	private def getChanges(String updateCursor) {
+		def changes = []
+		Long largestChangeId = null
+		def changedResources = []
+		def changeRequest = driveService.changes().list()
+		
+		changeRequest.setIncludeSubscribed(false)
+		changeRequest.setStartChangeId(updateCursor.toInteger())
+		largestChangeId = getPageOfChanges(changedResources, changeRequest)
+		
+		while(changeRequest.getPageToken() != null && changeRequest.getPageToken().length() > 0) {
+			largestChangeId = getPageOfChanges(changedResources, changeRequest)
+		}
+		
+		changes.add(largestChangeId.toString())
+		changes.add(changedResources)
+		
+		return changes
+	}
+	
+	private Long getPageOfChanges(def changedResources, def changeRequest) {
+		try {
+			ChangeList changeList = changeRequest.execute()
+			
+			changedResources.addAll(changeList.getItems())
+			changeRequest.setPageToken(changeList.getNextPageToken())
+			return changeList.getLargestChangeId()
+		} catch (IOException e) {
+			log.warn "An error occured when getting changes for google drive, Exception: {}", e
+			changeRequest.setPageToken(null);
+		}
+	}
+	
+	private void addNewEntries(CloudStore cloudStore, def changedResources, def currentFileResources) {
+		for(changedResource in changedResources) {
+			if(changedResource.deleted || changedResource.file?.labels?.trashed) {
+				if(!cloudStore.fileResources.find {it.extraMetadata == changedResource.fileId}) {
+					log.debug "Deleted file from updates that we don't track, continue"
+					continue
+				}
+				log.debug "Google drive resource was deleted"
+				deleteChangedGoogledriveResouce(changedResource, currentFileResources)
+			}
+			else {
+				log.debug "Google drive resource changed: '{}'", changedResource.file.title
+				boolean isEntryUpdated = updateEntryIfExists(cloudStore, changedResource, currentFileResources)
+				if(!isEntryUpdated) {
+					currentFileResources = addToFileResources(cloudStore, changedResource, currentFileResources)
+				}
+			}
+		}
+	}
+	
+	private void deleteChangedGoogledriveResouce(def changedResource, def currentFileResources) {
+		FileResource fileResource = null
+		for(FileResource currentFileResource : currentFileResources) {
+			if(changedResource.fileId == currentFileResource.extraMetadata) {
+				fileResource = currentFileResource
+				break
+			}
+		}
+		if(fileResource) {
+			CloudStoreUtilities.deleteFromDatabase(fileResource)
+		}
+		else {
+			// we previously deleted file. Google drive doesn't know so is still informing, ignore this
+		}
+	}
+	
+	private boolean updateEntryIfExists(CloudStore cloudStore, def changedResource, def currentFileResources) {
+		def googledriveFile = changedResource.file
+		boolean isEntryUpdated = false
+		for(FileResource fileResource : currentFileResources) {
+			if(googledriveFile.id == fileResource.extraMetadata) {
+				updateChangedFileResource(cloudStore, fileResource, googledriveFile)
+				isEntryUpdated = true
+				break
+			}
+		}
+		
+		return isEntryUpdated
+	}
+	
+	private void updateChangedFileResource(CloudStore cloudStore, FileResource currentFileResource, def googledriveFile) {
+		if(googledriveFile.mimeType == 'application/vnd.google-apps.folder') {
+			currentFileResource = setFolderFileResourceProperties(cloudStore, currentFileResource, googledriveFile)
+		}
+		else {
+			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, googledriveFile)
+		}
+		
+		currentFileResource.save()
+	}
+	
+	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def googledriveFile) {
+		fileResource.cloudStore = cloudStore
+		fileResource.isDir = true
+		fileResource.fileName = googledriveFile.title
+		fileResource.mimeType = "application/octet-stream"
+		fileResource.extraMetadata = googledriveFile.id
+		fileResource.path = getPathOfUpdatedFileResource(fileResource)
+		
+		return fileResource
+	}
+	
+	private FileResource setFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def googledriveFile) {
+		fileResource.cloudStore = cloudStore
+		fileResource.byteSize = googledriveFile.fileSize.toString()
+		fileResource.modified = googledriveFile.modifiedDate
+		fileResource.isDir = false
+		fileResource.fileName = googledriveFile.title
+		fileResource.extraMetadata = googledriveFile.id
+		fileResource.mimeType = googledriveFile.mimeType
+		fileResource.path = getPathOfUpdatedFileResource(fileResource)
+		
+		return fileResource
+	}
+	
+	private def addToFileResources(CloudStore cloudStore, def changedResource, def currentFileResources) {
+		def googledriveFile = changedResource.file
+		FileResource fileResource = new FileResource()
+		if(googledriveFile.mimeType == 'application/vnd.google-apps.folder') {
+			fileResource = setFolderFileResourceProperties(cloudStore, fileResource, googledriveFile)
+		}
+		else {
+			fileResource = setFileResourceProperties(cloudStore, fileResource, googledriveFile)
+		}
 
+		cloudStore.addToFileResources(fileResource)
+		
+		currentFileResources = CloudStoreUtilities.setParentAndChildFileResources(fileResource, currentFileResources)
+		return currentFileResources
+	}
+	
+	private String getPathOfUpdatedFileResource(FileResource fileResource) {
+		String queryString = "trashed=false"
+		def googledriveResources = getGoogledriveResources(queryString)
+		String path = '/' + fileResource.fileName
+		boolean fullPath = false
+		def parentDriveResource = getParentDriveResource(fileResource, googledriveResources)
+		while(!fullPath) {
+			if(!parentDriveResource?.name || parentDriveResource?.name == "My Drive") {
+				fullPath = true
+			}
+			else {
+				path = '/' + parentDriveResource.name + path
+				parentDriveResource = getNextParentResource(parentDriveResource.id, googledriveResources)
+			}
+		}
+		return path
+	}
+	
+	private def getParentDriveResource(FileResource fileResource, def googledriveResources) {
+		def parentDriveResource = null
+		for(googledriveResource in googledriveResources) {
+			if(googledriveResource.id == fileResource.extraMetadata) {
+				String parentFileId = googledriveResource.parents[0].id
+				def parentGoogleFile = driveService.files().get(parentFileId).execute()
+				
+				parentDriveResource = ['name': parentGoogleFile.title, 'id': parentGoogleFile.id]
+				return parentDriveResource
+			}
+		}
+	}
+	
+	private def getNextParentResource(def parentDriveResourceId, def googledriveResources) {
+		def parentDriveResource = null
+		for(googledriveResource in googledriveResources) {
+			if(googledriveResource.id == parentDriveResourceId) {
+				String parentFileId = googledriveResource.parents[0].id
+				def parentGoogleFile = driveService.files().get(parentFileId).execute()
+				
+				parentDriveResource = ['name': parentGoogleFile.title, 'id': parentGoogleFile.id]
+				return parentDriveResource
+			}
+		}
+	}
 }

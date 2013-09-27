@@ -1,18 +1,28 @@
 package com.intercloud.util
 
-import java.io.File;
+import com.google.api.services.drive.Drive.Files
+
+import java.io.File
 import java.util.zip.ZipEntry
 import java.util.zip.ZipOutputStream
 
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
-import com.google.api.services.drive.Drive.Files;
-import com.intercloud.FileResource;
+import com.intercloud.FileResource
 
 class ZipUtilities {
 	
 	private static Logger log = LoggerFactory.getLogger(ZipUtilities.class)
+	
+	static String ZIP_TEMP_STORAGE_PATH
+	
+	public static String getDownloadedFolderPath(FileResource fileResource) {
+		String uniqueFolderId = UUID.randomUUID().toString()
+		String fullPath = ZIP_TEMP_STORAGE_PATH + "/" + uniqueFolderId + "/downloadedFiles"
+		new File(fullPath).mkdirs()
+		return fullPath
+	}
 	
 	public static String getSourceZipName(String storeName, FileResource fileResource) {
 		String sourceZip
