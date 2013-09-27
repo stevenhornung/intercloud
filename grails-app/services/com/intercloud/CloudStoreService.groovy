@@ -317,7 +317,7 @@ class CloudStoreService {
 		fileResource.cloudStore = cloudStore
 		fileResource.modified = new Date()
 		
-		FileResource parentFileResource = FileResource.findByCloudStoreAndPath(cloudStore, '/')
+		FileResource parentFileResource = cloudStore.fileResources.find { it.path == '/' }
 		fileResource.parentFileResource = parentFileResource
 		
 		if(cloudStore.storeName == 'intercloud') {

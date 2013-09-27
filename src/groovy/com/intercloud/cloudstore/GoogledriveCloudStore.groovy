@@ -4,9 +4,11 @@ import com.google.api.client.auth.oauth2.Credential
 import com.google.api.client.googleapis.auth.oauth2.GoogleAuthorizationCodeFlow
 import com.google.api.client.googleapis.auth.oauth2.GoogleCredential
 import com.google.api.client.googleapis.auth.oauth2.GoogleTokenResponse
+import com.google.api.client.http.FileContent
 import com.google.api.client.http.GenericUrl
 import com.google.api.client.http.HttpResponse
 import com.google.api.client.http.HttpTransport
+import com.google.api.client.http.InputStreamContent
 import com.google.api.client.http.javanet.NetHttpTransport
 import com.google.api.client.json.JsonFactory
 import com.google.api.client.json.jackson2.JacksonFactory
@@ -15,6 +17,8 @@ import com.google.api.services.drive.DriveScopes
 import com.google.api.services.drive.model.About
 import com.google.api.services.drive.model.ChangeList
 import com.google.api.services.drive.model.FileList
+import com.google.api.services.drive.model.File
+import com.google.api.services.drive.model.ParentReference
 
 import javax.servlet.http.HttpServletRequest
 
@@ -123,8 +127,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResources.add(rootFileResource)
 		driveFileIds.add(['driveFileId': 'root', 'fileResourceId' :rootFileResource.id])
 		
-		String queryString = "trashed=false"
-		def googleDriveResources = getGoogledriveResources(queryString)
+		def googleDriveResources = getGoogledriveResources()
 		for(googleDriveResource in googleDriveResources) {
 			if(googleDriveResource.shared) {
 				continue
@@ -152,16 +155,17 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.fileName = "GoogleDriveRoot"
 		fileResource.path = "/"
 		fileResource.isDir = true
+		fileResource.extraMetadata = 'root'
 		
 		fileResource.save()
 		
 		return fileResource
 	}
 	
-	private def getGoogledriveResources(def queryString) {
+	private def getGoogledriveResources() {
 		def googledriveResources = []
 		def googledriveRequest = driveService.files().list()
-		googledriveRequest.setQ(queryString)
+		googledriveRequest.setQ("trashed=false")
 		
 		getPageOfFiles(googledriveResources, googledriveRequest)
 		
@@ -317,8 +321,27 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	}
 	
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
-		// TODO Auto-generated method stub
-		return null;
+		def credentials = cloudStore.credentials
+		setGoogledriveApiWithCredentials(credentials)
+		
+		uploadToGoogledrive(cloudStore, uploadedFile)
+		updateGoogledriveSpace(cloudStore)
+	}
+	
+	private void uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
+		File body = new File()
+		body.title = uploadedFile.originalFilename
+		body.mimeType =uploadedFile.contentType
+		body.parents = Arrays.asList(new ParentReference().setId('root'))
+		
+		InputStreamContent mediaContent = new InputStreamContent(uploadedFile.contentType, uploadedFile.inputStream)
+		
+		try {
+			File file = driveService.files().insert(body, mediaContent).execute()
+			log.debug "Successfully uploaded file '{}' to googledrive", file.title
+		} catch (IOException e) {
+			log.warn "File could not be uploaded to googledrive. Exception {}", e
+		}
 	}
 
 	public InputStream downloadResource(def credentials, FileResource fileResource) {
@@ -379,7 +402,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		for(FileResource childResource : fileResource.childFileResources) {
 			if(childResource.isDir) {
 				String updatedPath = path + "/" + childResource.fileName
-				new File(updatedPath).mkdir()
+				new java.io.File(updatedPath).mkdir()
 				downloadFolderToPath(updatedPath, childResource)
 			}
 			else {
@@ -457,8 +480,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		setGoogledriveApiWithCredentials(credentials)
 		
 		def changes = getChanges(updateCursor)
-		def newUpdateCursor = changes.get(0)
-		def changedResources = changes.get(1)
+		def newUpdateCursor = changes.largestChangeId
+		def changedResources = changes.changedResources
 		
 		if(changedResources) {
 			log.debug "Updates to google drive found. Syncing updates"
@@ -472,7 +495,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	
 	private def getChanges(String updateCursor) {
 		def changes = []
-		Long largestChangeId = null
+		def largestChangeId = null
 		def changedResources = []
 		def changeRequest = driveService.changes().list()
 		
@@ -484,10 +507,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			largestChangeId = getPageOfChanges(changedResources, changeRequest)
 		}
 		
-		changes.add(largestChangeId.toString())
-		changes.add(changedResources)
-		
-		return changes
+		return ['largestChangeId': largestChangeId.toString(), 'changedResources': changedResources]
 	}
 	
 	private Long getPageOfChanges(def changedResources, def changeRequest) {
@@ -499,7 +519,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			return changeList.getLargestChangeId()
 		} catch (IOException e) {
 			log.warn "An error occured when getting changes for google drive, Exception: {}", e
-			changeRequest.setPageToken(null);
+			changeRequest.setPageToken(null)
 		}
 	}
 	
@@ -605,8 +625,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	}
 	
 	private String getPathOfUpdatedFileResource(FileResource fileResource) {
-		String queryString = "trashed=false"
-		def googledriveResources = getGoogledriveResources(queryString)
+		def googledriveResources = getGoogledriveResources()
 		String path = '/' + fileResource.fileName
 		boolean fullPath = false
 		def parentDriveResource = getParentDriveResource(fileResource, googledriveResources)

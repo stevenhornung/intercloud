@@ -51,7 +51,7 @@ class SyncFileResourcesJob {
 		
 		// Get clean cloud store and save properties in case of stale properties
 		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == 'dropbox' }
-		cleanCloudStore.properties = cloudStore.properties
+		//cleanCloudStore.properties = cloudStore.properties
 		
 		cleanCloudStore.updateCursor = newUpdateCursor
 		cleanCloudStore.save(flush:true)
@@ -68,7 +68,7 @@ class SyncFileResourcesJob {
 		
 		// Get clean cloud store and save properties in case of stale properties
 		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == 'googledrive' }
-		cleanCloudStore.properties = cloudStore.properties
+		//cleanCloudStore.properties = cloudStore.properties
 		
 		cleanCloudStore.updateCursor = newUpdateCursor
 		cleanCloudStore.save(flush:true)

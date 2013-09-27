@@ -222,9 +222,9 @@ class DropboxCloudStore implements CloudStoreInterface {
 			else {
 				return null
 			}
-		}
-		catch(DbxException) {
+		} catch(DbxException) {
 			log.warn "File could not be uploaded to dropbox. Exception {}", DbxException
+			return null
 		}
 	}
 	
