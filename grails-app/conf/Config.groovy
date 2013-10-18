@@ -103,14 +103,19 @@ grails.plugins.springsecurity.successHandler.defaultTargetUrl = '/home'
 grails.plugins.springsecurity.auth.loginFormUrl = '/login'
 grails.plugins.springsecurity.failureHandler.defaultFailureUrl = '/login/authfail'
 grails.plugins.springsecurity.adh.errorPage = '/denied'
+grails.plugins.springsecurity.logout.afterLogoutUrl = '/home'
 
 grails.plugins.springsecurity.userLookup.usernamePropertyName='email'
+
+grails.plugin.springsecurity.useSessionFixationPrevention = true
 
 grails.plugins.springsecurity.securityConfigType = SecurityConfigType.InterceptUrlMap
 grails.plugins.springsecurity.interceptUrlMap = [
 	'/account/**':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/dropbox/*':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/googledrive/*':  ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/awss3/*':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/awss3credentials':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/cloudstore': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/auth_redirect': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/admin/**':		['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
@@ -118,3 +123,10 @@ grails.plugins.springsecurity.interceptUrlMap = [
 ]
 
 grails.plugins.springsecurity.password.algorithm = 'bcrypt'
+
+// Keep global list of all logged in users
+loggedInUsers = []
+grails.plugins.springsecurity.useSecurityEventListener = true
+grails.plugins.springsecurity.onAuthenticationSuccessEvent = { e, appCtx ->
+	loggedInUsers."$e.authentication.principal.username" = e
+}

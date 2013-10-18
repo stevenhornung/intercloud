@@ -8,6 +8,8 @@ class BaseController {
 	private static Logger log = LoggerFactory.getLogger(BaseController.class)
 	def springSecurityService
 	
+	static final CLOUD_STORES = ['intercloud', 'dropbox', 'googledrive', 'awss3']
+	
 	static final RENDER_TYPES = ['text/html', "image/jpeg", "image/png", "image/bmp", "text/x-java", "application/pdf", 
 							"text/css", "image/gif", "text/plain", "image/x-icon", "application/xml", "application/json", 
 							"text/json", "text/xml", "application/xhtml+xml", "text/csv", "text/x-c", "text/x-java-source"]

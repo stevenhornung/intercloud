@@ -15,6 +15,7 @@ class CloudStore {
     static constraints = {
 		fileResources nullable: true
 		updateCursor nullable: true
+		userId nullable: true
     }
 	
 	static mapping = {

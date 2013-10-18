@@ -52,7 +52,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		}
 		else {
 			log.debug "Auth redirect from google drive"
-			setGoogledriveApiForConfigure(request)
+			boolean isSuccess = setGoogledriveApiForConfigure(request)
+			return isSuccess
 		}
 	}
 	
@@ -62,25 +63,30 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	   
 		flow = new GoogleAuthorizationCodeFlow.Builder(
 			httpTransport, jsonFactory, CLIENT_ID, CLIENT_SECRET, Arrays.asList(DriveScopes.DRIVE))
-			.setAccessType("online")
-			.setApprovalPrompt("force").build()
+			.setAccessType("offline").setApprovalPrompt("force").build()
 		
 		String authorizeUrl = flow.newAuthorizationUrl().setRedirectUri(REDIRECT_URL).build()
 		return authorizeUrl
 	}
 	
-	private void setGoogledriveApiForConfigure(HttpServletRequest request) {
+	private boolean setGoogledriveApiForConfigure(HttpServletRequest request) {
 		String code = request.getParameter("code")
 		if(code != null) {
-			GoogleTokenResponse googleTokenResponse = flow.newTokenRequest(code).setRedirectUri(REDIRECT_URL).execute()
-			GoogleCredential googleCredential = new GoogleCredential().setFromTokenResponse(googleTokenResponse)
-			
 			HttpTransport httpTransport = new NetHttpTransport()
 			JsonFactory jsonFactory = new JacksonFactory()
 			
+			GoogleTokenResponse googleTokenResponse = flow.newTokenRequest(code).setRedirectUri(REDIRECT_URL).execute()
+			GoogleCredential googleCredential = new GoogleCredential.Builder().setTransport(httpTransport)
+								.setJsonFactory(jsonFactory).setClientSecrets(CLIENT_ID, CLIENT_SECRET)
+								.build().setFromTokenResponse(googleTokenResponse)
+
 			driveService = new Drive.Builder(httpTransport, jsonFactory, googleCredential).build()
 			
 			setCredentialForConfigure(googleCredential)
+			return true
+		}
+		else {
+			return false
 		}
 	}
 	
@@ -157,8 +163,6 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.isDir = true
 		fileResource.extraMetadata = 'root'
 		
-		fileResource.save()
-		
 		return fileResource
 	}
 	
@@ -199,11 +203,10 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.extraMetadata = googleDriveResource.id
 		
 		if(googleDriveResource.parents[0].isRoot) {
-			FileResource parentFileResource = fileResources.find { it.id == driveFileIds['root'] }
+			def rootDriveId = driveFileIds.find { it.driveFileId == 'root' }
+			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
 		}
-		
-		fileResource.save()
 
 		String driveFileId = googleDriveResource.id.toString()
 		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
@@ -223,11 +226,10 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.extraMetadata = googleDriveResource.id
 		
 		if(googleDriveResource.parents[0].isRoot) {
-			FileResource parentFileResource = fileResources.find { it.id == driveFileIds['root'] }
+			def rootDriveId = driveFileIds.find { it.driveFileId == 'root' }
+			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
 		}
-		
-		fileResource.save()
 		
 		String driveFileId = googleDriveResource.id.toString()
 		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
@@ -307,28 +309,40 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		account.addToCloudStores(cloudStoreInstance)
 	}
 	
-	private void setGoogledriveApiWithCredentials(def credentials) {
+	private void setGoogledriveApi(CloudStore cloudStore) {
 		log.debug "Setting google drive credentials for api access"
+		def credentials = cloudStore.credentials
 		String refresh_token = credentials.REFRESH_TOKEN
 		String access_token = credentials.ACCESS_TOKEN
-		credential = new GoogleCredential().setRefreshToken(refresh_token)
-		credential.setAccessToken(access_token)
 		
 		HttpTransport httpTransport = new NetHttpTransport()
 		JsonFactory jsonFactory = new JacksonFactory()
 		
+		credential = new GoogleCredential.Builder().setTransport(httpTransport).setJsonFactory(jsonFactory)
+					.setClientSecrets(CLIENT_ID, CLIENT_SECRET).build()
+					.setRefreshToken(refresh_token)
+		
 		driveService = new Drive.Builder(httpTransport, jsonFactory, credential).build()
+		
+		cloudStore.credentials << ['REFRESH_TOKEN': credential.getRefreshToken()]
+		cloudStore.credentials << ['ACCESS_TOKEN': credential.getAccessToken()]
 	}
 	
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
-		def credentials = cloudStore.credentials
-		setGoogledriveApiWithCredentials(credentials)
+		log.debug "Uploading file to google drive"
+		setGoogledriveApi(cloudStore)
 		
-		uploadToGoogledrive(cloudStore, uploadedFile)
-		updateGoogledriveSpace(cloudStore)
+		boolean isSuccess = uploadToGoogledrive(cloudStore, uploadedFile)
+		if(isSuccess) {
+			updateGoogledriveSpace(cloudStore)
+			return uploadedFile.originalFilename
+		}
+		else {
+			return null
+		}
 	}
 	
-	private void uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
+	private boolean uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
 		File body = new File()
 		body.title = uploadedFile.originalFilename
 		body.mimeType =uploadedFile.contentType
@@ -339,13 +353,15 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		try {
 			File file = driveService.files().insert(body, mediaContent).execute()
 			log.debug "Successfully uploaded file '{}' to googledrive", file.title
+			return true
 		} catch (IOException e) {
 			log.warn "File could not be uploaded to googledrive. Exception {}", e
+			return false
 		}
 	}
 
-	public InputStream downloadResource(def credentials, FileResource fileResource) {
-		setGoogledriveApiWithCredentials(credentials)
+	public InputStream downloadResource(CloudStore cloudStore, FileResource fileResource) {
+		setGoogledriveApi(cloudStore)
 		
 		def downloadedStream = null
 		if(fileResource.isDir) {
@@ -445,23 +461,25 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return zipFileLocation
 	}
 	
-	public void deleteResource(CloudStore cloudStore, FileResource fileResource) {
+	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
-		def credentials = cloudStore.credentials
-		setGoogledriveApiWithCredentials(credentials)
+		setGoogledriveApi(cloudStore)
 		
-		deleteFromGoogledrive(fileResource)
+		boolean isSuccess = deleteFromGoogledrive(fileResource)
 		
 		updateGoogledriveSpace(cloudStore)
+		return isSuccess
 	}
 	
-	private void deleteFromGoogledrive(FileResource fileResource) {
+	private boolean deleteFromGoogledrive(FileResource fileResource) {
 		String fileId = fileResource.extraMetadata
 		
 		try {
-			driveService.files().delete(fileId).execute();
+			driveService.files().delete(fileId).execute()
+			return true
 		} catch (IOException e) {
 		  	log.warn "File could not be deleted from google drive: {}", e
+			return false
 		}
 	}
 	
@@ -476,8 +494,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	
 	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {
 		log.debug "Updating google drive file resources for account '{}'", cloudStore.account.email
-		def credentials = cloudStore.credentials
-		setGoogledriveApiWithCredentials(credentials)
+		setGoogledriveApi(cloudStore)
 		
 		def changes = getChanges(updateCursor)
 		def newUpdateCursor = changes.largestChangeId
@@ -580,8 +597,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		else {
 			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, googledriveFile)
 		}
-		
-		currentFileResource.save()
+	
 	}
 	
 	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def googledriveFile) {

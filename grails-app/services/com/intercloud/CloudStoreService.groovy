@@ -28,13 +28,19 @@ class CloudStoreService {
 		else if(storeName == 'googledrive') {
 			cloudStoreLink = new GoogledriveCloudStore()
 		}
+		else if(storeName == 'awss3') {
+			cloudStoreLink = new AwsS3CloudStore()
+		}
 		
 		return cloudStoreLink
 	}
 	
-	public void authRedirect(Account account, def cloudStoreLink, request) {
-		cloudStoreLink.configure(true, request)
-		saveCloudStoreInstance(account, cloudStoreLink)
+	public boolean authRedirect(Account account, def cloudStoreLink, request) {
+		def isSuccess = cloudStoreLink.configure(true, request)
+		if(isSuccess) {
+			saveCloudStoreInstance(account, cloudStoreLink)
+		}
+		return isSuccess
 	}
 	
 	private void saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
@@ -158,13 +164,14 @@ class CloudStoreService {
 	
 	private InputStream downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
 		def cloudStoreLink = getCloudStoreLink(cloudStore.storeName)
-		InputStream downloadedFileStream = cloudStoreLink.downloadResource(cloudStore.credentials, fileResource)
+		InputStream downloadedFileStream = cloudStoreLink.downloadResource(cloudStore, fileResource)
 		return downloadedFileStream
 	}
 	
-	public void deleteResource(Account account, String storeName, def fileResourceId) {
+	public boolean deleteResource(Account account, String storeName, def fileResourceId) {
 		FileResource fileResource = FileResource.get(fileResourceId)
 		CloudStoreUtilities.deleteFromDatabase(fileResource)
+		boolean isSuccess = true
 		if(storeName == 'intercloud') {
 			deleteFromLocalFileSystem(fileResource)
 			
@@ -173,9 +180,9 @@ class CloudStoreService {
 			updateIntercloudSpace(cloudStore, spaceToDelete)
 		}
 		else {
-			deleteFromCloudStoreLink(account, storeName, fileResource)
+			isSuccess = deleteFromCloudStoreLink(account, storeName, fileResource)
 		}
-		
+		return isSuccess
 	}
 	
 	private void deleteFromLocalFileSystem(FileResource fileResource) {
@@ -183,27 +190,20 @@ class CloudStoreService {
 		file.delete()
 	}
 	
-	private def deleteFromCloudStoreLink(Account account, String storeName, FileResource fileResource) {
+	private boolean deleteFromCloudStoreLink(Account account, String storeName, FileResource fileResource) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		def cloudStoreLink = getCloudStoreLink(storeName)
+		boolean isSuccess = false
 		
-		if(storeName == 'dropbox') {
-			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
-			dropboxCloudStore.deleteResource(cloudStore, fileResource)
-		}
-		else if(storeName == 'googledrive') {
-			GoogledriveCloudStore googledriveCloudStore = new GoogledriveCloudStore()
-			googledriveCloudStore.deleteResource(cloudStore, fileResource)
+		if(cloudStoreLink) {
+			isSuccess = cloudStoreLink.deleteResource(cloudStore, fileResource)
 		}
 		else {
 			log.debug "Attempt to delete from unsuppored cloud store"
 		}
-		
-		// Get clean cloud store and save properties in case of stale properties
-		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == storeName }
-		//cleanCloudStore.properties = cloudStore.properties
 
-		cleanCloudStore.save(flush:true)
 		cloudStore.save(flush:true)
+		return isSuccess
 	}
 	
 	public void updateResources(Account account, String cloudStoreName) {
@@ -235,52 +235,37 @@ class CloudStoreService {
 		def currentFileResources = cloudStore.fileResources
 		
 		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
-		
-		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == storeName }
-		//cleanCloudStore.properties = cloudStore.properties
-		
-		cleanCloudStore.updateCursor = newUpdateCursor
-		cleanCloudStore.save(flush:true)
+
+		cloudStore.updateCursor = newUpdateCursor
+		cloudStore.save(flush:true)
 	}
 	
-	public void uploadResource(Account account, String cloudStoreName, def uploadedFile) {
+	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile) {
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
+		def cloudStoreLink = getCloudStoreLink(cloudStoreName)
 		String newFileName = null
 		def newUpdateCursor
 		
 		if(cloudStoreName == 'intercloud') {
-			// only need to create file resource so just pass
+			// pass
 		}
-		else if(cloudStoreName == 'dropbox') {
-			DropboxCloudStore dropboxCloudStore = new DropboxCloudStore()
-			
-			log.debug "Checking for updates before upload to dropbox"
+		else if(cloudStoreLink) {
+			log.debug "Checking for updates before upload"
 			String updateCursor = cloudStore.updateCursor
 			def currentFileResources = cloudStore.fileResources
-			newUpdateCursor = dropboxCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
+			newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
 			
-			def dropboxUpload = dropboxCloudStore.uploadResource(cloudStore, uploadedFile)
-			if(dropboxUpload) {
-				newFileName = dropboxUpload.name
+			def cloudStoreUploadName = cloudStoreLink.uploadResource(cloudStore, uploadedFile)
+			if(!cloudStoreUploadName) {
+				return false
 			}
-		}
-		else if(cloudStoreName == 'googledrive') {
-			GoogledriveCloudStore googledriveCloudStore = new GoogledriveCloudStore()
-			
-			log.debug "Checking for updates before upload to google drive"
-			String updateCursor = cloudStore.updateCursor
-			def currentFileResources = cloudStore.fileResources
-			newUpdateCursor = googledriveCloudStore.updateResources(cloudStore, updateCursor, currentFileResources)
-			cloudStore.updateCursor = newUpdateCursor
-			
-			def googledriveUpload = googledriveCloudStore.uploadResource(cloudStore, uploadedFile)
-			if(googledriveUpload) {
-				newFileName = googledriveUpload.name
+			if(cloudStoreUploadName != uploadedFile.originalFilename) {
+				newFileName = cloudStoreUploadName
 			}
 		}
 		else {
 			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
-			return
+			return false
 		}
 		
 		createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, newFileName)
@@ -288,13 +273,11 @@ class CloudStoreService {
 			BigInteger spaceToAdd = uploadedFile.getSize()
 			updateIntercloudSpace(cloudStore, spaceToAdd)
 		}
+
+		cloudStore.updateCursor = newUpdateCursor
+		cloudStore.save(flush:true)
 		
-		// Get clean cloud store and save properties in case of stale properties
-		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == cloudStoreName }
-		//cleanCloudStore.properties = cloudStore.properties
-		
-		cleanCloudStore.updateCursor = newUpdateCursor
-		cleanCloudStore.save(flush:true)
+		return true
 	}
 	
 	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, String newFileName) {
@@ -320,6 +303,8 @@ class CloudStoreService {
 		FileResource parentFileResource = cloudStore.fileResources.find { it.path == '/' }
 		fileResource.parentFileResource = parentFileResource
 		
+		fileResource.save()
+		
 		if(cloudStore.storeName == 'intercloud') {
 			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
 			String accountEmail = account.email
@@ -328,8 +313,6 @@ class CloudStoreService {
 			fileResource.locationOnFileSystem = locationOnFileSystem
 			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
 		}
-		
-		fileResource.save()
 	}
 	
 	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {
@@ -348,6 +331,7 @@ class CloudStoreService {
 			log.debug "Wrote file '{}' to local file system", pathToSaveFile
 		}
 		catch(IOException) {
+			flash.message = message(code: 'localsystem.couldnotsave')
 			log.warn "Could not save file to local file system. Exception: {}", IOException
 		}
 		finally {

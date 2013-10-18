@@ -16,11 +16,9 @@ class CloudStoreUtilities {
 	public static void deleteFromDatabase(FileResource fileResource) {
 		// Delete parent file resource relationship if parent not already deleted
 		fileResource.parentFileResource?.removeFromChildFileResources(fileResource)
-		fileResource.parentFileResource?.save()
 		
 		// Delete cloud store relationship
 		fileResource.cloudStore?.removeFromFileResources(fileResource)
-		fileResource.cloudStore?.save()
 		
 		// Delete any children relationships
 		def childFileResources = []
@@ -72,8 +70,6 @@ class CloudStoreUtilities {
 			if(currentResource.path == "/") {
 				currentResource.childFileResources.add(fileResource)
 				fileResource.parentFileResource = currentResource
-				currentResource.save()
-				fileResource.save()
 				parentFound = true
 				break
 			}
@@ -96,8 +92,6 @@ class CloudStoreUtilities {
 					currentResource.childFileResources.add(fileResource)
 				}
 				fileResource.parentFileResource = currentResource
-				currentResource.save()
-				fileResource.save()
 				parentFound = true
 				break
 			}
@@ -121,9 +115,6 @@ class CloudStoreUtilities {
 		def childFileResources = [fileResource]
 		parentFileResource.childFileResources = childFileResources
 		fileResource.parentFileResource = parentFileResource
-		
-		parentFileResource.save()
-		fileResource.save()
 		
 		return parentFileResource
 	}

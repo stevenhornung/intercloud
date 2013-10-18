@@ -12,6 +12,8 @@ class SyncFileResourcesJob {
 	
 	private static Logger log = LoggerFactory.getLogger(SyncFileResourcesJob.class)
 	
+	def grailsApplication
+	
     static triggers = {
       simple name: 'syncFileResources', startDelay: 180000, repeatInterval: 180000 // execute job after 3 min, every 3 min
     }
@@ -22,9 +24,11 @@ class SyncFileResourcesJob {
     }
 	
 	private void syncAllUsersCloudStores() {
-		List<Account> accounts = Account.list()
+		def loggedInUsers = grailsApplication.config.get('loggedInUsers')
 		
-		for(Account account : accounts) {
+		for(def loggedInUser : loggedInUsers) {
+			String loggedInUserEmail = loggedInUser.value.authentication.principal.username
+			Account account = Account.findByEmail(loggedInUserEmail)
 			def accountCloudStores = account.cloudStores
 			for(CloudStore cloudStore : accountCloudStores) {
 				if(cloudStore.storeName == 'dropbox') {
@@ -48,13 +52,9 @@ class SyncFileResourcesJob {
 		def currentFileResources = cloudStore.fileResources
 		
 		String newUpdateCursor = new DropboxCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
-		
-		// Get clean cloud store and save properties in case of stale properties
-		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == 'dropbox' }
-		//cleanCloudStore.properties = cloudStore.properties
-		
-		cleanCloudStore.updateCursor = newUpdateCursor
-		cleanCloudStore.save(flush:true)
+
+		cloudStore.updateCursor = newUpdateCursor
+		cloudStore.save()
 	}
 	
 	private void runGoogledriveUpdater(CloudStore cloudStore, Account account) {
@@ -65,12 +65,8 @@ class SyncFileResourcesJob {
 		def currentFileResources = cloudStore.fileResources
 		
 		String newUpdateCursor = new GoogledriveCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
-		
-		// Get clean cloud store and save properties in case of stale properties
-		CloudStore cleanCloudStore = account.cloudStores.find { it.storeName == 'googledrive' }
-		//cleanCloudStore.properties = cloudStore.properties
-		
-		cleanCloudStore.updateCursor = newUpdateCursor
-		cleanCloudStore.save(flush:true)
+
+		cloudStore.updateCursor = newUpdateCursor
+		cloudStore.save(flush:true)
 	}
 }

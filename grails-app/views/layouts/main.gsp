@@ -113,7 +113,7 @@
 							<g:link controller="cloudStore" action="index" params="[storeName:'box']">Link Box Account</g:link><br>
 							<g:link controller="cloudStore" action="index" params="[storeName:'skydrvie']">Link Microsoft SkyDrive Account</g:link><br>
 							<g:link controller="cloudStore" action="index" params="[storeName:'azure']">Link Azure Storage Account</g:link><br>
-							<g:link controller="cloudStore" action="index" params="[storeName:'amazonaws']">Link Amazon AWS Account</g:link><br>
+							<a href="/cloudstore?storeName=awss3">Link Amazon AWS Account</a><br>
 						</div>
 						<div class="left right">			
 							<!-- Account Settings -->

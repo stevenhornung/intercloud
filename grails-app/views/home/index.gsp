@@ -126,6 +126,11 @@
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
 				<h1>Welcome to InterCloud</h1>
+				<g:if test="${flash.message }">
+					<div class="errors">
+							${flash.message}
+					</div>
+				</g:if>
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
 					<hr>

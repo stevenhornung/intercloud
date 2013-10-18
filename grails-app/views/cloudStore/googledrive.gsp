@@ -130,6 +130,11 @@
 		<div id="page-body" role="main">
 			<h1>Welcome to InterCloud</h1>
 			<br>
+			<g:if test="${flash.message }">
+					<div class="errors">
+							${flash.message}
+					</div>
+			</g:if>
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">

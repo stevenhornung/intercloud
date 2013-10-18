@@ -100,6 +100,27 @@ class UrlMappings {
 			storeName = 'googledrive'
 		}
 		
+		"/awss3credentials" (view: "/cloudStore/awss3credentials")
+
+		"/awss3" {
+			controller = 'cloudStore'
+			action = [GET: "getAllCloudStoreResources",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			storeName = 'awss3'
+		}
+		
+		"/awss3/$fileResourcePath**" {
+			controller = 'cloudStore'
+			action = [GET: "getSpecificCloudStoreResource",
+						POST: 'respondInvalidAction',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+			storeName = 'awss3'
+		}
+		
+		
 		"/delete" {
 			controller = 'cloudStore'
 			action = [GET: 'deleteResource',
@@ -111,7 +132,7 @@ class UrlMappings {
 		"/auth_redirect" {
 			controller = 'cloudStore'
 			action = [GET: "authRedirect",
-						POST: 'respondInvalidAction',
+						POST: 'authRedirect',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}

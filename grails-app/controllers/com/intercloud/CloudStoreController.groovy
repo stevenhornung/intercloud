@@ -20,8 +20,15 @@ class CloudStoreController extends BaseController {
 				def cloudStoreLink = cloudStoreService.getCloudStoreLink(storeName)
 				if(cloudStoreLink) {
 					def clientAccessRequestUrl = cloudStoreService.getClientAccessRequestUrl(cloudStoreLink, request)
-					flash.cloudStoreLink = cloudStoreLink
-					redirect(url : clientAccessRequestUrl)
+					if(clientAccessRequestUrl) {
+						session['cloudStoreLink'] = cloudStoreLink
+						redirect(url : clientAccessRequestUrl)
+					}
+					else {
+						log.debug "Retrieving of cloud store request url failed from {}", storeName
+						flash.message = message(code: 'service.linkfailed', args: storeName)
+						redirect(controller: 'home', action: 'index')
+					}
 				}
 				else {
 					log.debug "Bad cloud store specified to link"
@@ -42,8 +49,18 @@ class CloudStoreController extends BaseController {
 	def authRedirect = {
 		log.debug "Auth redirect"
 		Account account = getCurrentAccount()
-		def cloudStoreLink = flash.cloudStoreLink
-		cloudStoreService.authRedirect(account, cloudStoreLink, request)
+		def cloudStoreLink = session['cloudStoreLink']
+		session.removeAttribute('cloudStoreLink')
+		if(cloudStoreLink) {
+			boolean isSuccess = cloudStoreService.authRedirect(account, cloudStoreLink, request)
+			
+			if(!isSuccess) {
+				flash.message = message(code: 'cloudstore.linkfailed')
+			}
+		}
+		else {
+			flash.message = message(code: 'cloudstore.linkfailed', args: storeName)
+		}
 		
 		redirect(controller: 'home', action:'index')
 	}
@@ -73,6 +90,12 @@ class CloudStoreController extends BaseController {
 		Account account = getCurrentAccount()
 		def storeName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
+		
+		// for some reason when we open a folder, the /js/* patterns arent getting handled by resources plugin
+		if(fileResourcePath =~ '^/js/') {
+			return
+		}
+		
 		def specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, storeName, fileResourcePath)
 		
 		if(specificCloudStoreResource) {
@@ -90,7 +113,13 @@ class CloudStoreController extends BaseController {
 		}
 		else {
 			log.debug "Could not find specific cloud store resources: {}", fileResourcePath
-			forward(controller: 'base', action: 'respondPageNotFound')
+			if(storeName) {
+				flash.message = message(code: 'cloudstore.specificnotfound', args: fileResourcePath)
+				getAllCloudStoreResources()
+			}
+			else {
+				forward(controller: 'base', action: 'respondPageNotFound')
+			}
 		}
 	}
 	
@@ -102,7 +131,8 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
-				forward(controller: 'base', action: 'respondServerError')
+				flash.message = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
+				getAllCloudStoreResources()
 			}
 		}
 		else if(fileResource.mimeType in VIDEO_TYPES){
@@ -112,7 +142,8 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
-				forward(controller: 'base', action: 'respondServerError')
+				flash.message = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
+				getAllCloudStoreResources()
 			}
 		}
 		else {
@@ -147,7 +178,8 @@ class CloudStoreController extends BaseController {
 		}
 		catch (Exception) {
 			log.debug "Download link could not be rendered to output stream: {}", Exception
-			forward(controller: 'base', action: 'respondServerError')
+			flash.message = message(code: 'cloudstore.error')
+			getAllCloudStoreResources()
 		}
 	}
 	
@@ -155,7 +187,11 @@ class CloudStoreController extends BaseController {
 		Account account = getCurrentAccount()
 		def storeName = params.storeName
 		String fileResourceId = params.fileResourceId
-		cloudStoreService.deleteResource(account, storeName, fileResourceId)
+		boolean isSuccess = cloudStoreService.deleteResource(account, storeName, fileResourceId)
+		
+		if(!isSuccess) {
+			flash.message = message(code: 'cloudstore.deletefailed', args: storeName)
+		}
 		
 		redirect(uri: params.targetUri)
 	}
@@ -169,7 +205,8 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.debug "File resource not found from download dialog"
-				forward(controller: 'base', action: 'respondPageNotFound')
+				flash.message = message(code: 'cloudstore.error')
+				getAllCloudStoreResources()
 			}
 		}
 		else {
@@ -197,7 +234,8 @@ class CloudStoreController extends BaseController {
 		}
 		catch (Exception) {
 			log.debug "File could not be sent to output stream: {}", Exception
-			forward(controller: 'base', action: 'respondServerError')
+			flash.message = message(code: 'cloudstore.error')
+			getAllCloudStoreResources()
 		}
 	}
 	
@@ -214,11 +252,21 @@ class CloudStoreController extends BaseController {
 	public def uploadResource() {
 		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
-		log.debug "Uploading file to {}", cloudStoreName
+		if(cloudStoreName in CLOUD_STORES) {
+			log.debug "Uploading file to {}", cloudStoreName
 		
-		def uploadedFile = request.getFile('file')
-		cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile)
-
-		response.sendError(200)
+			def uploadedFile = request.getFile('file')
+			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile)
+			
+			if(isSuccess) {
+				response.sendError(200)
+			}
+			else {
+				flash.message = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])
+			}
+		}
+		else {
+			forward(controller: 'base', action: 'respondPageNotFound')
+		}
 	}
 }

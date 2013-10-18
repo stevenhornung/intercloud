@@ -14,8 +14,10 @@ import com.dropbox.core.DbxRequestConfig
 import com.dropbox.core.DbxWriteMode
 
 import org.apache.tika.Tika
+
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpSession
+
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
@@ -47,7 +49,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}	
 		else {
 			log.debug "Auth redirect from dropbox"
-			setDropboxApiForConfigure(request)
+			boolean isSuccess = setDropboxApiForConfigure(request)
+			return isSuccess
 		}
 	}
 	
@@ -62,25 +65,29 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return auth.start()
 	}
 	
-	private void setDropboxApiForConfigure(HttpServletRequest request) {
+	private boolean setDropboxApiForConfigure(HttpServletRequest request) {
 		HttpSession session = request.getSession(true)
 		def sessionToken = session.getAttribute('dropbox-auth-csrf-token')
 		
 		if(sessionToken == null) {
 			log.debug "No request token in dropbox auth request"
 			session.removeAttribute("dropbox-auth-csrf-token")
+			return false
 		}
 		if(request.getParameter("state") != sessionToken) {
 			log.debug "Invalid oauth token in dropbox auth request"
+			return false 
 		}
 		
 		DbxAuthFinish authFinish
 		try {
 			authFinish = auth.finish(request.parameterMap)
 			setAccessTokenForConfigure(authFinish)
+			return true
 		}
 		catch(Exception) {
-			log.warn "Dropbox authorization failed: {}", Exception
+			log.debug "Dropbox authorization failed, user denied access"
+			return false
 		} 
 	}
 
@@ -201,6 +208,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
+		log.debug "Uploading file to dropbox"
 		def credentials = cloudStore.credentials
 		setDropboxApiWithCredentials(credentials)
 		def dropboxUpload = uploadToDropbox(uploadedFile)
@@ -216,12 +224,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		try {
 			def dropboxUpload = dropboxClient.uploadFile(filePath, DbxWriteMode.add(), uploadedFile.size, uploadedFile.inputStream)
 			log.debug "Successfully uploaded file '{}' to dropbox", dropboxUpload.path
-			if(filePath != dropboxUpload.path) {
-				return dropboxUpload
-			}
-			else {
-				return null
-			}
+			return dropboxUpload.name
 		} catch(DbxException) {
 			log.warn "File could not be uploaded to dropbox. Exception {}", DbxException
 			return null
@@ -237,26 +240,29 @@ class DropboxCloudStore implements CloudStoreInterface {
 		cloudStore.totalSpace = accountInfo.quota.total
 	}
 	
-	public void deleteResource(CloudStore cloudStore, FileResource fileResource) {
+	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
 		def credentials = cloudStore.credentials
 		setDropboxApiWithCredentials(credentials)
-		deleteFromDropbox(fileResource)
+		boolean isSuccess = deleteFromDropbox(fileResource)
 		
 		updateDropboxSpace(cloudStore)
+		return isSuccess
 	}
 	
-	private def deleteFromDropbox(FileResource fileResource) {
+	private boolean deleteFromDropbox(FileResource fileResource) {
 		try {
 			dropboxClient.delete(fileResource.path)
+			return true
 		}
 		catch(DbxException) {
 			log.warn "File could not be deleted from dropbox: {}", DbxException
+			return false
 		}
 	}
 
-	public InputStream downloadResource(def credentials, FileResource fileResource) {
-		setDropboxApiWithCredentials(credentials)
+	public InputStream downloadResource(CloudStore cloudStore, FileResource fileResource) {
+		setDropboxApiWithCredentials(cloudStore.credentials)
 		
 		def downloadedStream = null
 		if(fileResource.isDir) {
@@ -398,8 +404,6 @@ class DropboxCloudStore implements CloudStoreInterface {
 		else {
 			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
 		}
-		
-		currentFileResource.save()
 	}
 	
 	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
