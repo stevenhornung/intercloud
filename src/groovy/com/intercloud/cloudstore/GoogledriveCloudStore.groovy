@@ -368,11 +368,11 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
 		log.debug "Uploading file to google drive"
 		setGoogledriveApi(cloudStore)
-		def googledriveUpload = uploadToGoogledrive(cloudStore, uploadedFile)
+		String googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile)
 			
 		updateGoogledriveSpace(cloudStore)
 		
-		return googledriveUpload
+		return googledriveFileId
 	}
 	
 	private String uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
@@ -386,7 +386,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		try {
 			File file = driveService.files().insert(body, mediaContent).execute()
 			log.debug "Successfully uploaded file '{}' to googledrive", file.title
-			return uploadedFile.originalFilename
+			return file.id
 		} catch (Exception) {
 			log.warn "File could not be uploaded to googledrive. Exception {}", Exception
 			return null
@@ -412,19 +412,22 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	private InputStream getZippedGoogledriveFolderStream(FileResource fileResource) {
 		String downloadedFolderPath = ZipUtilities.getDownloadedFolderPath(fileResource)
 		String zipFileName = ZipUtilities.getSourceZipName(STORE_NAME, fileResource)
+		InputStream zippedFolderInputStream = null
 		
 		if(!doesFolderExistInGoogledrive(fileResource)) {
 			return null
 		}
 		
-		log.debug "Downloading folder to temporary zip storage"
-		downloadFolderToPath(downloadedFolderPath, fileResource)
-		
-		log.debug "Zipping downloaded folder to '{}'", zipFileName
-		ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
-		
 		String zipFileLocation = getZipFileLocation(downloadedFolderPath)
-		InputStream zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
+		
+		log.debug "Downloading folder to temporary zip storage"
+		boolean isSuccess = downloadFolderToPath(downloadedFolderPath, fileResource)
+		
+		if(isSuccess) {
+			log.debug "Zipping downloaded folder to '{}'", zipFileName
+			ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
+			zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
+		}
 		
 		ZipUtilities.removeTempFromFileSystem(zipFileLocation)
 		
@@ -447,12 +450,16 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		}
 	}
 	
-	private void downloadFolderToPath(String path, FileResource fileResource) {
+	private boolean downloadFolderToPath(String path, FileResource fileResource) {
+		boolean isSuccess = false
 		for(FileResource childResource : fileResource.childFileResources) {
 			if(childResource.isDir) {
 				String updatedPath = path + "/" + childResource.fileName
 				new java.io.File(updatedPath).mkdir()
-				downloadFolderToPath(updatedPath, childResource)
+				isSuccess = downloadFolderToPath(updatedPath, childResource)
+				if(!isSuccess) {
+					break
+				}
 			}
 			else {
 				InputStream resourceDataStream = getGoogledriveFileStream(childResource)
@@ -465,25 +472,31 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 						outputStream.write(buffer, 0, bytesRead)
 					}
 					outputStream.close()
+					isSuccess = true
+				}
+				else {
+					break
 				}
 			}
 		}
+		
+		return isSuccess
 	}
 	
 	private InputStream getGoogledriveFileStream(FileResource fileResource) {
 		InputStream inputStream = null
-		
 		String fileId = fileResource.extraMetadata
-		def file = driveService.files().get(fileId).execute()
 		
-		if (file.downloadUrl != null && file.downloadUrl.length() > 0) {
-			try {
+		try {
+			def file = driveService.files().get(fileId).execute()
+			
+			if (file.downloadUrl != null && file.downloadUrl.length() > 0) {
 				HttpResponse resp = driveService.getRequestFactory().buildGetRequest(new GenericUrl(file.downloadUrl)).execute()
 				inputStream = resp.getContent()
 				log.debug "Downloaded file '{}' from google drive", fileResource.fileName
-			} catch (IOException e) {
-				log.warn "An error occured when downloading file from google drive, Exception: {}", e
 			}
+		} catch (Exception) {
+			log.warn "An error occured when downloading file from google drive"
 		}
 		
 		return inputStream

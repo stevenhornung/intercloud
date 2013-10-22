@@ -241,11 +241,11 @@ class DropboxCloudStore implements CloudStoreInterface {
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
 		log.debug "Uploading file to dropbox"
 		setDropboxApi(cloudStore)
-		def dropboxUpload = uploadToDropbox(uploadedFile)
+		String dropboxUploadName = uploadToDropbox(uploadedFile)
 		
 		updateDropboxSpace(cloudStore)
 		
-		return dropboxUpload
+		return dropboxUploadName
 	}
 	
 	private String uploadToDropbox(def uploadedFile) {
@@ -309,20 +309,23 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private InputStream getZippedDropboxFolderStream(FileResource fileResource) {
 		String downloadedFolderPath = ZipUtilities.getDownloadedFolderPath(fileResource)
 		String zipFileName = ZipUtilities.getSourceZipName(STORE_NAME, fileResource)
+		InputStream zippedFolderInputStream = null
 		
 		if(!doesFolderExistInDropbox(fileResource)) {
 			return null
 		}
 		
-		log.debug "Downloading folder to temporary zip storage"
-		downloadFolderToPath(downloadedFolderPath, fileResource)
-		
-		log.debug "Zipping downloaded folder to '{}'", zipFileName
-		ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
-		
 		String zipFileLocation = downloadedFolderPath.substring(0, downloadedFolderPath.lastIndexOf('/'))
-		InputStream zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
 		
+		log.debug "Downloading folder to temporary zip storage"
+		boolean isSuccess = downloadFolderToPath(downloadedFolderPath, fileResource)
+		
+		if(isSuccess) {
+			log.debug "Zipping downloaded folder to '{}'", zipFileName
+			ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
+			zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
+		}
+			
 		ZipUtilities.removeTempFromFileSystem(zipFileLocation)
 		
 		return zippedFolderInputStream
@@ -337,12 +340,16 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}
 	}
 	
-	private void downloadFolderToPath(String path, FileResource fileResource) {
+	private boolean downloadFolderToPath(String path, FileResource fileResource) {
+		boolean isSuccess = false
 		for(FileResource childResource : fileResource.childFileResources) {
 			if(childResource.isDir) {
 				String updatedPath = path + "/" + childResource.fileName
 				new File(updatedPath).mkdir()
-				downloadFolderToPath(updatedPath, childResource)
+				isSuccess = downloadFolderToPath(updatedPath, childResource)
+				if(!isSuccess) {
+					break
+				}
 			}
 			else {
 				InputStream resourceDataStream = getDropboxFileStream(childResource)
@@ -355,9 +362,15 @@ class DropboxCloudStore implements CloudStoreInterface {
 						outputStream.write(buffer, 0, bytesRead)
 					}
 					outputStream.close()
+					isSuccess = true
+				}
+				else {
+					break
 				}
 			}
 		}
+		
+		return isSuccess
 	}
 	
 	private InputStream getDropboxFileStream(FileResource fileResource) {

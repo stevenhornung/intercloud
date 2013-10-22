@@ -11,7 +11,7 @@ class FileResource implements Comparable {
 	String modified
 	String extraMetadata
 	
-	SortedSet childFileResources
+	SortedSet childFileResources = new TreeSet()
 	static hasMany = [childFileResources: FileResource]
 	static belongsTo = [cloudStore: CloudStore, parentFileResource: FileResource]
 

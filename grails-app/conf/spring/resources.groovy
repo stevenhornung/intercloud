@@ -2,9 +2,12 @@ import com.intercloud.cloudstore.DropboxCloudStore
 import com.intercloud.cloudstore.GoogledriveCloudStore
 import com.intercloud.cloudstore.AwsS3CloudStore
 import com.intercloud.util.ZipUtilities
+import com.intercloud.sync.SecurityEventListener
 
 // Place your Spring DSL code here
 beans = {
+	securityEventListener(SecurityEventListener)
+	
 	userDetailsService(com.intercloud.accountdetails.AccountDetailsService)
 	
 	zipUtilities (ZipUtilities) {

@@ -84,13 +84,7 @@ class CloudStoreUtilities {
 		String parentPath = getParentPath(pathParts)
 		for(FileResource currentResource : currentFileResources) {
 			if(currentResource.path == parentPath) {
-				if(currentResource.childFileResources == null) {
-					def fileResources = [fileResource]
-					currentResource.childFileResources = fileResources
-				}
-				else {
-					currentResource.childFileResources.add(fileResource)
-				}
+				currentResource.childFileResources.add(fileResource)
 				fileResource.parentFileResource = currentResource
 				parentFound = true
 				break
@@ -112,8 +106,7 @@ class CloudStoreUtilities {
 		pathParts.pop()
 		
 		FileResource parentFileResource = createParentDirectory(pathParts)
-		def childFileResources = [fileResource]
-		parentFileResource.childFileResources = childFileResources
+		parentFileResource.childFileResources.add(fileResource)
 		fileResource.parentFileResource = parentFileResource
 		
 		return parentFileResource

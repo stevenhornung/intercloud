@@ -250,54 +250,87 @@ class CloudStoreService {
 	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile) {
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
 		def cloudStoreLink = getCloudStoreLink(cloudStoreName)
-		String newFileName = null
 		def newUpdateCursor
 		
 		if(cloudStoreName == 'intercloud') {
-			// pass
+			createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, null)
+			BigInteger spaceToAdd = uploadedFile.getSize()
+			updateIntercloudSpace(cloudStore, spaceToAdd)
 		}
 		else if(cloudStoreLink) {
 			log.debug "Checking for updates before upload"
 			String updateCursor = cloudStore.updateCursor
 			def currentFileResources = cloudStore.fileResources
 			newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
+			cloudStore.updateCursor = newUpdateCursor
 			
-			def cloudStoreUploadName = cloudStoreLink.uploadResource(cloudStore, uploadedFile)
-			if(!cloudStoreUploadName) {
-				return false
+			if(cloudStoreName == 'dropbox') {
+				boolean isSuccess = uploadToDropbox(cloudStoreLink, cloudStore, uploadedFile)
+				if(!isSuccess) {
+					return false
+				}
 			}
-			if(cloudStoreUploadName != uploadedFile.originalFilename) {
-				newFileName = cloudStoreUploadName
+			else if(cloudStoreName == 'googledrive') {
+				boolean isSuccess = uploadToGoogledrive(cloudStoreLink, cloudStore, uploadedFile)
+				if(!isSuccess) {
+					return false
+				}
 			}
 		}
 		else {
 			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
 			return false
 		}
-		
-		createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, newFileName)
-		if(cloudStore.storeName == 'intercloud') {
-			BigInteger spaceToAdd = uploadedFile.getSize()
-			updateIntercloudSpace(cloudStore, spaceToAdd)
-		}
 
-		cloudStore.updateCursor = newUpdateCursor
 		cloudStore.save(flush:true)
 		
 		return true
 	}
-	
-	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, String newFileName) {
-		FileResource fileResource = new FileResource()
-		String filePath
 		
-		if(newFileName) {
-			filePath = "/" + newFileName
-			fileResource.fileName = newFileName
+	private boolean uploadToDropbox(def cloudStoreLink, CloudStore cloudStore, def uploadedFile) {
+		String newFileName = null
+		def cloudStoreUploadName = cloudStoreLink.uploadResource(cloudStore, uploadedFile)
+		
+		if(!cloudStoreUploadName) {
+			return false
 		}
-		else {
-			filePath = "/" + uploadedFile.originalFilename
-			fileResource.fileName = uploadedFile.originalFilename
+		if(cloudStoreUploadName != uploadedFile.originalFilename) {
+			newFileName = cloudStoreUploadName
+		}
+		
+		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, newFileName)
+		
+		return true
+	}
+	
+	private boolean uploadToGoogledrive(def cloudStoreLink, CloudStore cloudStore, def uploadedFile) {
+		String extraMetadata = cloudStoreLink.uploadResource(cloudStore, uploadedFile)
+		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, extraMetadata)
+		return true
+	}
+	
+	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, String extraData) {
+		FileResource fileResource = new FileResource()
+		
+		String filePath = "/" + uploadedFile.originalFilename
+		fileResource.fileName = uploadedFile.originalFilename
+		
+		if(cloudStore.storeName == 'intercloud') {
+			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
+			String accountEmail = account.email
+			String dirLocationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot'
+			String locationOnFileSystem = dirLocationOnFileSystem + '/' + uploadedFile.originalFilename
+			fileResource.locationOnFileSystem = locationOnFileSystem
+			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
+		}
+		else if(cloudStore.storeName == 'dropbox') {
+			if(extraData) {
+				filePath = "/" + extraData
+				fileResource.fileName = extraData
+			}
+		}
+		else if(cloudStore.storeName == 'googledrive') {
+			fileResource.extraMetadata = extraData
 		}
 		
 		fileResource.path = filePath
@@ -311,15 +344,6 @@ class CloudStoreService {
 		fileResource.parentFileResource = parentFileResource
 		
 		fileResource.save()
-		
-		if(cloudStore.storeName == 'intercloud') {
-			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
-			String accountEmail = account.email
-			String dirLocationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot'
-			String locationOnFileSystem = dirLocationOnFileSystem + '/' + uploadedFile.originalFilename
-			fileResource.locationOnFileSystem = locationOnFileSystem
-			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
-		}
 	}
 	
 	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {
