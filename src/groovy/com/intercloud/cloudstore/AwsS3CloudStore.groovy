@@ -37,7 +37,7 @@ class AwsS3CloudStore implements CloudStoreInterface {
 		secretKey = parameterMap.secretKey
 	}
 
-	public void setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
+	public boolean setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
 		setCloudStoreInfo(cloudStoreInstance)
 		setCloudStoreFileResources(cloudStoreInstance)
 		setCloudStoreAccount(cloudStoreInstance, account)

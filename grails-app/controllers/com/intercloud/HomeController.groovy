@@ -33,10 +33,18 @@ class HomeController extends BaseController {
 	
 	private def getFilesForEachCloudStore(CloudStoreController controller, Account account) {
 		def fileInstanceMap = [:]
+		
+		// Add inter cloud first, want it at the top of the home view
+		def fileResources = controller.getHomeCloudStoreResources(account, "intercloud")
+		fileInstanceMap << ["intercloud" : fileResources]
+		
 		account.cloudStores.each {
-			def fileResources = controller.getHomeCloudStoreResources(account, it.storeName)
-			if(fileResources != null) {
-				fileInstanceMap << ["$it.storeName" : fileResources]
+			if(it.storeName != 'intercloud') {
+				
+				fileResources = controller.getHomeCloudStoreResources(account, it.storeName)
+				if(fileResources != null) {
+					fileInstanceMap << ["$it.storeName" : fileResources]
+				}
 			}
 		}
 		return fileInstanceMap

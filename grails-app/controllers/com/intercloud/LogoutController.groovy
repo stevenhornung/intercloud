@@ -11,7 +11,8 @@ class LogoutController extends BaseController {
 	
 	def index = {
 		Account currentAccount = getCurrentAccount()
-		log.error "logging out {}", currentAccount.email
+		log.debug "logging out {}", currentAccount.email
+		
 		def loggedInUsers = grailsApplication.config.get('loggedInUsers')
 		def userToLogout
 		

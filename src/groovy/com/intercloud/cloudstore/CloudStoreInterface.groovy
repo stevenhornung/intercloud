@@ -9,7 +9,7 @@ interface CloudStoreInterface {
 	public static String STORE_NAME
 	
 	public def configure(boolean isAuthRedirect, HttpServletRequest request)
-	public void setCloudStoreProperties(CloudStore cloudStoreInstance, Account account)
+	public boolean setCloudStoreProperties(CloudStore cloudStoreInstance, Account account)
 	public def uploadResource(CloudStore cloudStore, def uploadedFile)
 	public InputStream downloadResource(CloudStore cloudStore, FileResource fileResource)
 	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource)

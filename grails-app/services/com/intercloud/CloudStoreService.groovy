@@ -38,18 +38,24 @@ class CloudStoreService {
 	public boolean authRedirect(Account account, def cloudStoreLink, request) {
 		def isSuccess = cloudStoreLink.configure(true, request)
 		if(isSuccess) {
-			saveCloudStoreInstance(account, cloudStoreLink)
+			isSuccess =  saveCloudStoreInstance(account, cloudStoreLink)
 		}
 		return isSuccess
 	}
 	
-	private void saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
+	private boolean saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
 		CloudStore cloudStoreInstance = new CloudStore()
-		currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
+		boolean isSuccess = currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
 
-		if(!cloudStoreInstance.save(flush:true)) {
-			// show message that cloud store link failed, and ask to retry
-			log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
+		if(isSuccess) {
+			if(!cloudStoreInstance.save(flush:true)) {
+				// show message that cloud store link failed, and ask to retry
+				log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
+			}
+			return true
+		}
+		else {
+			return false
 		}
 	}
 	
@@ -235,9 +241,10 @@ class CloudStoreService {
 		def currentFileResources = cloudStore.fileResources
 		
 		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
-
-		cloudStore.updateCursor = newUpdateCursor
-		cloudStore.save(flush:true)
+		if(newUpdateCursor) {
+			cloudStore.updateCursor = newUpdateCursor
+			cloudStore.save(flush:true)
+		}
 	}
 	
 	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile) {

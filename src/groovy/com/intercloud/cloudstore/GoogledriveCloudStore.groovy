@@ -94,14 +94,34 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		credential = googleCredential
 	}
 	
-	public void setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
-		setCloudStoreInfo(cloudStoreInstance)
-		setCloudStoreFileResources(cloudStoreInstance)
-		setCloudStoreAccount(cloudStoreInstance, account)
+	public boolean setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
+		boolean isSuccess = false
+		isSuccess = setCloudStoreInfo(cloudStoreInstance)
+		if(!isSuccess) {
+			log.warn "Setting cloud store info failed"
+			return false
+		}
+		
+		isSuccess = setCloudStoreFileResources(cloudStoreInstance)
+		if(!isSuccess) {
+			log.warn "Setting cloud store file resources failed"
+			return false
+		}
+		
+		isSuccess = setCloudStoreAccount(cloudStoreInstance, account)
+		if(!isSuccess) {
+			log.warn "Setting cloud store account failed"
+			return false
+		}
+		
+		return true
 	}
 	
-	private void setCloudStoreInfo(CloudStore cloudStoreInstance) {
+	private boolean setCloudStoreInfo(CloudStore cloudStoreInstance) {
 		About accountInfo = getAccountInfo()
+		if(accountInfo == null) {
+			return false
+		}
 		
 		cloudStoreInstance.storeName = STORE_NAME
 		
@@ -114,15 +134,30 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		
 		String updateCursor = accountInfo.getLargestChangeId()
 		cloudStoreInstance.updateCursor = updateCursor
+		
+		return true
 	}
 	
 	private def getAccountInfo() {
-		return driveService.about().get().execute()
+		try {
+			def accountInfo = driveService.about().get().execute()
+			return accountInfo
+		}
+		catch(Exception) {
+			log.warn "Error getting account info from google drive, Exception: {}", Exception
+			return null
+		}
 	}
 	
-	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
+	private boolean setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllGoogledriveResources(cloudStoreInstance)
-		cloudStoreInstance.fileResources = fileResources
+		if(fileResources) {
+			cloudStoreInstance.fileResources = fileResources
+			return true
+		}
+		else {
+			return false
+		}
 	}
 	
 	private def getAllGoogledriveResources(CloudStore cloudStoreInstance) {
@@ -162,6 +197,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.path = "/"
 		fileResource.isDir = true
 		fileResource.extraMetadata = 'root'
+		
+		fileResource.save()
 		
 		return fileResource
 	}
@@ -207,6 +244,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
 		}
+		
+		fileResource.save()
 
 		String driveFileId = googleDriveResource.id.toString()
 		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
@@ -230,6 +269,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
 		}
+		
+		fileResource.save()
 		
 		String driveFileId = googleDriveResource.id.toString()
 		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
@@ -331,18 +372,14 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
 		log.debug "Uploading file to google drive"
 		setGoogledriveApi(cloudStore)
+		def googledriveUpload = uploadToGoogledrive(cloudStore, uploadedFile)
+			
+		updateGoogledriveSpace(cloudStore)
 		
-		boolean isSuccess = uploadToGoogledrive(cloudStore, uploadedFile)
-		if(isSuccess) {
-			updateGoogledriveSpace(cloudStore)
-			return uploadedFile.originalFilename
-		}
-		else {
-			return null
-		}
+		return googledriveUpload
 	}
 	
-	private boolean uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
+	private String uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
 		File body = new File()
 		body.title = uploadedFile.originalFilename
 		body.mimeType =uploadedFile.contentType
@@ -353,10 +390,10 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		try {
 			File file = driveService.files().insert(body, mediaContent).execute()
 			log.debug "Successfully uploaded file '{}' to googledrive", file.title
-			return true
-		} catch (IOException e) {
-			log.warn "File could not be uploaded to googledrive. Exception {}", e
-			return false
+			return uploadedFile.originalFilename
+		} catch (Exception) {
+			log.warn "File could not be uploaded to googledrive. Exception {}", Exception
+			return null
 		}
 	}
 
@@ -445,7 +482,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		
 		if (file.downloadUrl != null && file.downloadUrl.length() > 0) {
 			try {
-				HttpResponse resp = driveService.getRequestFactory().buildGetRequest(new GenericUrl(file.downloadUrl)).execute();
+				HttpResponse resp = driveService.getRequestFactory().buildGetRequest(new GenericUrl(file.downloadUrl)).execute()
 				inputStream = resp.getContent()
 				log.debug "Downloaded file '{}' from google drive", fileResource.fileName
 			} catch (IOException e) {
@@ -464,7 +501,6 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
 		setGoogledriveApi(cloudStore)
-		
 		boolean isSuccess = deleteFromGoogledrive(fileResource)
 		
 		updateGoogledriveSpace(cloudStore)
@@ -511,7 +547,6 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	}
 	
 	private def getChanges(String updateCursor) {
-		def changes = []
 		def largestChangeId = null
 		def changedResources = []
 		def changeRequest = driveService.changes().list()

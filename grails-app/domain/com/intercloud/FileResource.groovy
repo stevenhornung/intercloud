@@ -1,6 +1,6 @@
 package com.intercloud
 
-class FileResource {
+class FileResource implements Comparable {
 
 	String path
 	String fileName
@@ -11,6 +11,7 @@ class FileResource {
 	String modified
 	String extraMetadata
 	
+	SortedSet childFileResources
 	static hasMany = [childFileResources: FileResource]
 	static belongsTo = [cloudStore: CloudStore, parentFileResource: FileResource]
 
@@ -28,5 +29,9 @@ class FileResource {
 	
 	static mapping = {
 		childFileResources cascade: 'all-delete-orphan', lazy: false
+	}
+	
+	int compareTo(obj) {
+		fileName.toUpperCase().compareTo(obj.fileName.toUpperCase())
 	}
 }

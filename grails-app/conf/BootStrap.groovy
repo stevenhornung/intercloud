@@ -8,7 +8,7 @@ class BootStrap {
 		def userRole = Role.findByAuthority('ROLE_USER') ?: new Role(authority: 'ROLE_USER').save(failOnError: true)
 		def adminRole = Role.findByAuthority('ROLE_ADMIN') ?: new Role(authority: 'ROLE_ADMIN').save(failOnError: true)
 
-		def steveAdmin = Account.findByEmail('steven.hornung@icloud.com') ?: new Account(
+		Account steveAdmin = Account.findByEmail('steven.hornung@icloud.com') ?: new Account(
 			email: 'steven.hornung@icloud.com',
 			password: 'password',
 			fullName: 'Steven Hornung',
@@ -19,7 +19,7 @@ class BootStrap {
 			AccountRole.create steveAdmin, userRole
 		}
 			
-		def shaderAdmin = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
+		Account shaderAdmin = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
 			email: 'brandon.shader@uky.edu',
 			password: 'password',
 			fullName: 'BrandonShader',
@@ -32,6 +32,7 @@ class BootStrap {
 		
 		createIntercloudCloudStore(steveAdmin)
 		createRootIntercloudFileResource(steveAdmin)
+		
 		createIntercloudCloudStore(shaderAdmin)
 		createRootIntercloudFileResource(shaderAdmin)
     }
@@ -42,8 +43,7 @@ class BootStrap {
 		cloudStoreInstance.account = newAccount
 		cloudStoreInstance.storeName = 'intercloud'
 		cloudStoreInstance.userId = newAccount.email
-		
-		cloudStoreInstance.save(flush: true)
+		cloudStoreInstance.save()
 		
 		newAccount.cloudStores = [cloudStoreInstance]
 	}
@@ -62,12 +62,10 @@ class BootStrap {
 		
 		rootIntercloudFileResource.isDir = true
 		rootIntercloudFileResource.fileName = 'InterCloudRoot'
-		rootIntercloudFileResource.save()
 		
 		def fileResources = []
 		fileResources.add(rootIntercloudFileResource)
 		cloudStore.fileResources = fileResources
-		cloudStore.save()
 	}
 	
 	def destroy = {}

@@ -93,10 +93,9 @@ class AccountController extends BaseController {
 		cloudStoreInstance.storeName = 'intercloud'
 		cloudStoreInstance.userId = newAccount.email
 		
-		cloudStoreInstance.save(flush: true)
+		cloudStoreInstance.save()
 		
 		newAccount.cloudStores = [cloudStoreInstance]
-		newAccount.save(flush:true)
 	}
 	
 	private def createRootIntercloudFileResource(Account newAccount) {
@@ -119,6 +118,5 @@ class AccountController extends BaseController {
 		def fileResources = []
 		fileResources.add(rootIntercloudFileResource)
 		cloudStore.fileResources = fileResources
-		cloudStore.save(flush:true)
 	}
 }

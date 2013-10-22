@@ -1,6 +1,6 @@
 package com.intercloud
 
-class CloudStore {
+class CloudStore implements Comparable {
 	
 	String storeName
 	Map credentials = new HashMap()
@@ -20,5 +20,9 @@ class CloudStore {
 	
 	static mapping = {
 		fileResources cascade: 'all-delete-orphan', lazy: false
+	}
+	
+	int compareTo(obj) {
+		storeName.compareTo(obj.storeName)
 	}
 }

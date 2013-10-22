@@ -95,44 +95,74 @@ class DropboxCloudStore implements CloudStoreInterface {
 		access_token = authFinish?.accessToken
 	}
 	
-	public void setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
-		setCloudStoreInfo(cloudStoreInstance)
-		setCloudStoreFileResources(cloudStoreInstance)
+	public boolean setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
+		boolean isSuccess = false
+		isSuccess = setCloudStoreInfo(cloudStoreInstance)
+		if(!isSuccess) {
+			log.warn "Setting cloud store info failed"
+			return false
+		}
+		
+		isSuccess = setCloudStoreFileResources(cloudStoreInstance)
+		if(!isSuccess) {
+			log.warn "Setting cloud store file resources failed"
+			return false
+		}
+		
 		setCloudStoreAccount(cloudStoreInstance, account)
+		
+		return true
 	}
 	
-	private void setCloudStoreInfo(CloudStore cloudStoreInstance) {
+	private boolean setCloudStoreInfo(CloudStore cloudStoreInstance) {
 		DbxAccountInfo accountInfo = getAccountInfo()
-		
-		cloudStoreInstance.storeName = STORE_NAME
-		cloudStoreInstance.credentials << ['ACCESS_TOKEN': access_token]
-		cloudStoreInstance.userId = accountInfo.userId
-		cloudStoreInstance.spaceUsed = accountInfo.quota.normal
-		cloudStoreInstance.totalSpace = accountInfo.quota.total
-		
-		String updateCursor = getInitialUpdateCursor()
-		cloudStoreInstance.updateCursor = updateCursor
+		if(accountInfo) {
+			cloudStoreInstance.storeName = STORE_NAME
+			cloudStoreInstance.credentials << ['ACCESS_TOKEN': access_token]
+			cloudStoreInstance.userId = accountInfo.userId
+			cloudStoreInstance.spaceUsed = accountInfo.quota.normal
+			cloudStoreInstance.totalSpace = accountInfo.quota.total
+			
+			String updateCursor = getInitialUpdateCursor()
+			cloudStoreInstance.updateCursor = updateCursor
+			
+			return true
+		}
+		else {
+			return false
+		}
 	}
 	
 	private def getAccountInfo() {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
-		DbxAccountInfo dropboxAccountInfo = dropboxClient.getAccountInfo()
 		
-		return dropboxAccountInfo
+		try {
+			DbxAccountInfo dropboxAccountInfo = dropboxClient.getAccountInfo()
+			return dropboxAccountInfo
+		} catch(Exception) {
+			log.warn "Get account info failed, Exception: {}", Exception
+			return null
+		}
 	}
 	
 	private String getInitialUpdateCursor() {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
-		
+
 		DbxDelta delta = dropboxClient.getDelta(null)
 		return delta.cursor
 	}
 	
-	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
+	private boolean setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources(cloudStoreInstance)
-		cloudStoreInstance.fileResources = fileResources
+		if(fileResources) {
+			cloudStoreInstance.fileResources = fileResources
+			return true
+		}
+		else {
+			return false
+		}
 	}
 	
 	private def getAllDropboxResources(CloudStore cloudStoreInstance) {
@@ -195,13 +225,14 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return fileResource
 	}
 	
-	private def setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
+	private void setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
 		cloudStoreInstance.account = account
 		account.addToCloudStores(cloudStoreInstance)
 	}
 	
-	private void setDropboxApiWithCredentials(def credentials) {
+	private void setDropboxApi(CloudStore cloudStore) {
 		log.debug "Setting dropbox credentials for api access"
+		def credentials = cloudStore.credentials
 		access_token = credentials.ACCESS_TOKEN
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
@@ -209,8 +240,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
 		log.debug "Uploading file to dropbox"
-		def credentials = cloudStore.credentials
-		setDropboxApiWithCredentials(credentials)
+		setDropboxApi(cloudStore)
 		def dropboxUpload = uploadToDropbox(uploadedFile)
 		
 		updateDropboxSpace(cloudStore)
@@ -218,7 +248,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		return dropboxUpload
 	}
 	
-	private def uploadToDropbox(def uploadedFile) {
+	private String uploadToDropbox(def uploadedFile) {
 		String filePath = "/" + uploadedFile.originalFilename
 		
 		try {
@@ -242,8 +272,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
-		def credentials = cloudStore.credentials
-		setDropboxApiWithCredentials(credentials)
+		setDropboxApi(cloudStore)
 		boolean isSuccess = deleteFromDropbox(fileResource)
 		
 		updateDropboxSpace(cloudStore)
@@ -262,7 +291,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	}
 
 	public InputStream downloadResource(CloudStore cloudStore, FileResource fileResource) {
-		setDropboxApiWithCredentials(cloudStore.credentials)
+		setDropboxApi(cloudStore)
 		
 		def downloadedStream = null
 		if(fileResource.isDir) {
@@ -333,19 +362,33 @@ class DropboxCloudStore implements CloudStoreInterface {
 	
 	private InputStream getDropboxFileStream(FileResource fileResource) {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
-		DbxEntry entry = dropboxClient.getFile(fileResource.path, null, outputStream)
-		log.debug "Downloaded file '{}' from dropbox", fileResource.fileName
+		DbxEntry entry
+		try {
+			entry = dropboxClient.getFile(fileResource.path, null, outputStream)
+			log.debug "Downloaded file '{}' from dropbox", fileResource.fileName
 		
-		InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())
-		return inputStream
+			InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())
+			return inputStream
+		}
+		catch (Exception) {
+			log.warn "Could not download file from dropbox, Exception: ", Exception
+			return null
+		}
 	}
 	
 	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {
 		log.debug "Updating dropbox file resources for account '{}'", cloudStore.account.email
-		def credentials = cloudStore.credentials
-		setDropboxApiWithCredentials(credentials)
+		setDropboxApi(cloudStore)
 		
-		DbxDelta delta = dropboxClient.getDelta(updateCursor)
+		DbxDelta delta
+		try {
+			delta = dropboxClient.getDelta(updateCursor)
+		}
+		catch (Exception) {
+			log.warn "Could not retrieve update cursor for dropbox, Exception: {}", Exception
+			return null
+		}
+		
 		if(!delta.entries.empty) {
 			log.debug "Updates to dropbox found. Syncing updates"
 			addNewEntries(cloudStore, delta.entries, currentFileResources)
