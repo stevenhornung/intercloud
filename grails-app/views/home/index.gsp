@@ -134,7 +134,7 @@
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
 					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key} Files</a><g:if test="${cloudStore.key != 'intercloud' }">	| <a href="/update?storeName=${cloudStore.key}&targetUri=/home">Sync</a></g:if></h2>
+					<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a><g:if test="${cloudStore.key != 'intercloud' }">	| <a href="/update?storeName=${cloudStore.key}&targetUri=/home">Sync</a></g:if></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion_${cloudStore.key }">
 							<g:each in="${cloudStore.value }" var="fileInstance">

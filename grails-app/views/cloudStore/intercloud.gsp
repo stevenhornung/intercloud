@@ -143,10 +143,10 @@
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
 						<g:set var="backPath" value="/intercloud" scope="request" />
-						-&gt <a href="${backPath}">InterCloud</a>
+						&gt <a href="${backPath}">InterCloud</a>
 						<g:each in="${pathList }" status="i" var="pathPiece">
 							<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
-							-&gt <a href="${backPath}">${pathPiece}</a>
+							&gt <a href="${backPath}">${pathPiece}</a>
 						</g:each>
 					</g:if>
 					</h3>

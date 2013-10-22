@@ -108,12 +108,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			return false
 		}
 		
-		isSuccess = setCloudStoreAccount(cloudStoreInstance, account)
-		if(!isSuccess) {
-			log.warn "Setting cloud store account failed"
-			return false
-		}
-		
+		setCloudStoreAccount(cloudStoreInstance, account)
+
 		return true
 	}
 	
