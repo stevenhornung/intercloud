@@ -6,7 +6,7 @@ import com.intercloud.sync.SecurityEventListener
 
 // Place your Spring DSL code here
 beans = {
-	securityEventListener(SecurityEventListener)
+	//securityEventListener(SecurityEventListener)
 	
 	userDetailsService(com.intercloud.accountdetails.AccountDetailsService)
 	

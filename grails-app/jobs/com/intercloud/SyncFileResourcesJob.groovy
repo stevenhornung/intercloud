@@ -24,7 +24,6 @@ class SyncFileResourcesJob {
 	private void syncAllUsersCloudStores() {
 		def loggedInUsers = grailsApplication.config.get('loggedInUsers')
 		def syncFileResourcesHelper = new SyncFileResourcesHelper()
-		log.error "{}", loggedInUsers
 		for(def loggedInUser : loggedInUsers) {
 			String loggedInUserEmail = loggedInUser.value.authentication.principal.username
 			Account account = Account.findByEmail(loggedInUserEmail)

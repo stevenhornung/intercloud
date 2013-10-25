@@ -13,7 +13,6 @@ class SyncFileResourcesHelper {
 	private static Logger log = LoggerFactory.getLogger(SyncFileResourcesHelper.class)
 	
 	public void syncSingleUserCloudStores(Account account) {
-		log.error "here"
 		def accountCloudStores = account.cloudStores
 		for(CloudStore cloudStore : accountCloudStores) {
 			if(cloudStore.storeName == 'dropbox') {
@@ -51,7 +50,7 @@ class SyncFileResourcesHelper {
 		String newUpdateCursor = new GoogledriveCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
 
 		cloudStore.updateCursor = newUpdateCursor
-		cloudStore.save(flush:true)
+		cloudStore.save()
 	}
 
 }

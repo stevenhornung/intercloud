@@ -24,7 +24,7 @@ class Account {
 
 	static mapping = {
 		password column: '`password`'
-		cloudStores cascade: 'all-delete-orphan'
+		cloudStores cascade: 'all-delete-orphan', lazy: false
 	}
 
 	Set<Role> getAuthorities() {

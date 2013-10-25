@@ -3,6 +3,7 @@ package com.intercloud.sync
 import org.springframework.context.ApplicationListener
 import org.springframework.security.authentication.event. AuthenticationSuccessEvent
 
+import com.intercloud.Account
 import com.intercloud.sync.SyncFileResourcesHelper
 
 import org.slf4j.Logger
@@ -13,6 +14,12 @@ class SecurityEventListener implements ApplicationListener<AuthenticationSuccess
 	private static Logger log = LoggerFactory.getLogger(SecurityEventListener.class)
 
 	void onApplicationEvent(AuthenticationSuccessEvent event) {
-		log.error 'ere'
+		event.authentication.with {
+			/*def syncFileResourcesHelper = new SyncFileResourcesHelper()
+			
+			Account account = Account.findByEmail(principal.username)
+			syncFileResourcesHelper.syncSingleUserCloudStores(account)*/
+			
+		}
     }
 }
