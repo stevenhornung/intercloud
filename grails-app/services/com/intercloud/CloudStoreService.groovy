@@ -8,6 +8,8 @@ import org.slf4j.LoggerFactory
 import com.intercloud.cloudstore.*
 import com.intercloud.util.*
 
+import com.intercloud.LinkCloudStoreJob
+
 class CloudStoreService {
 	
 	private static Logger log = LoggerFactory.getLogger(CloudStoreService.class)
@@ -38,7 +40,11 @@ class CloudStoreService {
 	public boolean authRedirect(Account account, def cloudStoreLink, request) {
 		def isSuccess = cloudStoreLink.configure(true, request)
 		if(isSuccess) {
-			isSuccess =  saveCloudStoreInstance(account, cloudStoreLink)
+			def future = callAsync {
+				return saveCloudStoreInstance(account, cloudStoreLink)
+			}
+			Map linkCloudStoreParam = ['future': future]
+			LinkCloudStoreJob.triggerNow(linkCloudStoreParam)
 		}
 		return isSuccess
 	}
@@ -52,11 +58,8 @@ class CloudStoreService {
 				// show message that cloud store link failed, and ask to retry
 				log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
 			}
-			return true
 		}
-		else {
-			return false
-		}
+		return isSuccess
 	}
 	
 	public def getHomeCloudStoreResources(Account account, String storeName) {

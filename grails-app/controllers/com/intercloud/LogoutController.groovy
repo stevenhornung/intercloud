@@ -17,8 +17,8 @@ class LogoutController extends BaseController {
 		def userToLogout
 		
 		loggedInUsers.each {
-			if(currentAccount.email == it.key) {
-				userToLogout = it.key
+			if(currentAccount.email == it) {
+				userToLogout = it
 			}
 		}
 		loggedInUsers.remove(userToLogout)

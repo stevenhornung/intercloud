@@ -15,12 +15,6 @@ class HomeController extends BaseController {
 		Account account = getCurrentAccount()
 		if(account) {
 			def accountFileResources = retrieveAccountFileResources(account)
-			
-			String errorMessage = params.errorMessage
-			if(errorMessage) {
-				flash.message = errorMessage
-			}
-			
 			render (view: 'index', model: [fileInstanceMap : accountFileResources])
 		}
 	}

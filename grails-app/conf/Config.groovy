@@ -127,6 +127,3 @@ grails.plugins.springsecurity.password.algorithm = 'bcrypt'
 // Keep global list of all logged in users
 loggedInUsers = []
 grails.plugins.springsecurity.useSecurityEventListener = true
-grails.plugins.springsecurity.onAuthenticationSuccessEvent = { e, appCtx ->
-	loggedInUsers."$e.authentication.principal.username" = e
-}

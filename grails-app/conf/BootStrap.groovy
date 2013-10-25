@@ -22,7 +22,7 @@ class BootStrap {
 		Account shaderAdmin = Account.findByEmail('brandon.shader@uky.edu') ?: new Account(
 			email: 'brandon.shader@uky.edu',
 			password: 'password',
-			fullName: 'BrandonShader',
+			fullName: 'Brandon Shader',
 			type: 'unlimited').save(failOnError: true)
 
 		if (!shaderAdmin.authorities.contains(adminRole)) {

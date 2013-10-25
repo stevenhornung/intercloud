@@ -26,7 +26,7 @@ class CloudStoreController extends BaseController {
 					}
 					else {
 						log.debug "Retrieving of cloud store request url failed from {}", storeName
-						flash.message = message(code: 'service.linkfailed', args: storeName)
+						flash.message = message(code: 'service.linkfailed', args: [storeName])
 						redirect(controller: 'home', action: 'index')
 					}
 				}
@@ -57,13 +57,17 @@ class CloudStoreController extends BaseController {
 			if(!isSuccess) {
 				flash.message = message(code: 'cloudstore.linkfailed')
 			}
+			else {
+				flash.message = message(code: 'cloudstore.linking', args: [cloudStoreLink.STORE_NAME.capitalize()])
+			}
 		}
 		else {
-			flash.message = message(code: 'cloudstore.linkfailed', args: storeName)
+			flash.message = message(code: 'cloudstore.linkfailed')
 		}
 		
-		redirect(controller: 'home', action:'index')
+		forward(controller: 'home', action:'index')
 	}
+
 	
 	public def getHomeCloudStoreResources(Account account, String storeName) {
 		def homeCloudStoreResources = cloudStoreService.getHomeCloudStoreResources(account, storeName)
@@ -114,7 +118,7 @@ class CloudStoreController extends BaseController {
 		else {
 			log.debug "Could not find specific cloud store resources: {}", fileResourcePath
 			if(storeName) {
-				flash.message = message(code: 'cloudstore.specificnotfound', args: fileResourcePath)
+				flash.message = message(code: 'cloudstore.specificnotfound', args: [fileResourcePath])
 				getAllCloudStoreResources()
 			}
 			else {
@@ -190,7 +194,7 @@ class CloudStoreController extends BaseController {
 		boolean isSuccess = cloudStoreService.deleteResource(account, storeName, fileResourceId)
 		
 		if(!isSuccess) {
-			flash.message = message(code: 'cloudstore.deletefailed', args: storeName)
+			flash.message = message(code: 'cloudstore.deletefailed', args: [storeName])
 		}
 		
 		redirect(uri: params.targetUri)

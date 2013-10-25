@@ -6,7 +6,9 @@ import com.intercloud.sync.SecurityEventListener
 
 // Place your Spring DSL code here
 beans = {
-	//securityEventListener(SecurityEventListener)
+	securityEventListener(SecurityEventListener) {
+		grailsApplication = ref('grailsApplication')
+	}
 	
 	userDetailsService(com.intercloud.accountdetails.AccountDetailsService)
 	

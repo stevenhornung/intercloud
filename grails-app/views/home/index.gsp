@@ -125,7 +125,7 @@
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
-				<h1>Welcome to InterCloud</h1>
+				<h1>Welcome to InterCloud</h1>	
 				<g:if test="${flash.message }">
 					<div class="errors">
 							${flash.message}
