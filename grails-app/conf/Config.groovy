@@ -119,6 +119,7 @@ grails.plugins.springsecurity.interceptUrlMap = [
 	'/cloudstore': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/auth_redirect': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/admin/**':		['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
+	'/home':			['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/**':               ['IS_AUTHENTICATED_ANONYMOUSLY']
 ]
 

@@ -8,7 +8,7 @@ class UrlMappings {
 
 		"/" {
 			controller = 'home'
-			action = [GET: "redirectHome",
+			action = [GET: "baseUrl",
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']

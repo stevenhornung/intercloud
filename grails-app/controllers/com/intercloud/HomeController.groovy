@@ -7,8 +7,14 @@ class HomeController extends BaseController {
 	
 	private static Logger log = LoggerFactory.getLogger(HomeController.class)
 
-	public def redirectHome() {
-		redirect(url: "/home")
+	public def baseUrl() {
+		Account account = getCurrentAccount()
+		if(account) {
+			redirect(uri: '/home')
+		}
+		else {
+			render (view: 'index')
+		}
 	}
 	
     public def index() {
