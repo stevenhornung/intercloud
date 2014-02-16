@@ -1,0 +1,6 @@
+
+Configuring Spring Security Core ...
+... finished configuring Spring Security Core
+
+Server running. Browse to http://localhost:8080
+2013-10-17 20:41:59,309 [quartzScheduler_Worker-1] DEBUG intercloud.SyncFileResourcesJob  - Starting SyncFileResources job
