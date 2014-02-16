@@ -1,2 +1,10 @@
-target-eclipse/
+stacktrace.log
 target/
+target-eclipse/
+.classpath
+.project
+.settings/
+/bin
+.DS_STORE
+cobertura.ser
+storage/
