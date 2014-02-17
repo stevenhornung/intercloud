@@ -119,7 +119,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			return false
 		}
 
-		cloudStoreInstance.storeName = STORE_NAME + " - ${accountInfo.getName()}"
+		cloudStoreInstance.storeName = STORE_NAME// + " - ${accountInfo.getName()}"
 
 		cloudStoreInstance.credentials << ['REFRESH_TOKEN': credential.getRefreshToken()]
 		cloudStoreInstance.credentials << ['ACCESS_TOKEN': credential.getAccessToken()]
