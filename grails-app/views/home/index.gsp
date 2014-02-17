@@ -79,11 +79,11 @@
 				}
 			}
 		</style>
-		
+
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
 		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-		
+
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
@@ -92,7 +92,7 @@
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
 			});
 		</script>
-		
+
 		<script>
 		  $(function() {
 		    $( "#accordion_intercloud" ).accordion({
@@ -125,7 +125,7 @@
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
-				<h1>Welcome to InterCloud</h1>	
+				<h1>Welcome to InterCloud</h1>
 				<g:if test="${flash.message }">
 					<div class="errors">
 							${flash.message}
@@ -134,27 +134,10 @@
 				<g:each in="${fileInstanceMap}" status="i" var="cloudStore">
 					<br>
 					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a><g:if test="${cloudStore.key != 'intercloud' }">	| <a href="/update?storeName=${cloudStore.key}&targetUri=/home">Sync</a></g:if></h2>
+					<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a><g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudStore" action="updateResources" update="accordian_${cloudStore.key}" params="[storeName:'${cloudStore.key}']">Sync</g:remoteLink> </g:if></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion_${cloudStore.key }">
-							<g:each in="${cloudStore.value }" var="fileInstance">
-								<tr>
-									<h3>${fileInstance.fileName }</h3>
-									<div>
-										<p>
-											<g:if test="${fileInstance.isDir }">
-												<td><a href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></t>
-											</g:if>
-											<g:else>
-												<td><a class="colorbox" href="/${cloudStore.key}${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-											</g:else>
-											<td><a href="/download?storeName=${cloudStore.key}&fileResourceId=${fileInstance.id}">Download</a></td>
-											<td><a href="#">Move</a></td>
-											<td><a href="/delete?storeName=${cloudStore.key}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
-										</p>
-									</div>
-								</tr>
-							</g:each>
+							<g:render template="layouts/homeCloudStoreResources" model="[cloudStore: cloudStore]" />
 						</div>
 					</g:if>
 				</g:each>

@@ -79,23 +79,23 @@
 				}
 			}
 		</style>
-		
+
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
 		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-		
+
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'dropzone.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'dropzone.js')}" type="text/javascript"></script>
-		
+
 		<script>
 			$(document).ready(function(){
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
 			});
 		</script>
-		
+
 		<script>
 		  $(function() {
 		    $( "#accordion" ).accordion({
@@ -103,14 +103,14 @@
 		    });
 		  });
 		</script>
-		
+
 		<script>
 			Dropzone.options.dropzone = {
 				parallelUploads: 1,
 				maxFilesize: 3072 // 3 gb
 					}
 		</script>
-		
+
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
@@ -123,7 +123,7 @@
 					    <input name="file" type="file" multiple />
 					  </div>
 					</form>
-					
+
 				</div>
 			</g:if>
 		</sec:ifLoggedIn>
@@ -138,7 +138,7 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Dropbox Files | <a href="/update?storeName=dropbox&targetUri=${request.forwardURI }">Sync</a>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
+					<h2><b>Dropbox Files | <g:remoteLink controller="cloudStore" action="updateResources" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
 					<h3><a href="/">Home </a>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
@@ -152,23 +152,7 @@
 					</h3>
 					<br/>
 					<div id="accordion">
-						<g:each in="${fileInstanceList}" status="i" var="fileInstance">
-							<tr>
-								<h3>${fileInstance.fileName }</h3>
-								<div>
-									<p><g:if test="${fileInstance.isDir }">
-											<td><a href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open Folder</a></td>
-										</g:if>
-										<g:else>
-											<td><a class="colorbox" href="/dropbox${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
-										</g:else>
-										<td><a href="/download?storeName=dropbox&fileResourceId=${fileInstance.id}">Download</a></td>
-										<td><a href="#">Move</a></td>
-										<td><a href="/delete?storeName=dropbox&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
-									</p>
-								</div>
-							</tr>
-						</g:each>
+							<g:render template="layouts/dropboxResources" model="[fileInstanceList: fileInstanceList]" />
 					</div>
 				</g:if>
 			</sec:ifLoggedIn>
@@ -176,6 +160,6 @@
 				<h1>Display what adding dropbox link can do</h1>
 			</sec:ifNotLoggedIn>
 		</div>
-		
+
 	</body>
 </html>

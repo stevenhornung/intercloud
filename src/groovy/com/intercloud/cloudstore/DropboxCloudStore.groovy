@@ -28,47 +28,47 @@ import com.intercloud.CloudStore
 import com.intercloud.FileResource
 
 class DropboxCloudStore implements CloudStoreInterface {
-	
+
 	private static Logger log = LoggerFactory.getLogger(DropboxCloudStore.class)
-	
+
 	static String STORE_NAME
 	static String APP_KEY
 	static String APP_SECRET
 	static String REDIRECT_URL
-	
+
 	private DbxWebAuth auth
 	private DbxAuthInfo authInfo
 	private DbxClient dropboxClient
 	private String access_token
-	
+
 	public def configure(boolean isAuthRedirect, HttpServletRequest request) {
 		if(!isAuthRedirect) {
 			log.debug "Getting authorize url for dropbox"
 			String authorizeUrl = getAuthorizeUrl(request)
 			return authorizeUrl
-		}	
+		}
 		else {
 			log.debug "Auth redirect from dropbox"
 			boolean isSuccess = setDropboxApiForConfigure(request)
 			return isSuccess
 		}
 	}
-	
+
 	private def getAuthorizeUrl(HttpServletRequest request) {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		DbxAppInfo appInfo = new DbxAppInfo(APP_KEY, APP_SECRET)
 		HttpSession session = request.getSession(true)
 		String sessionKey = "dropbox-auth-csrf-token"
 		DbxSessionStore csrfTokenStore = new DbxStandardSessionStore(session, sessionKey);
-		
+
 		auth = new DbxWebAuth(requestConfig, appInfo, REDIRECT_URL, csrfTokenStore)
 		return auth.start()
 	}
-	
+
 	private boolean setDropboxApiForConfigure(HttpServletRequest request) {
 		HttpSession session = request.getSession(true)
 		def sessionToken = session.getAttribute('dropbox-auth-csrf-token')
-		
+
 		if(sessionToken == null) {
 			log.debug "No request token in dropbox auth request"
 			session.removeAttribute("dropbox-auth-csrf-token")
@@ -76,9 +76,9 @@ class DropboxCloudStore implements CloudStoreInterface {
 		}
 		if(request.getParameter("state") != sessionToken) {
 			log.debug "Invalid oauth token in dropbox auth request"
-			return false 
+			return false
 		}
-		
+
 		DbxAuthFinish authFinish
 		try {
 			authFinish = auth.finish(request.parameterMap)
@@ -88,55 +88,56 @@ class DropboxCloudStore implements CloudStoreInterface {
 		catch(Exception) {
 			log.debug "Dropbox authorization failed, user denied access"
 			return false
-		} 
+		}
 	}
 
 	private def setAccessTokenForConfigure(def authFinish) {
 		access_token = authFinish?.accessToken
 	}
-	
+
 	public boolean setCloudStoreProperties(CloudStore cloudStoreInstance, Account account) {
 		boolean isSuccess = false
-		isSuccess = setCloudStoreInfo(cloudStoreInstance)
+		isSuccess = setCloudStoreInfo(cloudStoreInstance, account)
 		if(!isSuccess) {
 			log.warn "Setting cloud store info failed"
 			return false
 		}
-		
+
 		isSuccess = setCloudStoreFileResources(cloudStoreInstance)
 		if(!isSuccess) {
 			log.warn "Setting cloud store file resources failed"
 			return false
 		}
-		
+
 		setCloudStoreAccount(cloudStoreInstance, account)
-		
+
 		return true
 	}
-	
-	private boolean setCloudStoreInfo(CloudStore cloudStoreInstance) {
+
+	private boolean setCloudStoreInfo(CloudStore cloudStoreInstance, Account account) {
 		DbxAccountInfo accountInfo = getAccountInfo()
 		if(accountInfo) {
-			cloudStoreInstance.storeName = STORE_NAME
+			// need to check that this store doesn't already exist, if so alert user and do nothing
+			cloudStoreInstance.storeName = STORE_NAME// + " - ${accountInfo.displayName}"
 			cloudStoreInstance.credentials << ['ACCESS_TOKEN': access_token]
-			cloudStoreInstance.userId = accountInfo.userId
+			cloudStoreInstance.userId = accountInfo.displayName
 			cloudStoreInstance.spaceUsed = accountInfo.quota.normal
 			cloudStoreInstance.totalSpace = accountInfo.quota.total
-			
+
 			String updateCursor = getInitialUpdateCursor()
 			cloudStoreInstance.updateCursor = updateCursor
-			
+
 			return true
 		}
 		else {
 			return false
 		}
 	}
-	
+
 	private def getAccountInfo() {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
-		
+
 		try {
 			DbxAccountInfo dropboxAccountInfo = dropboxClient.getAccountInfo()
 			return dropboxAccountInfo
@@ -145,7 +146,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			return null
 		}
 	}
-	
+
 	private String getInitialUpdateCursor() {
 		DbxRequestConfig requestConfig = new DbxRequestConfig("intercloud/1.0", "english")
 		dropboxClient = new DbxClient(requestConfig, access_token)
@@ -153,7 +154,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		DbxDelta delta = dropboxClient.getDelta(null)
 		return delta.cursor
 	}
-	
+
 	private boolean setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources(cloudStoreInstance)
 		if(fileResources) {
@@ -164,7 +165,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			return false
 		}
 	}
-	
+
 	private def getAllDropboxResources(CloudStore cloudStoreInstance) {
 		String rootPath = "/"
 		def rootDropboxFolder = dropboxClient.getMetadataWithChildren(rootPath)
@@ -172,7 +173,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		def fileResources = getFilesInDir(rootDropboxFolder, parentFileResource, cloudStoreInstance)
 		return fileResources
 	}
-	
+
 	private def getFilesInDir(def dropboxFolder, FileResource parentFileResource, CloudStore cloudStoreInstance) {
 		def dirResources = []
 		for (DbxEntry entry : dropboxFolder.children) {
@@ -191,10 +192,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 		dirResources.add(parentFileResource)
 		return dirResources
 	}
-	
+
 	private def dropboxFolderToFileResource(DbxEntry dropboxFolder, CloudStore cloudStoreInstance) {
 		FileResource fileResource = new FileResource()
-		
+
 		fileResource.cloudStore = cloudStoreInstance
 		fileResource.path = dropboxFolder.path
 		fileResource.isDir = dropboxFolder.isFolder()
@@ -208,28 +209,28 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 		return fileResource
 	}
-	
+
 	private def dropboxFileToFileResource(def dropboxResource, CloudStore cloudStoreInstance) {
 		FileResource fileResource = new FileResource()
-		
+
 		fileResource.cloudStore = cloudStoreInstance
 		fileResource.byteSize = dropboxResource.numBytes
 		fileResource.path = dropboxResource.path
 		fileResource.modified = dropboxResource.lastModified
 		fileResource.isDir = dropboxResource.isFolder()
 		fileResource.fileName = dropboxResource.name
-		
+
 		// Guess mimeType by file extension
 		fileResource.mimeType = new Tika().detect(fileResource.path)
 
 		return fileResource
 	}
-	
+
 	private void setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
 		cloudStoreInstance.account = account
 		account.addToCloudStores(cloudStoreInstance)
 	}
-	
+
 	private void setDropboxApi(CloudStore cloudStore) {
 		log.debug "Setting dropbox credentials for api access"
 		def credentials = cloudStore.credentials
@@ -242,15 +243,15 @@ class DropboxCloudStore implements CloudStoreInterface {
 		log.debug "Uploading file to dropbox"
 		setDropboxApi(cloudStore)
 		String dropboxUploadName = uploadToDropbox(uploadedFile)
-		
+
 		updateDropboxSpace(cloudStore)
-		
+
 		return dropboxUploadName
 	}
-	
+
 	private String uploadToDropbox(def uploadedFile) {
 		String filePath = "/" + uploadedFile.originalFilename
-		
+
 		try {
 			def dropboxUpload = dropboxClient.uploadFile(filePath, DbxWriteMode.add(), uploadedFile.size, uploadedFile.inputStream)
 			log.debug "Successfully uploaded file '{}' to dropbox", dropboxUpload.path
@@ -260,25 +261,25 @@ class DropboxCloudStore implements CloudStoreInterface {
 			return null
 		}
 	}
-	
+
 	private void updateDropboxSpace(CloudStore cloudStore) {
 		log.debug "Updating dropbox space"
-		
+
 		DbxAccountInfo accountInfo = getAccountInfo()
-		
+
 		cloudStore.spaceUsed = accountInfo.quota.normal
 		cloudStore.totalSpace = accountInfo.quota.total
 	}
-	
+
 	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		log.debug "Deleting resource {}", fileResource.path
 		setDropboxApi(cloudStore)
 		boolean isSuccess = deleteFromDropbox(fileResource)
-		
+
 		updateDropboxSpace(cloudStore)
 		return isSuccess
 	}
-	
+
 	private boolean deleteFromDropbox(FileResource fileResource) {
 		try {
 			dropboxClient.delete(fileResource.path)
@@ -292,7 +293,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 
 	public InputStream downloadResource(CloudStore cloudStore, FileResource fileResource) {
 		setDropboxApi(cloudStore)
-		
+
 		def downloadedStream = null
 		if(fileResource.isDir) {
 			log.debug "Downloading folder and building zip from dropbox"
@@ -302,35 +303,35 @@ class DropboxCloudStore implements CloudStoreInterface {
 			log.debug "Downloading file from dropbox"
 			downloadedStream = getDropboxFileStream(fileResource)
 		}
-		
+
 		return downloadedStream
 	}
-	
+
 	private InputStream getZippedDropboxFolderStream(FileResource fileResource) {
 		String downloadedFolderPath = ZipUtilities.getDownloadedFolderPath(fileResource)
 		String zipFileName = ZipUtilities.getSourceZipName(STORE_NAME, fileResource)
 		InputStream zippedFolderInputStream = null
-		
+
 		if(!doesFolderExistInDropbox(fileResource)) {
 			return null
 		}
-		
+
 		String zipFileLocation = downloadedFolderPath.substring(0, downloadedFolderPath.lastIndexOf('/'))
-		
+
 		log.debug "Downloading folder to temporary zip storage"
 		boolean isSuccess = downloadFolderToPath(downloadedFolderPath, fileResource)
-		
+
 		if(isSuccess) {
 			log.debug "Zipping downloaded folder to '{}'", zipFileName
 			ZipUtilities.zipFolder(downloadedFolderPath, zipFileName)
 			zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
 		}
-			
+
 		ZipUtilities.removeTempFromFileSystem(zipFileLocation)
-		
+
 		return zippedFolderInputStream
 	}
-	
+
 	private boolean doesFolderExistInDropbox(FileResource fileResource) {
 		if(dropboxClient.getMetadata(fileResource.path) == null) {
 			return false
@@ -339,7 +340,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			return true
 		}
 	}
-	
+
 	private boolean downloadFolderToPath(String path, FileResource fileResource) {
 		boolean isSuccess = false
 		for(FileResource childResource : fileResource.childFileResources) {
@@ -369,17 +370,17 @@ class DropboxCloudStore implements CloudStoreInterface {
 				}
 			}
 		}
-		
+
 		return isSuccess
 	}
-	
+
 	private InputStream getDropboxFileStream(FileResource fileResource) {
 		ByteArrayOutputStream outputStream = new ByteArrayOutputStream()
 		DbxEntry entry
 		try {
 			entry = dropboxClient.getFile(fileResource.path, null, outputStream)
 			log.debug "Downloaded file '{}' from dropbox", fileResource.fileName
-		
+
 			InputStream inputStream = new ByteArrayInputStream(outputStream.toByteArray())
 			return inputStream
 		}
@@ -388,11 +389,11 @@ class DropboxCloudStore implements CloudStoreInterface {
 			return null
 		}
 	}
-	
+
 	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {
 		log.debug "Updating dropbox file resources for account '{}'", cloudStore.account.email
 		setDropboxApi(cloudStore)
-		
+
 		DbxDelta delta
 		try {
 			delta = dropboxClient.getDelta(updateCursor)
@@ -401,17 +402,17 @@ class DropboxCloudStore implements CloudStoreInterface {
 			log.warn "Could not retrieve update cursor for dropbox, Exception: {}", Exception
 			return null
 		}
-		
+
 		if(!delta.entries.empty) {
 			log.debug "Updates to dropbox found. Syncing updates"
 			addNewEntries(cloudStore, delta.entries, currentFileResources)
 		}
-		
+
 		updateDropboxSpace(cloudStore)
-		
+
 		return delta.cursor
 	}
-	
+
 	private void addNewEntries(CloudStore cloudStore, def entries, def currentFileResources) {
 		for(entry in entries) {
 			if(entry.metadata) {
@@ -439,7 +440,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			}
 		}
 	}
-	
+
 	private boolean updateEntryIfExists(CloudStore cloudStore, def entry, def currentFileResources) {
 		boolean isEntryUpdated = false
 		for(FileResource fileResource : currentFileResources) {
@@ -449,10 +450,10 @@ class DropboxCloudStore implements CloudStoreInterface {
 				break
 			}
 		}
-		
+
 		return isEntryUpdated
 	}
-	
+
 	private void updateChangedFileResource(CloudStore cloudStore, FileResource currentFileResource, def updatedEntry) {
 		if(updatedEntry.isFolder()) {
 			currentFileResource = setFolderFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
@@ -461,17 +462,17 @@ class DropboxCloudStore implements CloudStoreInterface {
 			currentFileResource = setFileResourceProperties(cloudStore, currentFileResource, updatedEntry)
 		}
 	}
-	
+
 	private FileResource setFolderFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
 		fileResource.cloudStore = cloudStore
 		fileResource.path = entry.path
 		fileResource.isDir = entry.isFolder()
 		fileResource.fileName = entry.name
 		fileResource.mimeType = "application/octet-stream"
-		
+
 		return fileResource
 	}
-	
+
 	private FileResource setFileResourceProperties(CloudStore cloudStore, FileResource fileResource, def entry) {
 		fileResource.cloudStore = cloudStore
 		fileResource.byteSize = entry.numBytes
@@ -479,13 +480,13 @@ class DropboxCloudStore implements CloudStoreInterface {
 		fileResource.modified = entry.lastModified
 		fileResource.isDir = entry.isFolder()
 		fileResource.fileName = entry.name
-		
+
 		// Guess mimeType by file extension
 		fileResource.mimeType = new Tika().detect(fileResource.path)
-		
+
 		return fileResource
 	}
-	
+
 	private def addToFileResources(CloudStore cloudStore, def entry, def currentFileResources) {
 		FileResource fileResource = new FileResource()
 		if(entry.isFolder()) {
@@ -495,7 +496,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			fileResource = setFileResourceProperties(cloudStore, fileResource, entry)
 		}
 		cloudStore.addToFileResources(fileResource)
-		
+
 		currentFileResources = CloudStoreUtilities.setParentAndChildFileResources(fileResource, currentFileResources)
 		return currentFileResources
 	}

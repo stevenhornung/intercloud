@@ -7,11 +7,11 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class CloudStoreController extends BaseController {
-	
+
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
-	
+
 	def cloudStoreService
-	
+
 	public def index() {
 		if(getCurrentAccount()) {
 			String storeName = params.storeName
@@ -26,7 +26,7 @@ class CloudStoreController extends BaseController {
 					}
 					else {
 						log.debug "Retrieving of cloud store request url failed from {}", storeName
-						flash.message = message(code: 'service.linkfailed', args: [storeName])
+						//flash.message = message(code: 'service.linkfailed', args: [storeName])
 						redirect(controller: 'home', action: 'index')
 					}
 				}
@@ -45,7 +45,7 @@ class CloudStoreController extends BaseController {
 			forward(controller: 'base', action: 'respondServerError')
 		}
 	}
-	
+
 	def authRedirect = {
 		log.debug "Auth redirect"
 		Account account = getCurrentAccount()
@@ -53,71 +53,56 @@ class CloudStoreController extends BaseController {
 		session.removeAttribute('cloudStoreLink')
 		if(cloudStoreLink) {
 			boolean isSuccess = cloudStoreService.authRedirect(account, cloudStoreLink, request)
-			
+
 			if(!isSuccess) {
-				flash.message = message(code: 'cloudstore.linkfailed')
+				//flash.message = message(code: 'cloudstore.linkfailed')
 			}
 			else {
-				flash.message = message(code: 'cloudstore.linking', args: [cloudStoreLink.STORE_NAME.capitalize()])
+				//flash.message = message(code: 'cloudstore.linking', args: [cloudStoreLink.STORE_NAME.capitalize()])
 			}
 		}
 		else {
-			flash.message = message(code: 'cloudstore.linkfailed')
+			//flash.message = message(code: 'cloudstore.linkfailed')
 		}
-		
+
 		forward(controller: 'home', action:'index')
 	}
 
-	
+
 	public def getHomeCloudStoreResources(Account account, String storeName) {
 		def homeCloudStoreResources = cloudStoreService.getHomeCloudStoreResources(account, storeName)
 		return homeCloudStoreResources
 	}
-	
+
 	public def getAllCloudStoreResources() {
 		Account account = getCurrentAccount()
-		def storeName = params.storeName
-		def cloudStoreResources = cloudStoreService.getAllCloudStoreResources(account, storeName)
-		if(cloudStoreResources != null) {
-			def cloudStore = cloudStoreService.getAccountCloudStore(account, storeName)
-			def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
-			def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
-
-			render (view : storeName, model: [fileInstanceList: cloudStoreResources, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
-		}
-		else {
-			render (view : storeName, model: [fileInstanceList: cloudStoreResources])
-		}
+		def cloudStoreName = params.storeName
+		renderTemplate(account, cloudStoreName)
 	}
-	
+
 	public def getSpecificCloudStoreResource() {
 		Account account = getCurrentAccount()
-		def storeName = params.storeName
+		def cloudStoreName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
-		
-		// for some reason when we open a folder, the /js/* patterns arent getting handled by resources plugin
+
+		// for some reason when we open a folder, the /js/* patterns arent getting handled the by resources plugin
 		if(fileResourcePath =~ '^/js/') {
 			return
 		}
-		
-		def specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, storeName, fileResourcePath)
-		
+
+		def specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
+
 		if(specificCloudStoreResource) {
 			if(specificCloudStoreResource.isDir) {
-				def directoryResources = cloudStoreService.retrieveFilesInDir(specificCloudStoreResource)
-				def cloudStore = cloudStoreService.getAccountCloudStore(account, storeName)
-				def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
-				def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
-				
-				render (view : storeName, model: [fileInstanceList: directoryResources, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
+				renderTemplate(account, cloudStoreName)
 			}
 			else {
-				renderFileResource(storeName, specificCloudStoreResource)
+				renderFileResource(cloudStoreName, specificCloudStoreResource)
 			}
 		}
 		else {
 			log.debug "Could not find specific cloud store resources: {}", fileResourcePath
-			if(storeName) {
+			if(cloudStoreName) {
 				flash.message = message(code: 'cloudstore.specificnotfound', args: [fileResourcePath])
 				getAllCloudStoreResources()
 			}
@@ -126,7 +111,7 @@ class CloudStoreController extends BaseController {
 			}
 		}
 	}
-	
+
 	private void renderFileResource(String storeName, FileResource fileResource) {
 		if(fileResource.mimeType in RENDER_TYPES) {
 			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
@@ -154,7 +139,7 @@ class CloudStoreController extends BaseController {
 			renderDownloadLink(fileResource, storeName)
 		}
 	}
-	
+
 	private def renderBytesToScreen(FileResource fileResource, InputStream cloudStoreFileStream) {
 		try{
 			response.contentType = fileResource.mimeType
@@ -166,13 +151,13 @@ class CloudStoreController extends BaseController {
 			//Do nothing, Client clicked out during load of data
 		}
 	}
-	
+
 	private def displayVideo(FileResource fileResource, InputStream cloudStoreFileStream, String storeName /*wont need storeName normally*/) {
 		// need to figure out how to buffer video then show render in a video
-		// just allow downloads for now 
+		// just allow downloads for now
 		renderDownloadLink(fileResource, storeName)
 	}
-	
+
 	private def renderDownloadLink(FileResource fileResource, String storeName) {
 		try{
 			def downloadLink = "<html><head></head><body><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download File</a></body></html>"
@@ -186,20 +171,20 @@ class CloudStoreController extends BaseController {
 			getAllCloudStoreResources()
 		}
 	}
-	
+
 	public def deleteResource() {
 		Account account = getCurrentAccount()
-		def storeName = params.storeName
+		def cloudStoreName = params.storeName
 		String fileResourceId = params.fileResourceId
-		boolean isSuccess = cloudStoreService.deleteResource(account, storeName, fileResourceId)
-		
+		boolean isSuccess = cloudStoreService.deleteResource(account, cloudStoreName, fileResourceId)
+
 		if(!isSuccess) {
-			flash.message = message(code: 'cloudstore.deletefailed', args: [storeName])
+			flash.message = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
 		}
-		
-		redirect(uri: params.targetUri)
+
+		renderTemplate(account, cloudStoreName)
 	}
-	
+
 	public def showDownloadDialog() {
 		def storeName = params.storeName
 		if(params.fileResourceId) {
@@ -222,7 +207,7 @@ class CloudStoreController extends BaseController {
 			showFileResourceDownload(storeName, rootFileResource)
 		}
 	}
-	
+
 	private def showFileResourceDownload(String storeName, FileResource fileResource) {
 		InputStream fileResourceStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
 		try{
@@ -242,35 +227,49 @@ class CloudStoreController extends BaseController {
 			getAllCloudStoreResources()
 		}
 	}
-	
+
 	public def updateResources() {
 		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
-		String targetUri = params.targetUri ?: "/home"
-		
+
 		cloudStoreService.updateResources(account, cloudStoreName)
 
-		redirect uri: targetUri
+		if(cloudStoreName) {
+			renderTemplate(account, cloudStoreName)
+		}
+		else {
+			forward(controller: 'home', action:'index')
+		}
 	}
-	
+
 	public def uploadResource() {
 		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
+		def fileInstanceList
+
 		if(cloudStoreName in CLOUD_STORES) {
 			log.debug "Uploading file to {}", cloudStoreName
-		
+
 			def uploadedFile = request.getFile('file')
 			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile)
-			
-			if(isSuccess) {
-				response.sendError(200)
-			}
-			else {
+
+			if(!isSuccess) {
 				flash.message = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])
 			}
 		}
 		else {
 			forward(controller: 'base', action: 'respondPageNotFound')
 		}
+
+		renderTemplate(account, cloudStoreName)
+	}
+
+	private void renderTemplate(Account account, String cloudStoreName) {
+		CloudStore cloudStore = cloudStoreService.getAccountCloudStore(account, cloudStoreName)
+		def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
+		def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
+		def fileInstanceList = cloudStoreService.getAllCloudStoreResources(account, cloudStoreName)
+
+		render(view : cloudStoreName, template: "layouts/${cloudStoreName}Resources", model: [fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
 	}
 }

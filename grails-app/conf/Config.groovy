@@ -79,7 +79,7 @@ log4j = {
     //appenders {
     //    console name:'stdout', layout:pattern(conversionPattern: '%c{2} %m%n')
     //}
-	
+
 	debug "com.intercloud"
 
     error  'org.codehaus.groovy.grails.web.servlet',        // controllers
@@ -120,6 +120,7 @@ grails.plugins.springsecurity.interceptUrlMap = [
 	'/auth_redirect': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/admin/**':		['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
 	'/home':			['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+    '/update':            ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
 	'/**':               ['IS_AUTHENTICATED_ANONYMOUSLY']
 ]
 
@@ -131,7 +132,7 @@ grails.plugins.springsecurity.useSecurityEventListener = true
 
 // Uncomment and edit the following lines to start using Grails encoding & escaping improvements
 
-/* remove this line 
+/* remove this line
 // GSP settings
 grails {
     views {

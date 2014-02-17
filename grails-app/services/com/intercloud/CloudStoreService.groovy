@@ -11,19 +11,19 @@ import com.intercloud.util.*
 import com.intercloud.LinkCloudStoreJob
 
 class CloudStoreService {
-	
+
 	private static Logger log = LoggerFactory.getLogger(CloudStoreService.class)
-	
+
 	static String INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
-	
+
 	public def getClientAccessRequestUrl(def cloudStoreLink, def request) {
 		def clientAccessRequestUrl = cloudStoreLink.configure(false, request)
 		return clientAccessRequestUrl
 	}
-	
+
 	public def getCloudStoreLink(String storeName) {
 		def cloudStoreLink = null
-		
+
 		if(storeName == 'dropbox') {
 			cloudStoreLink = new DropboxCloudStore()
 		}
@@ -33,10 +33,10 @@ class CloudStoreService {
 		else if(storeName == 'awss3') {
 			cloudStoreLink = new AwsS3CloudStore()
 		}
-		
+
 		return cloudStoreLink
 	}
-	
+
 	public boolean authRedirect(Account account, def cloudStoreLink, request) {
 		def isSuccess = cloudStoreLink.configure(true, request)
 		if(isSuccess) {
@@ -48,7 +48,7 @@ class CloudStoreService {
 		}
 		return isSuccess
 	}
-	
+
 	private boolean saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
 		CloudStore cloudStoreInstance = new CloudStore()
 		boolean isSuccess = currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
@@ -61,43 +61,68 @@ class CloudStoreService {
 		}
 		return isSuccess
 	}
-	
+
+	public def retrieveAccountFileResources(Account account) {
+		CloudStoreController controller = new CloudStoreController()
+		def accountFileResources = getFilesForEachCloudStore(controller, account)
+		return accountFileResources
+	}
+
+	private def getFilesForEachCloudStore(CloudStoreController controller, Account account) {
+		def fileInstanceMap = [:]
+
+		// Add inter cloud first, want it at the top of the home view
+		def fileResources = controller.getHomeCloudStoreResources(account, "intercloud")
+		fileInstanceMap << ["intercloud" : fileResources]
+
+		account.cloudStores.each {
+			if(it.storeName != 'intercloud') {
+
+				fileResources = controller.getHomeCloudStoreResources(account, it.storeName)
+				if(fileResources != null) {
+					fileInstanceMap << ["$it.storeName" : fileResources]
+				}
+			}
+		}
+		return fileInstanceMap
+	}
+
 	public def getHomeCloudStoreResources(Account account, String storeName) {
 		def dir = "/"
 		def fileResource = getFileResourceFromPath(account, storeName, dir)
 		return retrieveFilesInDir(fileResource)
 	}
-	
+
 	private def getFileResourceFromPath(Account account, String storeName, String fileResourcePath) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
 		if(cloudStore) {
 			return cloudStore.fileResources.find { it.path == fileResourcePath }
 		}
 	}
-	
+
 	public def retrieveFilesInDir(FileResource fileResource) {
 		return fileResource?.childFileResources
 	}
-	
-	public CloudStore getAccountCloudStore(Account account, String storeName) {
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+
+	public CloudStore getAccountCloudStore(Account account, String cloudStoreName) {
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
 		return cloudStore
 	}
-	
-	public def getAllCloudStoreResources(Account account, String storeName) {
+
+	public def getAllCloudStoreResources(Account account, String cloudStoreName) {
 		def dir = "/"
-		def fileResource = getFileResourceFromPath(account, storeName, dir)
+		def fileResource = getFileResourceFromPath(account, cloudStoreName, dir)
 		def cloudStoreResources = retrieveFilesInDir(fileResource)
-		
+
 		return cloudStoreResources
 	}
-	
+
 	public BigDecimal getTotalSpaceInGb(CloudStore cloudStore) {
 		BigDecimal totalSpaceInBytes = cloudStore.totalSpace
 		BigDecimal totalSpaceInGb = Math.round(totalSpaceInBytes/(2**30)*100)/100
 		return totalSpaceInGb
 	}
-	
+
 	public def getSpaceList(BigDecimal spaceInBytes) {
 		BigDecimal spaceUsed
 		def spaceList
@@ -109,11 +134,11 @@ class CloudStoreService {
 			spaceUsed = Math.round(spaceInBytes/(2**30)*100)/100
 			spaceList = [spaceUsed,'GB']
 		}
-		
+
 		return spaceList
-		
+
 	}
-	
+
 	public def getFileResourceStream(String storeName, FileResource fileResource) {
 		def resourceDataStream = null
 		if(storeName == 'intercloud') {
@@ -124,38 +149,38 @@ class CloudStoreService {
 			CloudStore cloudStore = fileResource.cloudStore
 			resourceDataStream = downloadFileResourceFromCloudStore(cloudStore, fileResource)
 		}
-		
+
 		return resourceDataStream
 	}
-	
+
 	private InputStream getStreamFromFileLocation(String storeName, FileResource fileResource, String locationOnFileSystem) {
 		InputStream inputStream = null
-		
+
 		if(fileResource.isDir) {
 			inputStream = buildZipAndGetStream(storeName, fileResource, locationOnFileSystem)
 		}
 		else {
 			inputStream = getSingleFileStream(locationOnFileSystem)
 		}
-		
+
 		return inputStream
 	}
-	
+
 	private InputStream buildZipAndGetStream(String storeName, FileResource fileResource, String locationOnFileSystem) {
 		String zipFileName = ZipUtilities.getSourceZipName(storeName, fileResource)
-		
+
 		log.debug "Zipping downloaded folder to '{}'", zipFileName
 		ZipUtilities.zipFolder(locationOnFileSystem, zipFileName)
-		
+
 		String zipFileLocation = locationOnFileSystem.substring(0, locationOnFileSystem.lastIndexOf('/'))
 		InputStream zippedFolderInputStream = ZipUtilities.getInputStreamFromZipFile(zipFileLocation, zipFileName)
-		
+
 		String zipPath = zipFileLocation + '/' + zipFileName
 		ZipUtilities.removeTempFromFileSystem(zipPath)
-		
+
 		return zippedFolderInputStream
 	}
-	
+
 	private InputStream getSingleFileStream(String locationOnFileSystem) {
 		InputStream inputStream = null
 		try {
@@ -167,54 +192,56 @@ class CloudStoreService {
 		catch(IOException) {
 			log.warn "File could not be read on file system"
 		}
-		
+
 		return inputStream
 	}
-	
+
 	private InputStream downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
 		def cloudStoreLink = getCloudStoreLink(cloudStore.storeName)
 		InputStream downloadedFileStream = cloudStoreLink.downloadResource(cloudStore, fileResource)
 		return downloadedFileStream
 	}
-	
-	public boolean deleteResource(Account account, String storeName, def fileResourceId) {
+
+	public boolean deleteResource(Account account, String cloudStoreName, def fileResourceId) {
 		FileResource fileResource = FileResource.get(fileResourceId)
 		CloudStoreUtilities.deleteFromDatabase(fileResource)
 		boolean isSuccess = true
-		if(storeName == 'intercloud') {
+
+		if(cloudStoreName == 'intercloud') {
 			deleteFromLocalFileSystem(fileResource)
-			
-			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+
+			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+
 			BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
 			updateIntercloudSpace(cloudStore, spaceToDelete)
 		}
 		else {
-			isSuccess = deleteFromCloudStoreLink(account, storeName, fileResource)
+			isSuccess = deleteFromCloudStoreLink(account, cloudStoreName, fileResource)
 		}
 		return isSuccess
 	}
-	
+
 	private void deleteFromLocalFileSystem(FileResource fileResource) {
 		File file = new File(fileResource.locationOnFileSystem)
 		file.delete()
 	}
-	
-	private boolean deleteFromCloudStoreLink(Account account, String storeName, FileResource fileResource) {
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		def cloudStoreLink = getCloudStoreLink(storeName)
+
+	private boolean deleteFromCloudStoreLink(Account account, String cloudStoreName, FileResource fileResource) {
+		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+		def cloudStoreLink = getCloudStoreLink(cloudStoreName)
 		boolean isSuccess = false
-		
+
 		if(cloudStoreLink) {
 			isSuccess = cloudStoreLink.deleteResource(cloudStore, fileResource)
+			cloudStore.save(flush:true)
 		}
 		else {
 			log.debug "Attempt to delete from unsuppored cloud store"
 		}
 
-		cloudStore.save(flush:true)
 		return isSuccess
 	}
-	
+
 	public void updateResources(Account account, String cloudStoreName) {
 		if(cloudStoreName) {
 			log.debug "Manually updating {} file resources", cloudStoreName
@@ -236,25 +263,25 @@ class CloudStoreService {
 			}
 		}
 	}
-	
+
 	private def updateSingleCloudStore(Account account, String storeName, def cloudStoreLink) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		
+
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
-		
+
 		def newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
 		if(newUpdateCursor) {
 			cloudStore.updateCursor = newUpdateCursor
 			cloudStore.save(flush:true)
 		}
 	}
-	
+
 	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile) {
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
 		def cloudStoreLink = getCloudStoreLink(cloudStoreName)
 		def newUpdateCursor
-		
+
 		if(cloudStoreName == 'intercloud') {
 			createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, null)
 			BigInteger spaceToAdd = uploadedFile.getSize()
@@ -266,7 +293,7 @@ class CloudStoreService {
 			def currentFileResources = cloudStore.fileResources
 			newUpdateCursor = cloudStoreLink.updateResources(cloudStore, updateCursor, currentFileResources)
 			cloudStore.updateCursor = newUpdateCursor
-			
+
 			if(cloudStoreName == 'dropbox') {
 				boolean isSuccess = uploadToDropbox(cloudStoreLink, cloudStore, uploadedFile)
 				if(!isSuccess) {
@@ -286,38 +313,38 @@ class CloudStoreService {
 		}
 
 		cloudStore.save(flush:true)
-		
+
 		return true
 	}
-		
+
 	private boolean uploadToDropbox(def cloudStoreLink, CloudStore cloudStore, def uploadedFile) {
 		String newFileName = null
 		def cloudStoreUploadName = cloudStoreLink.uploadResource(cloudStore, uploadedFile)
-		
+
 		if(!cloudStoreUploadName) {
 			return false
 		}
 		if(cloudStoreUploadName != uploadedFile.originalFilename) {
 			newFileName = cloudStoreUploadName
 		}
-		
+
 		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, newFileName)
-		
+
 		return true
 	}
-	
+
 	private boolean uploadToGoogledrive(def cloudStoreLink, CloudStore cloudStore, def uploadedFile) {
 		String extraMetadata = cloudStoreLink.uploadResource(cloudStore, uploadedFile)
 		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, extraMetadata)
 		return true
 	}
-	
+
 	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, String extraData) {
 		FileResource fileResource = new FileResource()
-		
+
 		String filePath = "/" + uploadedFile.originalFilename
 		fileResource.fileName = uploadedFile.originalFilename
-		
+
 		if(cloudStore.storeName == 'intercloud') {
 			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
 			String accountEmail = account.email
@@ -335,20 +362,20 @@ class CloudStoreService {
 		else if(cloudStore.storeName == 'googledrive') {
 			fileResource.extraMetadata = extraData
 		}
-		
+
 		fileResource.path = filePath
 		fileResource.byteSize = uploadedFile.size
 		fileResource.mimeType = uploadedFile.contentType
 		fileResource.isDir = false
 		fileResource.cloudStore = cloudStore
 		fileResource.modified = new Date()
-		
+
 		FileResource parentFileResource = cloudStore.fileResources.find { it.path == '/' }
 		fileResource.parentFileResource = parentFileResource
-		
+
 		fileResource.save()
 	}
-	
+
 	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {
 		byte[] buffer = new byte[1024]
 		int read = 0
@@ -357,11 +384,11 @@ class CloudStoreService {
 		try {
 			inputStream = newFile.getInputStream()
 			outputStream = new FileOutputStream(new File(pathToSaveFile))
-			
+
 			while((read = inputStream.read(buffer)) != -1) {
 				outputStream.write(buffer, 0, read)
 			}
-			
+
 			log.debug "Wrote file '{}' to local file system", pathToSaveFile
 		}
 		catch(IOException) {
@@ -377,7 +404,7 @@ class CloudStoreService {
 			}
 		}
 	}
-	
+
 	private void updateIntercloudSpace(CloudStore cloudStore, BigInteger spaceToChange) {
 		log.debug "Updating intercloud space"
 		cloudStore.spaceUsed += spaceToChange

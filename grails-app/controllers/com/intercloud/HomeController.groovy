@@ -4,7 +4,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class HomeController extends BaseController {
-	
+
 	private static Logger log = LoggerFactory.getLogger(HomeController.class)
 
 	public def baseUrl() {
@@ -16,31 +16,31 @@ class HomeController extends BaseController {
 			render (view: 'index')
 		}
 	}
-	
+
     public def index() {
 		Account account = getCurrentAccount()
 		if(account) {
 			def accountFileResources = retrieveAccountFileResources(account)
-			render (view: 'index', model: [fileInstanceMap : accountFileResources])
+			render (view: "index", template: "layouts/allCloudStoreResources", model: [fileInstanceMap : accountFileResources])
 		}
 	}
-	
+
 	private def retrieveAccountFileResources(Account account) {
 		CloudStoreController controller = new CloudStoreController()
 		def accountFileResources = getFilesForEachCloudStore(controller, account)
 		return accountFileResources
 	}
-	
+
 	private def getFilesForEachCloudStore(CloudStoreController controller, Account account) {
 		def fileInstanceMap = [:]
-		
+
 		// Add inter cloud first, want it at the top of the home view
 		def fileResources = controller.getHomeCloudStoreResources(account, "intercloud")
 		fileInstanceMap << ["intercloud" : fileResources]
-		
+
 		account.cloudStores.each {
 			if(it.storeName != 'intercloud') {
-				
+
 				fileResources = controller.getHomeCloudStoreResources(account, it.storeName)
 				if(fileResources != null) {
 					fileInstanceMap << ["$it.storeName" : fileResources]
@@ -49,7 +49,7 @@ class HomeController extends BaseController {
 		}
 		return fileInstanceMap
 	}
-	
+
 	public def loginOrRegister() {
 		def submit = params.submit
 		if(submit == 'Login') {
