@@ -15,93 +15,88 @@ class CloudStoreService {
 	private static Logger log = LoggerFactory.getLogger(CloudStoreService.class)
 
 	static String INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
+	private static String ROOT_DIR = "/"
 
-	public def getClientAccessRequestUrl(def cloudStoreLink, def request) {
-		def clientAccessRequestUrl = cloudStoreLink.configure(false, request)
+	public def getClientAccessRequestUrl(def cloudStoreClass, def request) {
+		def clientAccessRequestUrl = cloudStoreClass.configure(false, request)
 		return clientAccessRequestUrl
 	}
 
-	public def getCloudStoreLink(String storeName) {
-		def cloudStoreLink = null
+	public def getCloudStoreClass(String cloudStoreName) {
+		def cloudStoreClass = null
 
-		if(storeName == 'dropbox') {
-			cloudStoreLink = new DropboxCloudStore()
+		if(cloudStoreName == 'dropbox') {
+			cloudStoreClass = new DropboxCloudStore()
 		}
-		else if(storeName == 'googledrive') {
-			cloudStoreLink = new GoogledriveCloudStore()
+		else if(cloudStoreName == 'googledrive') {
+			cloudStoreClass = new GoogledriveCloudStore()
 		}
-		else if(storeName == 'awss3') {
-			cloudStoreLink = new AwsS3CloudStore()
+		else if(cloudStoreName == 'awss3') {
+			cloudStoreClass = new AwsS3CloudStore()
 		}
 
-		return cloudStoreLink
+		return cloudStoreClass
 	}
 
-	public boolean authRedirect(Account account, def cloudStoreLink, request) {
-		def isSuccess = cloudStoreLink.configure(true, request)
-		if(isSuccess) {
+	public boolean authRedirect(Account account, def cloudStoreClass, def request) {
+		def didFinishConfigure = cloudStoreClass.configure(true, request)
+		if(didFinishConfigure) {
+			// Run async job to link up cloud store
+
 			def future = callAsync {
-				return saveCloudStoreInstance(account, cloudStoreLink)
+				return saveCloudStoreInstance(account, cloudStoreClass)
 			}
 			Map linkCloudStoreParam = ['future': future]
 			LinkCloudStoreJob.triggerNow(linkCloudStoreParam)
 		}
-		return isSuccess
+		return didFinishConfigure
 	}
 
-	private boolean saveCloudStoreInstance(Account account, def currentCloudStoreLink) {
+	private boolean saveCloudStoreInstance(Account account, def cloudStoreClass) {
 		CloudStore cloudStoreInstance = new CloudStore()
-		boolean isSuccess = currentCloudStoreLink.setCloudStoreProperties(cloudStoreInstance, account)
+		boolean isSuccess = cloudStoreClass.setCloudStoreProperties(cloudStoreInstance, account)
 
 		if(isSuccess) {
 			if(!cloudStoreInstance.save(flush:true)) {
-				// show message that cloud store link failed, and ask to retry
 				log.warn "Cloud store link failed: {}", cloudStoreInstance.errors.allErrors
+				isSuccess = false
 			}
 		}
 		return isSuccess
 	}
 
-	public def retrieveAccountFileResources(Account account) {
-		CloudStoreController controller = new CloudStoreController()
-		def accountFileResources = getFilesForEachCloudStore(controller, account)
-		return accountFileResources
-	}
-
-	private def getFilesForEachCloudStore(CloudStoreController controller, Account account) {
-		def fileInstanceMap = [:]
+	public def getHomeCloudStoreResources(Account account) {
+		def homeResources = [:]
 
 		// Add inter cloud first, want it at the top of the home view
-		def fileResources = controller.getHomeCloudStoreResources(account, "intercloud")
-		fileInstanceMap << ["intercloud" : fileResources]
+		def fileResources = getSpecificCloudStoreResources(account, "intercloud", ROOT_DIR)
+		homeResources << ["intercloud" : fileResources]
 
 		account.cloudStores.each {
-			if(it.storeName != 'intercloud') {
+			if(it.storeName != "intercloud") {
 
-				fileResources = controller.getHomeCloudStoreResources(account, it.storeName)
+				fileResources = getSpecificCloudStoreResources(account, it.storeName, ROOT_DIR)
 				if(fileResources != null) {
-					fileInstanceMap << ["$it.storeName" : fileResources]
+					homeResources << ["$it.storeName" : fileResources]
 				}
 			}
 		}
-		return fileInstanceMap
+
+		return homeResources
 	}
 
-	public def getHomeCloudStoreResources(Account account, String storeName) {
-		def dir = "/"
-		def fileResource = getFileResourceFromPath(account, storeName, dir)
-		return retrieveFilesInDir(fileResource)
+	public def getSpecificCloudStoreResources(Account account, String cloudStoreName, String directory) {
+		def fileResource = getFileResourceFromPath(account, cloudStoreName, directory)
+		def cloudStoreResources = retrieveFilesInDir(fileResource)
+
+		return cloudStoreResources
 	}
 
-	private def getFileResourceFromPath(Account account, String storeName, String fileResourcePath) {
-		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+	private FileResource getFileResourceFromPath(Account account, String cloudStoreName, String fileResourcePath) {
+		CloudStore cloudStore = getAccountCloudStore(account, cloudStoreName)
 		if(cloudStore) {
 			return cloudStore.fileResources.find { it.path == fileResourcePath }
 		}
-	}
-
-	public def retrieveFilesInDir(FileResource fileResource) {
-		return fileResource?.childFileResources
 	}
 
 	public CloudStore getAccountCloudStore(Account account, String cloudStoreName) {
@@ -109,12 +104,8 @@ class CloudStoreService {
 		return cloudStore
 	}
 
-	public def getAllCloudStoreResources(Account account, String cloudStoreName) {
-		def dir = "/"
-		def fileResource = getFileResourceFromPath(account, cloudStoreName, dir)
-		def cloudStoreResources = retrieveFilesInDir(fileResource)
-
-		return cloudStoreResources
+	public def retrieveFilesInDir(FileResource fileResource) {
+		return fileResource?.childFileResources
 	}
 
 	public BigDecimal getTotalSpaceInGb(CloudStore cloudStore) {
@@ -197,7 +188,7 @@ class CloudStoreService {
 	}
 
 	private InputStream downloadFileResourceFromCloudStore(CloudStore cloudStore, FileResource fileResource) {
-		def cloudStoreLink = getCloudStoreLink(cloudStore.storeName)
+		def cloudStoreLink = getCloudStoreClass(cloudStore.storeName)
 		InputStream downloadedFileStream = cloudStoreLink.downloadResource(cloudStore, fileResource)
 		return downloadedFileStream
 	}
@@ -228,7 +219,7 @@ class CloudStoreService {
 
 	private boolean deleteFromCloudStoreLink(Account account, String cloudStoreName, FileResource fileResource) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
-		def cloudStoreLink = getCloudStoreLink(cloudStoreName)
+		def cloudStoreLink = getCloudStoreClass(cloudStoreName)
 		boolean isSuccess = false
 
 		if(cloudStoreLink) {
@@ -245,7 +236,7 @@ class CloudStoreService {
 	public void updateResources(Account account, String cloudStoreName) {
 		if(cloudStoreName) {
 			log.debug "Manually updating {} file resources", cloudStoreName
-			def cloudStoreLink = getCloudStoreLink(cloudStoreName)
+			def cloudStoreLink = getCloudStoreClass(cloudStoreName)
 			if(cloudStoreLink) {
 				updateSingleCloudStore(account, cloudStoreName, cloudStoreLink)
 			}
@@ -257,7 +248,7 @@ class CloudStoreService {
 			log.debug "Manually updating all cloud store file resources"
 			account.cloudStores.each{
 				if(it.storeName != 'intercloud') {
-					def cloudStoreLink = getCloudStoreLink(it.storeName)
+					def cloudStoreLink = getCloudStoreClass(it.storeName)
 					updateSingleCloudStore(account, it.storeName, cloudStoreLink)
 				}
 			}
@@ -279,7 +270,7 @@ class CloudStoreService {
 
 	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile) {
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
-		def cloudStoreLink = getCloudStoreLink(cloudStoreName)
+		def cloudStoreLink = getCloudStoreClass(cloudStoreName)
 		def newUpdateCursor
 
 		if(cloudStoreName == 'intercloud') {

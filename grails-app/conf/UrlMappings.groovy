@@ -30,7 +30,7 @@ class UrlMappings {
 						DELETE: 'deleteAccount']
 		}
 
-		"/account/logout" {
+		"/logout" {
 			controller = 'account'
 			action = [GET: 'logout',
 						POST: 'respondInvalidAction',

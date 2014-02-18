@@ -9,35 +9,21 @@ import org.slf4j.LoggerFactory
 class CloudStoreController extends BaseController {
 
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
+	private static String ROOT_DIR = "/"
 
 	def cloudStoreService
 
 	public def index() {
-		if(getCurrentAccount()) {
-			String storeName = params.storeName
-			if(storeName) {
-				log.debug "Adding cloud store '{}' to account '{}'", storeName, getCurrentAccount().email
-				def cloudStoreLink = cloudStoreService.getCloudStoreLink(storeName)
-				if(cloudStoreLink) {
-					def clientAccessRequestUrl = cloudStoreService.getClientAccessRequestUrl(cloudStoreLink, request)
-					if(clientAccessRequestUrl) {
-						session['cloudStoreLink'] = cloudStoreLink
-						redirect(url : clientAccessRequestUrl)
-					}
-					else {
-						log.debug "Retrieving of cloud store request url failed from {}", storeName
-						//flash.message = message(code: 'service.linkfailed', args: [storeName])
-						redirect(controller: 'home', action: 'index')
-					}
-				}
-				else {
-					log.debug "Bad cloud store specified to link"
-					redirect(controller: 'home', action: 'index')
-				}
+		Account account = getCurrentAccount()
+		if(account) {
+
+			String cloudStoreName = params.storeName
+			if(cloudStoreName) {
+				linkCloudStore(account, cloudStoreName)
 			}
 			else {
 				log.debug "No store name specified to link to"
-				redirect(controller: 'home', action: 'index')
+				renderHomeResources()
 			}
 		}
 		else {
@@ -46,38 +32,64 @@ class CloudStoreController extends BaseController {
 		}
 	}
 
-	def authRedirect = {
-		log.debug "Auth redirect"
-		Account account = getCurrentAccount()
-		def cloudStoreLink = session['cloudStoreLink']
-		session.removeAttribute('cloudStoreLink')
-		if(cloudStoreLink) {
-			boolean isSuccess = cloudStoreService.authRedirect(account, cloudStoreLink, request)
+	private void linkCloudStore(Account account, String cloudStoreName) {
+		log.debug "Adding cloud store '{}' to account '{}'", cloudStoreName, account.email
 
-			if(!isSuccess) {
-				//flash.message = message(code: 'cloudstore.linkfailed')
+		def cloudStoreClass = cloudStoreService.getCloudStoreClass(cloudStoreName)
+		if(cloudStoreClass) {
+			def clientAccessRequestUrl = cloudStoreService.getClientAccessRequestUrl(cloudStoreClass, request)
+			if(clientAccessRequestUrl) {
+				session['cloudStoreClass'] = cloudStoreClass
+				redirect(url : clientAccessRequestUrl)
 			}
 			else {
-				//flash.message = message(code: 'cloudstore.linking', args: [cloudStoreLink.STORE_NAME.capitalize()])
+				log.debug "Retrieving of cloud store request url failed from '{}'", cloudStoreName
+				flash.message = message(code: 'service.linkfailed', args: [cloudStoreName])
+				renderHomeResources()
 			}
 		}
 		else {
-			//flash.message = message(code: 'cloudstore.linkfailed')
+			log.debug "Bad cloud store specified to link"
+			renderHomeResources()
 		}
-
-		forward(controller: 'home', action:'index')
 	}
 
+	def authRedirect = {
+		log.debug "Auth redirect from cloud store url"
 
-	public def getHomeCloudStoreResources(Account account, String storeName) {
-		def homeCloudStoreResources = cloudStoreService.getHomeCloudStoreResources(account, storeName)
-		return homeCloudStoreResources
+		Account account = getCurrentAccount()
+		def cloudStoreClass = session['cloudStoreClass']
+		session.removeAttribute('cloudStoreClass')
+
+		if(cloudStoreClass) {
+			boolean didFinishConfigure = cloudStoreService.authRedirect(account, cloudStoreClass, request)
+
+			if(!didFinishConfigure) {
+				// Did not successfully configure link
+				flash.message = message(code: 'cloudstore.linkfailed')
+			}
+			else {
+				// Successfully configured. Currently linking async
+				flash.message = message(code: 'cloudstore.linking', args: [cloudStoreClass.STORE_NAME.capitalize()])
+			}
+		}
+		else {
+			flash.message = message(code: 'cloudstore.linkfailed')
+		}
+
+		renderHomeResources()
+	}
+
+	public def renderHomeResources() {
+		Account account = getCurrentAccount()
+		def homeResources = cloudStoreService.getHomeCloudStoreResources(account)
+		render (view: "index", template: "layouts/homeResources", model: [homeResources : homeResources])
 	}
 
 	public def getAllCloudStoreResources() {
 		Account account = getCurrentAccount()
 		def cloudStoreName = params.storeName
-		renderTemplate(account, cloudStoreName)
+		renderCloudStore(account, cloudStoreName, ROOT_DIR)
 	}
 
 	public def getSpecificCloudStoreResource() {
@@ -85,23 +97,18 @@ class CloudStoreController extends BaseController {
 		def cloudStoreName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
 
-		// for some reason when we open a folder, the /js/* patterns arent getting handled the by resources plugin
-		if(fileResourcePath =~ '^/js/') {
-			return
-		}
-
-		def specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
+		FileResource specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
 
 		if(specificCloudStoreResource) {
 			if(specificCloudStoreResource.isDir) {
-				renderTemplate(account, cloudStoreName)
+				renderCloudStore(account, cloudStoreName, specificCloudStoreResource.path)
 			}
 			else {
 				renderFileResource(cloudStoreName, specificCloudStoreResource)
 			}
 		}
 		else {
-			log.debug "Could not find specific cloud store resources: {}", fileResourcePath
+			log.debug "Could not find specific cloud store resource: {}", fileResourcePath
 			if(cloudStoreName) {
 				flash.message = message(code: 'cloudstore.specificnotfound', args: [fileResourcePath])
 				getAllCloudStoreResources()
@@ -182,7 +189,7 @@ class CloudStoreController extends BaseController {
 			flash.message = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
 		}
 
-		renderTemplate(account, cloudStoreName)
+		renderCloudStore(account, cloudStoreName, ROOT_DIR)
 	}
 
 	public def showDownloadDialog() {
@@ -235,7 +242,7 @@ class CloudStoreController extends BaseController {
 		cloudStoreService.updateResources(account, cloudStoreName)
 
 		if(cloudStoreName) {
-			renderTemplate(account, cloudStoreName)
+			renderCloudStore(account, cloudStoreName, ROOT_DIR)
 		}
 		else {
 			forward(controller: 'home', action:'index')
@@ -261,14 +268,15 @@ class CloudStoreController extends BaseController {
 			forward(controller: 'base', action: 'respondPageNotFound')
 		}
 
-		renderTemplate(account, cloudStoreName)
+		renderCloudStore(account, cloudStoreName, ROOT_DIR)
 	}
 
-	private void renderTemplate(Account account, String cloudStoreName) {
+	private void renderCloudStore(Account account, String cloudStoreName, String directory) {
 		CloudStore cloudStore = cloudStoreService.getAccountCloudStore(account, cloudStoreName)
 		def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
 		def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
-		def fileInstanceList = cloudStoreService.getAllCloudStoreResources(account, cloudStoreName)
+
+		def fileInstanceList = cloudStoreService.getSpecificCloudStoreResources(account, cloudStoreName, directory)
 
 		render(view : cloudStoreName, template: "layouts/${cloudStoreName}Resources", model: [fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
 	}

@@ -32,13 +32,13 @@ grails.project.dependency.resolution = {
 		compile 'com.google.apis:google-api-services-drive:v2-rev100-1.17.0-rc'
 		compile 'com.google.api-client:google-api-client-servlet:1.17.0-rc'
 		//compile 'com.amazonaws:aws-java-sdk:1.0.002'
-		
+
 		compile 'org.apache.tika:tika-core:0.7'
-		
+
 		build 'org.slf4j:slf4j-api:1.7.5'
-		
+
 		test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
-		
+
 		build 'org.apache.tika:tika-core:0.9'
     }
 
@@ -47,19 +47,19 @@ grails.project.dependency.resolution = {
         runtime ":jquery:1.8.3"
         compile ":resources:1.1.6"
 
-        build ":tomcat:7.0.50"
+        build ":tomcat:7.0.50.1"
 
         runtime ":database-migration:1.3.2"
 
         compile ':cache:1.0.1'
-		
+
 		compile ':spring-security-core:1.2.7.3'
-		
+
 		compile ":executor:0.3"
 		compile ":quartz:1.0-RC9"
-		
+
 		compile ':webflow:2.0.8.1'
-		
+
 		test(":spock:0.7") {
 			exclude "spock-grails-support"
 		}

@@ -12,9 +12,9 @@ class Account {
 	boolean accountExpired
 	boolean accountLocked
 	boolean passwordExpired
-	
+
 	static hasMany = [cloudStores: CloudStore]
-	
+
 	static constraints = {
 		email blank: false, email: true, unique: true
 		password blank: false

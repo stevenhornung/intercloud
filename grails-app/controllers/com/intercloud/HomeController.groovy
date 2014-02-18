@@ -9,6 +9,7 @@ class HomeController extends BaseController {
 
 	public def baseUrl() {
 		Account account = getCurrentAccount()
+
 		if(account) {
 			redirect(uri: '/home')
 		}
@@ -19,35 +20,14 @@ class HomeController extends BaseController {
 
     public def index() {
 		Account account = getCurrentAccount()
+
 		if(account) {
-			def accountFileResources = retrieveAccountFileResources(account)
-			render (view: "index", template: "layouts/allCloudStoreResources", model: [fileInstanceMap : accountFileResources])
+			forward(controller: "cloudStore", action: "renderHomeResources")
 		}
-	}
-
-	private def retrieveAccountFileResources(Account account) {
-		CloudStoreController controller = new CloudStoreController()
-		def accountFileResources = getFilesForEachCloudStore(controller, account)
-		return accountFileResources
-	}
-
-	private def getFilesForEachCloudStore(CloudStoreController controller, Account account) {
-		def fileInstanceMap = [:]
-
-		// Add inter cloud first, want it at the top of the home view
-		def fileResources = controller.getHomeCloudStoreResources(account, "intercloud")
-		fileInstanceMap << ["intercloud" : fileResources]
-
-		account.cloudStores.each {
-			if(it.storeName != 'intercloud') {
-
-				fileResources = controller.getHomeCloudStoreResources(account, it.storeName)
-				if(fileResources != null) {
-					fileInstanceMap << ["$it.storeName" : fileResources]
-				}
-			}
+		else {
+			log.warn "Passed spring security as logged in user but getCurrentAccount returned null"
+			render (view: 'index')
 		}
-		return fileInstanceMap
 	}
 
 	public def loginOrRegister() {
