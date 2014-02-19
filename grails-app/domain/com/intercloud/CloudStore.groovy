@@ -1,15 +1,16 @@
 package com.intercloud
 
 class CloudStore implements Comparable {
-	
+
 	String storeName
 	Map credentials = new HashMap()
 	String userId
 	BigDecimal spaceUsed = 0
 	BigDecimal totalSpace = 5368709120 // 5gb
 	String updateCursor
-	
+
 	static belongsTo = [account: Account]
+
 	static hasMany = [fileResources: FileResource]
 
     static constraints = {
@@ -17,11 +18,11 @@ class CloudStore implements Comparable {
 		updateCursor nullable: true
 		userId nullable: true
     }
-	
+
 	static mapping = {
 		fileResources cascade: 'all-delete-orphan', lazy: false
 	}
-	
+
 	int compareTo(obj) {
 		storeName.compareTo(obj.storeName)
 	}

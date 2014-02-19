@@ -12,13 +12,13 @@ import com.intercloud.CloudStore
 import com.intercloud.FileResource
 
 class AwsS3CloudStore implements CloudStoreInterface {
-	
+
 	private static Logger log = LoggerFactory.getLogger(AwsS3CloudStore.class)
-	
+
 	static String STORE_NAME
 	static String AWS_CREDENTIAL_URL
 	static String REDIRECT_URL
-	
+
 	private String accessKey
 	private String secretKey
 
@@ -31,7 +31,7 @@ class AwsS3CloudStore implements CloudStoreInterface {
 			setAccessTokenForConfigure(request.parameterMap)
 		}
 	}
-	
+
 	private void setAccessTokenForConfigure(def parameterMap) {
 		accessKey = parameterMap.accessKey
 		secretKey = parameterMap.secretKey
@@ -42,20 +42,20 @@ class AwsS3CloudStore implements CloudStoreInterface {
 		setCloudStoreFileResources(cloudStoreInstance)
 		setCloudStoreAccount(cloudStoreInstance, account)
 	}
-	
+
 	private void setCloudStoreInfo(CloudStore cloudStoreInstance) {
-		
+
 	}
-	
+
 	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllAwsS3Resources(cloudStoreInstance)
-		cloudStoreInstance.fileResources = fileResources
+		cloudStoreInstance.addToFileResources(fileResources)
 	}
-	
+
 	private def getAllAwsS3Resources(CloudStore cloudStoreInstance) {
-		
+
 	}
-	
+
 	private def setCloudStoreAccount(CloudStore cloudStoreInstance, Account account) {
 		cloudStoreInstance.account = account
 		account.addToCloudStores(cloudStoreInstance)
@@ -73,7 +73,7 @@ class AwsS3CloudStore implements CloudStoreInterface {
 
 	public boolean deleteResource(CloudStore cloudStore, FileResource fileResource) {
 		// TODO Auto-generated method stub
-		
+
 	}
 
 	public def updateResources(CloudStore cloudStore, String updateCursor, def currentFileResources) {

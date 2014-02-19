@@ -158,7 +158,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private boolean setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources(cloudStoreInstance)
 		if(fileResources) {
-			cloudStoreInstance.fileResources = fileResources
+			cloudStoreInstance.addToFileResources(fileResources)
 			return true
 		}
 		else {

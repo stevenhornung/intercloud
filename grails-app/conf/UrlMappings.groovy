@@ -70,7 +70,7 @@ class UrlMappings {
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
-			storeName = 'dropbox'
+			storeName = "dropbox"
 		}
 
 		"/dropbox/$fileResourcePath**" {

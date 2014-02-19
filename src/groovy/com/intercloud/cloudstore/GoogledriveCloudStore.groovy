@@ -148,7 +148,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	private boolean setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllGoogledriveResources(cloudStoreInstance)
 		if(fileResources) {
-			cloudStoreInstance.fileResources = fileResources
+			cloudStoreInstance.addToFileResources(fileResources)
 			return true
 		}
 		else {

@@ -10,7 +10,7 @@ class FileResource implements Comparable {
 	boolean isDir
 	String modified
 	String extraMetadata
-	
+
 	SortedSet childFileResources = new TreeSet()
 	static hasMany = [childFileResources: FileResource]
 	static belongsTo = [cloudStore: CloudStore, parentFileResource: FileResource]
@@ -26,11 +26,11 @@ class FileResource implements Comparable {
 		path nullable:true
 		extraMetadata nullable:true
     }
-	
+
 	static mapping = {
 		childFileResources cascade: 'all-delete-orphan', lazy: false
 	}
-	
+
 	int compareTo(obj) {
 		fileName.toUpperCase().compareTo(obj.fileName.toUpperCase())
 	}

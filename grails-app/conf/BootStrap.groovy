@@ -45,7 +45,7 @@ class BootStrap {
 		cloudStoreInstance.userId = newAccount.email
 		cloudStoreInstance.save()
 
-		newAccount.cloudStores = [cloudStoreInstance]
+		newAccount.addToCloudStores(cloudStoreInstance)
 	}
 
 	private def createRootIntercloudFileResource(Account newAccount) {
@@ -63,9 +63,7 @@ class BootStrap {
 		rootIntercloudFileResource.isDir = true
 		rootIntercloudFileResource.fileName = 'InterCloudRoot'
 
-		def fileResources = []
-		fileResources.add(rootIntercloudFileResource)
-		cloudStore.fileResources = fileResources
+		cloudStore.addToFileResources(rootIntercloudFileResource)
 	}
 
 	def destroy = {}
