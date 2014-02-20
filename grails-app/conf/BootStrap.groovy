@@ -57,6 +57,8 @@ class BootStrap {
 		rootIntercloudFileResource.path = '/'
 
 		String locationOnFileSystem = "storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+		//String locationOnFileSystem = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+
 		new File(locationOnFileSystem).mkdirs()
 		rootIntercloudFileResource.locationOnFileSystem = locationOnFileSystem
 

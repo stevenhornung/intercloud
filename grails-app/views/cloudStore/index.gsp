@@ -126,9 +126,14 @@
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
 				<h1>Welcome to InterCloud</h1>
-				<g:if test="${flash.message }">
+				<g:if test="${flash.error }">
 					<div class="errors">
-							${flash.message}
+							${flash.error}
+					</div>
+				</g:if>
+				<g:if test="${flash.info }">
+					<div class="message">
+							${flash.info}
 					</div>
 				</g:if>
 				<g:each in="${homeResources}" status="i" var="cloudStore">

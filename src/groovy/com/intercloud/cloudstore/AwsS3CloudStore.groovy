@@ -49,7 +49,8 @@ class AwsS3CloudStore implements CloudStoreInterface {
 
 	private def setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllAwsS3Resources(cloudStoreInstance)
-		cloudStoreInstance.addToFileResources(fileResources)
+		cloudStoreInstance.fileResources.clear()
+		cloudStoreInstance.fileResources = fileResources
 	}
 
 	private def getAllAwsS3Resources(CloudStore cloudStoreInstance) {

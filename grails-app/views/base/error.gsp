@@ -6,8 +6,8 @@
 	</head>
 	<body>
 		<ul class="errors">
-			<li><g:if test="${flash.message }">
-					${flash.message}
+			<li><g:if test="${flash.error }">
+					${flash.error}
 				</g:if>
 			</li>
 		</ul>

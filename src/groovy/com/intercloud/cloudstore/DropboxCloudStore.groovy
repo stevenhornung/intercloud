@@ -158,7 +158,8 @@ class DropboxCloudStore implements CloudStoreInterface {
 	private boolean setCloudStoreFileResources(CloudStore cloudStoreInstance) {
 		def fileResources = getAllDropboxResources(cloudStoreInstance)
 		if(fileResources) {
-			cloudStoreInstance.addToFileResources(fileResources)
+			cloudStoreInstance.fileResources.clear()
+			cloudStoreInstance.fileResources = fileResources
 			return true
 		}
 		else {
@@ -495,7 +496,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 		else {
 			fileResource = setFileResourceProperties(cloudStore, fileResource, entry)
 		}
-		cloudStore.addToFileResources(fileResource)
+		cloudStore.fileResources.add(fileResource)
 
 		currentFileResources = CloudStoreUtilities.setParentAndChildFileResources(fileResource, currentFileResources)
 		return currentFileResources

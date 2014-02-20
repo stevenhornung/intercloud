@@ -130,9 +130,9 @@
 		<div id="page-body" role="main">
 			<h1>Welcome to InterCloud</h1>
 			<br>
-			<g:if test="${flash.message }">
+			<g:if test="${flash.error }">
 					<div class="errors">
-							${flash.message}
+							${flash.error}
 					</div>
 			</g:if>
 			<hr>

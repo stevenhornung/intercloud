@@ -9,30 +9,37 @@ beans = {
 	securityEventListener(SecurityEventListener) {
 		grailsApplication = ref('grailsApplication')
 	}
-	
+
 	userDetailsService(com.intercloud.accountdetails.AccountDetailsService)
-	
+
 	zipUtilities (ZipUtilities) {
 		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
+		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
 	}
-	
+
 	dropboxCloudStore (DropboxCloudStore) {
-		STORE_NAME = 'dropbox'
+		STORE_NAME = "dropbox"
 		APP_KEY = "ujdofnwh516yrg0"
 		APP_SECRET = "43itigcfb9y59dy"
+
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
+		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
 	}
-	
+
 	googledriveCloudStore (GoogledriveCloudStore) {
 		STORE_NAME = 'googledrive'
 		CLIENT_ID = "887098665005.apps.googleusercontent.com"
 		CLIENT_SECRET = "OZQKsV0dGM04h-FtNt-VpGIF"
+
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
+		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
 	}
-	
+
 	awsS3CloudStore (AwsS3CloudStore) {
 		STORE_NAME = 'awss3'
 		AWS_CREDENTIAL_URL = "http://localhost:8080/awss3credentials"
+
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
+		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
 	}
 }

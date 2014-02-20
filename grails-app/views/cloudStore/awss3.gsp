@@ -79,23 +79,23 @@
 				}
 			}
 		</style>
-		
+
 		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
 		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
 		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-		
+
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'dropzone.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'dropzone.js')}" type="text/javascript"></script>
-		
+
 		<script>
 			$(document).ready(function(){
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
 			});
 		</script>
-		
+
 		<script>
 		  $(function() {
 		    $( "#accordion" ).accordion({
@@ -103,14 +103,14 @@
 		    });
 		  });
 		</script>
-		
+
 		<script>
 			Dropzone.options.dropzone = {
 				parallelUploads: 1,
 				maxFilesize: 3072 // 3 gb
 					}
 		</script>
-		
+
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
@@ -123,18 +123,23 @@
 					    <input name="file" type="file" multiple />
 					  </div>
 					</form>
-					
+
 				</div>
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<h1>Welcome to InterCloud</h1>
 			<br>
-			<g:if test="${flash.message }">
+			<g:if test="${flash.error }">
 					<div class="errors">
-							${flash.message}
+							${flash.error}
 					</div>
-				</g:if>
+			</g:if>
+			<g:if test="${flash.info }">
+					<div class="message">
+							${flash.info}
+					</div>
+			</g:if>
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
@@ -176,6 +181,6 @@
 				<h1>Display what adding Amazon AWS S3 link can do</h1>
 			</sec:ifNotLoggedIn>
 		</div>
-		
+
 	</body>
 </html>

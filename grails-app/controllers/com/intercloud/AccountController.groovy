@@ -30,20 +30,20 @@ class AccountController extends BaseController {
 
 	public def register() {
 		if(!isPasswordMatch()) {
-			flash.message = message(code: 'account.password.mismatch')
+			flash.error = message(code: 'account.password.mismatch')
 			showRegisterErrors()
 			return false
 		}
 
 		if(!isUniqueEmail()) {
-			flash.message = message(code: 'account.email.notunique')
+			flash.error = message(code: 'account.email.notunique')
 			showRegisterErrors()
 			return
 		}
 
 		Account newAccount = createNewAccount()
 		if(!newAccount.save(flush: true)) {
-			flash.message = message(code: 'account.notcreated')
+			flash.error = message(code: 'account.notcreated')
 			showRegisterErrors()
 			return
 		}
@@ -108,6 +108,8 @@ class AccountController extends BaseController {
 		rootIntercloudFileResource.path = '/'
 
 		String locationOnFileSystem = "storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+		//String locationOnFileSystem = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+
 		new File(locationOnFileSystem).mkdirs()
 		rootIntercloudFileResource.locationOnFileSystem = locationOnFileSystem
 
@@ -115,8 +117,6 @@ class AccountController extends BaseController {
 		rootIntercloudFileResource.fileName = 'InterCloudRoot'
 		rootIntercloudFileResource.save(flush:true)
 
-		def fileResources = []
-		fileResources.add(rootIntercloudFileResource)
-		cloudStore.addToFileResources(fileResources)
+		cloudStore.addToFileResources(rootIntercloudFileResource)
 	}
 }

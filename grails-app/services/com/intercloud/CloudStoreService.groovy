@@ -15,6 +15,8 @@ class CloudStoreService {
 	private static Logger log = LoggerFactory.getLogger(CloudStoreService.class)
 
 	static String INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
+	//static String INTERCLOUD_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage"
+
 	private static String ROOT_DIR = "/"
 
 	public def getClientAccessRequestUrl(def cloudStoreClass, def request) {
@@ -194,21 +196,31 @@ class CloudStoreService {
 	}
 
 	public boolean deleteResource(Account account, String cloudStoreName, def fileResourceId) {
+		boolean isSuccess
 		FileResource fileResource = FileResource.get(fileResourceId)
-		CloudStoreUtilities.deleteFromDatabase(fileResource)
-		boolean isSuccess = true
 
-		if(cloudStoreName == 'intercloud') {
-			deleteFromLocalFileSystem(fileResource)
+		if(fileResource) {
+			CloudStoreUtilities.deleteFromDatabase(fileResource)
+			isSuccess = true
 
-			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+			if(cloudStoreName == 'intercloud') {
+				deleteFromLocalFileSystem(fileResource)
 
-			BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
-			updateIntercloudSpace(cloudStore, spaceToDelete)
+				CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+
+				BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
+				updateIntercloudSpace(cloudStore, spaceToDelete)
+			}
+			else {
+				isSuccess = deleteFromCloudStoreLink(account, cloudStoreName, fileResource)
+			}
 		}
 		else {
-			isSuccess = deleteFromCloudStoreLink(account, cloudStoreName, fileResource)
+
+			log.debug "Attempted to delete a file resource that did not exist"
+			isSuccess = true
 		}
+
 		return isSuccess
 	}
 
@@ -383,7 +395,6 @@ class CloudStoreService {
 			log.debug "Wrote file '{}' to local file system", pathToSaveFile
 		}
 		catch(IOException) {
-			flash.message = message(code: 'localsystem.couldnotsave')
 			log.warn "Could not save file to local file system. Exception: {}", IOException
 		}
 		finally {

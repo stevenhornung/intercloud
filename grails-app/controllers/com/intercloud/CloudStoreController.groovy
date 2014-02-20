@@ -44,7 +44,7 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.debug "Retrieving of cloud store request url failed from '{}'", cloudStoreName
-				flash.message = message(code: 'service.linkfailed', args: [cloudStoreName])
+				flash.error = message(code: 'service.linkfailed', args: [cloudStoreName])
 				renderHomeResources()
 			}
 		}
@@ -66,15 +66,15 @@ class CloudStoreController extends BaseController {
 
 			if(!didFinishConfigure) {
 				// Did not successfully configure link
-				flash.message = message(code: 'cloudstore.linkfailed')
+				flash.error = message(code: 'cloudstore.linkfailed')
 			}
 			else {
 				// Successfully configured. Currently linking async
-				flash.message = message(code: 'cloudstore.linking', args: [cloudStoreClass.STORE_NAME.capitalize()])
+				flash.info = message(code: 'cloudstore.linking', args: [cloudStoreClass.STORE_NAME.capitalize()])
 			}
 		}
 		else {
-			flash.message = message(code: 'cloudstore.linkfailed')
+			flash.error = message(code: 'cloudstore.linkfailed')
 		}
 
 		renderHomeResources()
@@ -110,7 +110,7 @@ class CloudStoreController extends BaseController {
 		else {
 			log.debug "Could not find specific cloud store resource: {}", fileResourcePath
 			if(cloudStoreName) {
-				flash.message = message(code: 'cloudstore.specificnotfound', args: [fileResourcePath])
+				flash.error = message(code: 'cloudstore.specificnotfound', args: [fileResourcePath])
 				getAllCloudStoreResources()
 			}
 			else {
@@ -127,7 +127,7 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
-				flash.message = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
+				flash.error = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
 				getAllCloudStoreResources()
 			}
 		}
@@ -138,7 +138,7 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
-				flash.message = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
+				flash.error = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
 				getAllCloudStoreResources()
 			}
 		}
@@ -174,7 +174,7 @@ class CloudStoreController extends BaseController {
 		}
 		catch (Exception) {
 			log.debug "Download link could not be rendered to output stream: {}", Exception
-			flash.message = message(code: 'cloudstore.error')
+			flash.error = message(code: 'cloudstore.error')
 			getAllCloudStoreResources()
 		}
 	}
@@ -186,7 +186,7 @@ class CloudStoreController extends BaseController {
 		boolean isSuccess = cloudStoreService.deleteResource(account, cloudStoreName, fileResourceId)
 
 		if(!isSuccess) {
-			flash.message = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
+			flash.error = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
 		}
 
 		renderCloudStore(account, cloudStoreName, ROOT_DIR)
@@ -201,7 +201,7 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.debug "File resource not found from download dialog"
-				flash.message = message(code: 'cloudstore.error')
+				flash.error = message(code: 'cloudstore.error')
 				getAllCloudStoreResources()
 			}
 		}
@@ -230,7 +230,7 @@ class CloudStoreController extends BaseController {
 		}
 		catch (Exception) {
 			log.debug "File could not be sent to output stream: {}", Exception
-			flash.message = message(code: 'cloudstore.error')
+			flash.error = message(code: 'cloudstore.error')
 			getAllCloudStoreResources()
 		}
 	}
@@ -261,7 +261,7 @@ class CloudStoreController extends BaseController {
 			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile)
 
 			if(!isSuccess) {
-				flash.message = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])
+				flash.error = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])
 			}
 		}
 		else {
@@ -273,10 +273,17 @@ class CloudStoreController extends BaseController {
 
 	private void renderCloudStore(Account account, String cloudStoreName, String directory) {
 		CloudStore cloudStore = cloudStoreService.getAccountCloudStore(account, cloudStoreName)
-		def totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
-		def spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
 
-		def fileInstanceList = cloudStoreService.getSpecificCloudStoreResources(account, cloudStoreName, directory)
+		def totalSpaceList
+		def spaceUsedList
+		def fileInstanceList
+
+		if(cloudStore) {
+			totalSpaceList = cloudStoreService.getSpaceList(cloudStore.totalSpace)
+			spaceUsedList = cloudStoreService.getSpaceList(cloudStore.spaceUsed)
+
+			fileInstanceList = cloudStoreService.getSpecificCloudStoreResources(account, cloudStoreName, directory)
+		}
 
 		render(view : cloudStoreName, template: "layouts/${cloudStoreName}Resources", model: [fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
 	}

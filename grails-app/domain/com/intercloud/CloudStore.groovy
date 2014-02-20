@@ -11,6 +11,7 @@ class CloudStore implements Comparable {
 
 	static belongsTo = [account: Account]
 
+	Set fileResources = []
 	static hasMany = [fileResources: FileResource]
 
     static constraints = {
