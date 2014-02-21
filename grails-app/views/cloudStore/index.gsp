@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Home - InterCloud</title>
+		<title>Home - intercloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -117,7 +117,7 @@
 			<div id="status" role="complementary">
 				<ul>
 					<li><a href="/update">Sync All Files</a></li>
-					<li><a href="/intercloud">View all InterCloud Files</a></li>
+					<li><a href="/intercloud">View all intercloud Files</a></li>
 					<li><a href="/dropbox">View all Dropbox Files</a></li>
 					<li><a href="/googledrive">View all Google Drive Files</a></li>
 				</ul>
@@ -125,7 +125,7 @@
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
-				<h1>Welcome to InterCloud</h1>
+				<h1>Welcome to intercloud</h1>
 				<g:if test="${flash.error }">
 					<div class="errors">
 							${flash.error}

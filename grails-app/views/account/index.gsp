@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 	<head>
-		<title>Account - InterCloud</title>
+		<title>Account - intercloud</title>
 		<meta name="layout" content="main">
 	</head>
 	<body>

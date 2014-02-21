@@ -240,18 +240,26 @@ class DropboxCloudStore implements CloudStoreInterface {
 		dropboxClient = new DbxClient(requestConfig, access_token)
 	}
 
-	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath) {
 		log.debug "Uploading file to dropbox"
 		setDropboxApi(cloudStore)
-		String dropboxUploadName = uploadToDropbox(uploadedFile)
+		String dropboxUploadName = uploadToDropbox(uploadedFile, parentPath)
 
 		updateDropboxSpace(cloudStore)
 
 		return dropboxUploadName
 	}
 
-	private String uploadToDropbox(def uploadedFile) {
-		String filePath = "/" + uploadedFile.originalFilename
+	private String uploadToDropbox(def uploadedFile, String parentPath) {
+		String filePath
+
+		// directories besides root do not have trailing forward slash
+		if(parentPath == "/") {
+			filePath = parentPath + uploadedFile.originalFilename
+		}
+		else {
+			filePath = parentPath + "/" + uploadedFile.originalFilename
+		}
 
 		try {
 			def dropboxUpload = dropboxClient.uploadFile(filePath, DbxWriteMode.add(), uploadedFile.size, uploadedFile.inputStream)

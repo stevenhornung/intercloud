@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>InterCloud</title>
+		<title>intercloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -118,7 +118,7 @@
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=googledrive">Download Entire Google Drive</a></p>
-					<form id="dropzone" action="/upload?storeName=googledrive" class="dropzone" >
+					<form id="dropzone" action="/upload?storeName=googledrive&targetDir=${request.forwardURI}" class="dropzone" >
 					  <div class="fallback">
 					    <input name="file" type="file" multiple />
 					  </div>
@@ -128,7 +128,7 @@
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
-			<h1>Welcome to InterCloud</h1>
+			<h1>Welcome to intercloud</h1>
 			<br>
 			<g:if test="${flash.error }">
 					<div class="errors">

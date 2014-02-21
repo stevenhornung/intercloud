@@ -97,6 +97,18 @@ class CloudStoreController extends BaseController {
 		def cloudStoreName = params.storeName
 		def fileResourcePath = '/' + params.fileResourcePath
 
+		// when we open a folder, the /js/* gets handed to /{foldername}/js/* so not caught by resources plugin
+		// handle this special case
+		if(fileResourcePath.contains("/js/")) {
+			if(cloudStoreName) {
+				getAllCloudStoreResources()
+				return
+			}
+			else {
+				forward(controller: 'base', action: 'respondPageNotFound')
+			}
+		}
+
 		FileResource specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
 
 		if(specificCloudStoreResource) {
@@ -189,7 +201,8 @@ class CloudStoreController extends BaseController {
 			flash.error = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
 		}
 
-		renderCloudStore(account, cloudStoreName, ROOT_DIR)
+		// Redirect back to where file resource was deleted from and then worry about rendering
+		redirect(uri: params.targetUri)
 	}
 
 	public def showDownloadDialog() {
@@ -258,7 +271,9 @@ class CloudStoreController extends BaseController {
 			log.debug "Uploading file to {}", cloudStoreName
 
 			def uploadedFile = request.getFile('file')
-			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile)
+			String targetDirectory = params.targetDir
+
+			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile, targetDirectory)
 
 			if(!isSuccess) {
 				flash.error = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])

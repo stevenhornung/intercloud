@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>InterCloud</title>
+		<title>intercloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
@@ -117,8 +117,8 @@
 		<sec:ifLoggedIn>
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
-					<p><a href="/download?storeName=intercloud">Download Entire InterCloud</a></p>
-					<form id="dropzone" action="/upload?storeName=intercloud" class="dropzone">
+					<p><a href="/download?storeName=intercloud">Download Entire intercloud</a></p>
+					<form id="dropzone" action="/upload?storeName=intercloud&targetDir=${request.forwardURI}" class="dropzone">
 					  <div class="fallback">
 					    <input name="file" type="file" multiple />
 					  </div>
@@ -128,7 +128,7 @@
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
-			<h1>Welcome to InterCloud</h1>
+			<h1>Welcome to intercloud</h1>
 			<br>
 			<g:if test="${flash.error }">
 					<div class="errors">
@@ -138,12 +138,12 @@
 			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>InterCloud Files  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
+					<h2><b>intercloud Files  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
 					<h3><a href="/">Home </a>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
 						<g:set var="backPath" value="/intercloud" scope="request" />
-						&gt <a href="${backPath}">InterCloud</a>
+						&gt <a href="${backPath}">intercloud</a>
 						<g:each in="${pathList }" status="i" var="pathPiece">
 							<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
 							&gt <a href="${backPath}">${pathPiece}</a>

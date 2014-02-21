@@ -7,7 +7,7 @@
 	<head>
 		<meta http-equiv="Content-Type" content="text/html; charset=UTF-8">
 		<meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
-		<title><g:layoutTitle default="InterCloud"/></title>
+		<title><g:layoutTitle default="intercloud"/></title>
 		<meta name="viewport" content="width=device-width, initial-scale=1.0">
 		<link rel="shortcut icon" href="${resource(dir: 'images', file: 'favicon.ico')}" type="image/x-icon">
 		<link rel="apple-touch-icon" href="${resource(dir: 'images', file: 'apple-touch-icon.png')}">
@@ -30,7 +30,7 @@
 	<body>
 		<header>
 	      <div class="inner">
-	        <a href="/home"><h1>InterCloud</h1></a>
+	        <a href="/home"><h1>intercloud</h1></a>
 	        <h2></h2>
 	      </div>
 	    </header>
@@ -45,7 +45,7 @@
 				<div id="panel">
 					<div class="content clearfix">
 						<div class="left">
-							<h1>Welcome to InterCloud</h1>
+							<h1>Welcome to intercloud</h1>
 							<h2>Access all of your cloud data in one location</h2>
 							<p class="grey">Add all of your cloud data services including Dropbox, Google Drive, Box, Azure Storage, Amazon AWS, SkyDrive and more!</p>
 							</div>
@@ -101,7 +101,7 @@
 				<div id="panel">
 					<div class="content clearfix">
 						<div class="left">
-							<h1>Welcome to InterCloud</h1>
+							<h1>Welcome to intercloud</h1>
 							<h2>Access all of your cloud data in one location</h2>
 							<p class="grey">Add all of your cloud data services including Dropbox, Google Drive, Box, Azure Storage, Amazon AWS, SkyDrive and more!</p>
 							</div>

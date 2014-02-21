@@ -366,20 +366,22 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		cloudStore.credentials << ['ACCESS_TOKEN': credential.getAccessToken()]
 	}
 
-	public def uploadResource(CloudStore cloudStore, def uploadedFile) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath) {
 		log.debug "Uploading file to google drive"
 		setGoogledriveApi(cloudStore)
-		String googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile)
+		String googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile, parentPath)
 
 		updateGoogledriveSpace(cloudStore)
 
 		return googledriveFileId
 	}
 
-	private String uploadToGoogledrive(CloudStore cloudStore, def uploadedFile) {
+	private String uploadToGoogledrive(CloudStore cloudStore, def uploadedFile, String parentPath) {
 		File body = new File()
 		body.title = uploadedFile.originalFilename
 		body.mimeType =uploadedFile.contentType
+
+		// TODO: get parent from parent parth err somefin
 		body.parents = Arrays.asList(new ParentReference().setId('root'))
 
 		InputStreamContent mediaContent = new InputStreamContent(uploadedFile.contentType, uploadedFile.inputStream)

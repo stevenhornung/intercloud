@@ -10,7 +10,7 @@
 				</g:else>
 				<td><a href="/download?storeName=intercloud&fileResourceId=${fileInstance.id}">Download</a></td>
 				<td><a href="#">Move</a></td>
-				<td><a href="/delete?storeName=intercloud&fileResourceId=${fileInstance.id}">Delete</a></td>
+				<td><a href="/delete?storeName=intercloud&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 			</p>
 		</div>
 	</tr>

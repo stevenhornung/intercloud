@@ -2,7 +2,7 @@
 <html>
 	<head>
 		<meta name="layout" content="main"/>
-		<title>Home - InterCloud</title>
+		<title>Home - intercloud</title>
 		<style type="text/css" media="screen">
 			#status {
 				background-color: #eee;
