@@ -10,7 +10,6 @@
 .dropzone {
   position: relative;
   border: 1px solid rgba(0,0,0,0.08);
-  background: rgba(0,0,0,0.02);
   padding: 1em;
 }
 .dropzone.dz-clickable {
@@ -153,11 +152,10 @@
   display: block;
 }
 .dropzone {
-  border: 1px solid rgba(0,0,0,0.03);
-  min-height: 360px;
+  border: 1px solid rgba(0,0,0,0.08);
+  min-height: 160px;
   -webkit-border-radius: 3px;
   border-radius: 3px;
-  background: rgba(0,0,0,0.03);
   padding: 23px;
 }
 .dropzone .dz-default.dz-message {
