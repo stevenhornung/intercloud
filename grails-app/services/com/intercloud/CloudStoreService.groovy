@@ -202,6 +202,7 @@ class CloudStoreService {
 		FileResource fileResource = FileResource.get(fileResourceId)
 
 		if(fileResource) {
+			log.debug "Deleting resource data from db"
 			CloudStoreUtilities.deleteFromDatabase(fileResource)
 			isSuccess = true
 
@@ -227,6 +228,8 @@ class CloudStoreService {
 	}
 
 	private void deleteFromLocalFileSystem(FileResource fileResource) {
+		log.debug "Deleting file resource from local file system"
+
 		File file = new File(fileResource.locationOnFileSystem)
 		file.delete()
 	}

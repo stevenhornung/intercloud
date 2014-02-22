@@ -112,16 +112,20 @@ grails.plugin.springsecurity.useSessionFixationPrevention = true
 grails.plugins.springsecurity.securityConfigType = SecurityConfigType.InterceptUrlMap
 grails.plugins.springsecurity.interceptUrlMap = [
 	'/account/**':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/dropbox/*':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/googledrive/*':  ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/awss3/*':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/awss3credentials':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/cloudstore': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/auth_redirect': ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/admin/**':		['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
-	'/home':			['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-    '/update':            ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
-	'/**':               ['IS_AUTHENTICATED_ANONYMOUSLY']
+    '/intercloud/**':      ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/dropbox/**':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/googledrive/**':     ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/awss3/**':           ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/awss3credentials':   ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/cloudstore':         ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/auth_redirect':      ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/admin/**':		   ['ROLE_ADMIN', 'IS_AUTHENTICATED_FULLY'],
+	'/home':			   ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+    '/update':             ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+    '/upload':             ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+    '/delete':             ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+    '/download':           ['ROLE_USER', 'IS_AUTHENTICATED_REMEMBERED'],
+	'/**':                 ['IS_AUTHENTICATED_ANONYMOUSLY']
 ]
 
 grails.plugins.springsecurity.password.algorithm = 'bcrypt'

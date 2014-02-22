@@ -2,6 +2,7 @@ class UrlMappings {
 
 	static mappings = {
 		"401" (controller: 'base', action: 'respondUnauthorized')
+		"403" (controller: 'base', action: 'respondUnauthorized')
 		"404" (controller: 'base', action: 'respondPageNotFound')
 		"405" (controller: 'base', action: 'respondInvalidAction')
 		"500"(controller: 'base', action: 'respondServerError')

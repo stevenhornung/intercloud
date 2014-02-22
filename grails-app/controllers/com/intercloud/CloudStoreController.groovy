@@ -192,6 +192,8 @@ class CloudStoreController extends BaseController {
 	}
 
 	public def deleteResource() {
+		log.debug "Deleting file resource"
+
 		Account account = getCurrentAccount()
 		def cloudStoreName = params.storeName
 		String fileResourceId = params.fileResourceId
