@@ -128,8 +128,6 @@
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
-			<h1>Welcome to intercloud</h1>
-			<br>
 			<g:if test="${flash.error }">
 					<div class="errors">
 							${flash.error}
@@ -140,22 +138,27 @@
 							${flash.info}
 					</div>
 			</g:if>
-			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>Dropbox Files | <g:remoteLink controller="cloudStore" action="updateResources" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
-					<h3><a href="/">Home </a>
-					<g:if test="${params.fileResourcePath }">
-						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
-						<g:set var="backPath" value="/dropbox" scope="request" />
-						&gt <a href="${backPath}">Dropbox</a>
-						<g:each in="${pathList }" status="i" var="pathPiece">
-							<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
-							&gt <a href="${backPath}">${pathPiece}</a>
-						</g:each>
-					</g:if>
-					</h3>
-					<br/>
+					<div style="margin-top:10px">
+						<img src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50>
+							 | <g:remoteLink controller="cloudStore" action="updateResources" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used
+							<br><br>
+							<a href="/">Home </a>
+							<g:if test="${params.fileResourcePath }">
+								<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
+								<g:set var="backPath" value="/dropbox" scope="request" />
+								&#65515; <a href="${backPath}">Dropbox</a>
+								<g:each in="${pathList }" status="i" var="pathPiece">
+									<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
+									&#65515; <a href="${backPath}">${pathPiece}</a>
+								</g:each>
+							</g:if>
+							<br>
+							<br>
+							<hr>
+							<br>
+					</div>
 					<div id="accordion">
 							<g:render template="layouts/dropboxResources" model="[fileInstanceList: fileInstanceList]" />
 					</div>

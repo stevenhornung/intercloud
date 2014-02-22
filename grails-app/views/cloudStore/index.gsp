@@ -125,7 +125,6 @@
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<sec:ifLoggedIn>
-				<h1>Welcome to intercloud</h1>
 				<g:if test="${flash.error }">
 					<div class="errors">
 							${flash.error}
@@ -139,7 +138,15 @@
 				<g:each in="${homeResources}" status="i" var="cloudStore">
 					<br>
 					<hr>
-					<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a><g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudStore" action="updateResources" update="accordian_${cloudStore.key}" params="[storeName:'${cloudStore.key}']">Sync</g:remoteLink> </g:if></h2>
+					<br>
+					<g:if test="${cloudStore.key == 'dropbox' }">
+						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50></a>
+					</g:if>
+					<g:else>
+						<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a>
+					</g:else>
+
+					<g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudStore" action="updateResources" update="accordian_${cloudStore.key}" params="[storeName:'${cloudStore.key}']">Sync</g:remoteLink> </g:if></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion_${cloudStore.key }">
 							<g:render template="layouts/homeResources" model="[cloudStore: cloudStore]" />

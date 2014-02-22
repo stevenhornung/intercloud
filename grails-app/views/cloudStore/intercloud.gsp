@@ -128,29 +128,28 @@
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
-			<h1>Welcome to intercloud</h1>
-			<br>
 			<g:if test="${flash.error }">
 					<div class="errors">
 							${flash.error}
 					</div>
 			</g:if>
-			<hr>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>intercloud Files  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
+					<h2><b>intercloud |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
 					<h3><a href="/">Home </a>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
 						<g:set var="backPath" value="/intercloud" scope="request" />
-						&gt <a href="${backPath}">intercloud</a>
+						&#65515; <a href="${backPath}">intercloud</a>
 						<g:each in="${pathList }" status="i" var="pathPiece">
 							<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
-							&gt <a href="${backPath}">${pathPiece}</a>
+							&#65515; <a href="${backPath}">${pathPiece}</a>
 						</g:each>
 					</g:if>
 					</h3>
 					<br/>
+					<hr>
+					<br>
 					<div id="accordion">
 						<g:render template="layouts/intercloudResources" model="[fileInstanceList: fileInstanceList]" />
 					</div>
