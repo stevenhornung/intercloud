@@ -15,7 +15,7 @@ class BaseController {
 							"text/json", "text/xml", "application/xhtml+xml", "text/csv", "text/x-c", "text/x-java-source"]
 
 	static final VIDEO_TYPES = ["video/x-flv", "video/mp4", "application/x-mpegURL", "video/MP2T", "video/3gpp",
-								"video/quicktime", "video/x-msvideo", "video/x-ms-wmv"]
+								"video/quicktime", "video/x-msvideo", "video/x-ms-wmv", "video/avi"]
 
 	public def respondUnauthorized() {
 		log.debug "Unauthorized access attempt"

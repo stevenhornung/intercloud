@@ -74,6 +74,7 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else {
+			// No cloud store class in the session. something goofed
 			flash.error = message(code: 'cloudstore.linkfailed')
 		}
 
@@ -132,9 +133,12 @@ class CloudStoreController extends BaseController {
 	}
 
 	private void renderFileResource(String storeName, FileResource fileResource) {
+
+		// Only attempt to render certain mime types
 		if(fileResource.mimeType in RENDER_TYPES) {
 			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
 			if(cloudStoreFileStream) {
+				log.debug "Rendering file resource to screen"
 				renderBytesToScreen(fileResource, cloudStoreFileStream)
 			}
 			else {
@@ -144,9 +148,12 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else if(fileResource.mimeType in VIDEO_TYPES){
+
+			// Render as video
 			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
 			if(cloudStoreFileStream) {
-				displayVideo(fileResource, cloudStoreFileStream, storeName /*wont need storename normally*/)
+				log.debug "Rendering video file resource to screen"
+				displayVideo(fileResource, cloudStoreFileStream)
 			}
 			else {
 				log.warn "File resource data could not be retrieved from {}", storeName
@@ -155,6 +162,8 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else {
+
+			// Any other mimetype we just want to display a download link for
 			renderDownloadLink(fileResource, storeName)
 		}
 	}
@@ -165,24 +174,34 @@ class CloudStoreController extends BaseController {
 			response.contentLength = fileResource.byteSize.toInteger()
 			response.outputStream << cloudStoreFileStream
 			response.outputStream.flush()
+			response.outputStream.close()
 		}
 		catch (Exception) {
-			//Do nothing, Client clicked out during load of data
+			//Do nothing, Client probably clicked out during load of data
 		}
 	}
 
-	private def displayVideo(FileResource fileResource, InputStream cloudStoreFileStream, String storeName /*wont need storeName normally*/) {
-		// need to figure out how to buffer video then show render in a video
-		// just allow downloads for now
-		renderDownloadLink(fileResource, storeName)
+	private def displayVideo(FileResource fileResource, InputStream cloudStoreFileStream) {
+		try {
+			response.contentLength = fileResource.byteSize.toInteger()
+		    response.addHeader("Content-disposition", "attachment; filename=${fileResource.fileName}")
+		    response.contentType = fileResource.mimeType
+		    response.outputStream << cloudStoreFileStream
+		    response.outputStream.flush()
+		    response.outputStream.close()
+		}
+		catch (Exception) {
+			// do nothing, client probably clicked out during load
+		}
 	}
 
 	private def renderDownloadLink(FileResource fileResource, String storeName) {
 		try{
-			def downloadLink = "<html><head></head><body><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download File</a></body></html>"
+			def downloadLink = "<html><head></head><body><img src='${resource(dir: 'images', file: 'file.jpeg')}'><br><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download</a></body></html>"
 
 			response.outputStream << downloadLink
 			response.outputStream.flush()
+			response.outputStream.close()
 		}
 		catch (Exception) {
 			log.debug "Download link could not be rendered to output stream: {}", Exception
