@@ -1,2 +1,2 @@
-InterCloud
+intercloud
 ==========
