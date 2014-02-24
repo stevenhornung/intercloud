@@ -142,20 +142,20 @@
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50>
-						 | <a href="/update?storeName=googledrive&targetUri=${request.forwardURI }">Sync</a>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
-						<h3><a href="/">Home </a>
+						 | <a href="/update?storeName=googledrive&targetUri=${request.forwardURI }">Sync</a>
+						 <div style="float:right">
+						 	Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
+						 </div>
+						<br><br>
 						<g:if test="${params.fileResourcePath }">
 							<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
 							<g:set var="backPath" value="/googledrive" scope="request" />
-							&#65515; <a href="${backPath}">Google Drive</a>
+							<a href="${backPath}">Google Drive</a>
 							<g:each in="${pathList }" status="i" var="pathPiece">
 								<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
 								&#65515; <a href="${backPath}">${pathPiece}</a>
 							</g:each>
 						</g:if>
-						</h3>
-						<br/>
-						<br>
 						<hr>
 						<br>
 						<div id="accordion">

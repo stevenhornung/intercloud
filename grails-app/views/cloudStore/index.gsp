@@ -116,10 +116,10 @@
 		<sec:ifLoggedIn>
 			<div id="status" role="complementary">
 				<ul>
-					<li><a href="/update">Sync All Files</a></li>
-					<li><a href="/intercloud">View all intercloud Files</a></li>
-					<li><a href="/dropbox">View all Dropbox Files</a></li>
-					<li><a href="/googledrive">View all Google Drive Files</a></li>
+					<li><a href="/update">Sync Files</a></li>
+					<li><a href="/intercloud">Go to intercloud Files</a></li>
+					<li><a href="/dropbox">Go to Dropbox Files</a></li>
+					<li><a href="/googledrive">Go to Google Drive Files</a></li>
 				</ul>
 			</div>
 		</sec:ifLoggedIn>
@@ -142,6 +142,12 @@
 					<g:if test="${cloudStore.key == 'dropbox' }">
 						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50></a>
 					</g:if>
+					<g:elseif test="${cloudStore.key == 'googledrive' }">
+						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50></a>
+					</g:elseif>
+					<g:elseif test="${cloudStore.key == 'intercloud' }">
+						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'intercloud.jpeg')}" width=50 height=50></a>
+					</g:elseif>
 					<g:else>
 						<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a>
 					</g:else>

@@ -135,8 +135,10 @@
 			</g:if>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
-					<h2><b>intercloud |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used</b></h2>
-					<h3><a href="/">Home </a>
+					<img src="${resource(dir: 'images', file: 'intercloud.jpeg')}" width=50 height=50>
+					<div style="float:right">
+				 		Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
+				 	</div>
 					<g:if test="${params.fileResourcePath }">
 						<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
 						<g:set var="backPath" value="/intercloud" scope="request" />
@@ -146,8 +148,8 @@
 							&#65515; <a href="${backPath}">${pathPiece}</a>
 						</g:each>
 					</g:if>
-					</h3>
-					<br/>
+					<br>
+					<br>
 					<hr>
 					<br>
 					<div id="accordion">

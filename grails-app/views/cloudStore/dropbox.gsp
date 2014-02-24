@@ -142,22 +142,22 @@
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50>
-							 | <g:remoteLink controller="cloudStore" action="updateResources" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>  |  ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]} Used
-							<br><br>
-							<a href="/">Home </a>
-							<g:if test="${params.fileResourcePath }">
-								<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
-								<g:set var="backPath" value="/dropbox" scope="request" />
-								&#65515; <a href="${backPath}">Dropbox</a>
-								<g:each in="${pathList }" status="i" var="pathPiece">
-									<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
-									&#65515; <a href="${backPath}">${pathPiece}</a>
-								</g:each>
-							</g:if>
-							<br>
-							<br>
-							<hr>
-							<br>
+							 | <g:remoteLink controller="cloudStore" action="updateResources" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>
+						<div style="float:right">
+					 		Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
+					 	</div>
+						<br><br>
+						<g:if test="${params.fileResourcePath }">
+							<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />
+							<g:set var="backPath" value="/dropbox" scope="request" />
+							<a href="${backPath}">Dropbox</a>
+							<g:each in="${pathList }" status="i" var="pathPiece">
+								<g:set var="backPath" value="${backPath + '/' + pathPiece}" scope="request" />
+								&#65515; <a href="${backPath}">${pathPiece}</a>
+							</g:each>
+						</g:if>
+						<hr>
+						<br>
 					</div>
 					<div id="accordion">
 							<g:render template="layouts/dropboxResources" model="[fileInstanceList: fileInstanceList]" />
