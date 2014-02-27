@@ -80,15 +80,9 @@
 			}
 		</style>
 
-		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
-		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-
-		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
-		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
-		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
-		<link rel="stylesheet" href="${resource(dir: 'css', file: 'dropzone.css')}" type="text/css" media="screen" />
-		<script src="${resource(dir: 'js', file: 'dropzone.js')}" type="text/javascript"></script>
+		<script src="${resource(dir: 'js', file: 'jquery-1.10.2.js')}" type="text/javascript"></script>
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery-ui-1.10.4.custom.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'jquery-ui-1.10.4.custom.js')}" type="text/javascript"></script>
 
 		<script>
 			$(document).ready(function(){
@@ -99,7 +93,8 @@
 		<script>
 		  $(function() {
 		    $( "#accordion" ).accordion({
-		      collapsible: true
+		      collapsible: true,
+		      active: false
 		    });
 		  });
 		</script>
@@ -159,7 +154,7 @@
 						<hr>
 						<br>
 						<div id="accordion">
-							<g:render template="layouts/googledriveResources" model="[fileInstanceList: fileInstanceList]" />
+							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'googledrive']" />
 						</div>
 					</div>
 				</g:if>

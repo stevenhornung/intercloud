@@ -80,13 +80,10 @@
 			}
 		</style>
 
-		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
-		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
+		<script src="${resource(dir: 'js', file: 'jquery-1.10.2.js')}" type="text/javascript"></script>
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery-ui-1.10.4.custom.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'jquery-ui-1.10.4.custom.js')}" type="text/javascript"></script>
 
-		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
-		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
-		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
 		<script>
 			$(document).ready(function(){
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
@@ -96,17 +93,20 @@
 		<script>
 		  $(function() {
 		    $( "#accordion_intercloud" ).accordion({
-		      collapsible: true
+		      collapsible: true,
+		      active: false
 		    });
 		  });
 		  $(function() {
 		    $( "#accordion_dropbox" ).accordion({
-		      collapsible: true
+		      collapsible: true,
+		      active: false
 		    });
 		  });
 		  $(function() {
 		    $( "#accordion_googledrive" ).accordion({
-		      collapsible: true
+		      collapsible: true,
+		      active: false
 		    });
 		  });
 		</script>
@@ -155,7 +155,7 @@
 					<g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudStore" action="updateResources" update="accordian_${cloudStore.key}" params="[storeName:'${cloudStore.key}']">Sync</g:remoteLink> </g:if></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion_${cloudStore.key }">
-							<g:render template="layouts/homeResources" model="[cloudStore: cloudStore]" />
+							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
 						</div>
 					</g:if>
 				</g:each>

@@ -110,6 +110,7 @@ class CloudStoreController extends BaseController {
 			}
 		}
 
+		log.debug "Getting '{}' file resource from '{}'", fileResourcePath, cloudStoreName
 		FileResource specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
 
 		if(specificCloudStoreResource) {
@@ -197,7 +198,7 @@ class CloudStoreController extends BaseController {
 
 	private def renderDownloadLink(FileResource fileResource, String storeName) {
 		try{
-			def downloadLink = "<html><head></head><body><img src='${resource(dir: 'images', file: 'file.jpeg')}'><br><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download</a></body></html>"
+			def downloadLink = "<html><head></head><body><img src='${resource(dir: 'images', file: 'file.jpeg')}' height=50 width=50 ><br><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download</a></body></html>"
 
 			response.outputStream << downloadLink
 			response.outputStream.flush()

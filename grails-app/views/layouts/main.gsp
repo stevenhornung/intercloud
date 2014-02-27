@@ -15,17 +15,21 @@
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'main.css')}" type="text/css">
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'mobile.css')}" type="text/css">
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'style.css')}" type="text/css" media="screen" />
-  		<link rel="stylesheet" href="${resource(dir: 'css', file: 'slide.css')}" type="text/css" media="screen" />
   		<link rel="stylesheet" href="${resource(dir: 'css', file: 'header.css')}" type="text/css" media="screen" />
 		<g:layoutHead/>
+
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'dropzone.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'dropzone.js')}" type="text/javascript"></script>
+
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'slide.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'slide.js')}" type="text/javascript"></script>
+
 		<r:layoutResources />
 
-
-		<script src="js/slide.js" type="text/javascript"></script>
-
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
-		<script src="js/jquery.colorbox.js" type="text/javascript"></script>
-		<script src="js/jquery.colorbox-min.js" type="text/javascript"></script>
+		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
+
+
 	</head>
 	<body>
 		<header>

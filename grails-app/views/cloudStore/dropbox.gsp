@@ -80,15 +80,9 @@
 			}
 		</style>
 
-		<link rel="stylesheet" href="http://code.jquery.com/ui/1.10.3/themes/smoothness/jquery-ui.css" />
-		<script src="${resource(dir: 'js', file: 'jquery-1.9.1.js')}" type="text/javascript"></script>
-		<script src="http://code.jquery.com/ui/1.10.3/jquery-ui.js"></script>
-
-		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
-		<script src="${resource(dir: 'js', file: 'jquery.colorbox-min.js')}" type="text/javascript"></script>
-		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
-		<link rel="stylesheet" href="${resource(dir: 'css', file: 'dropzone.css')}" type="text/css" media="screen" />
-		<script src="${resource(dir: 'js', file: 'dropzone.js')}" type="text/javascript"></script>
+		<script src="${resource(dir: 'js', file: 'jquery-1.10.2.js')}" type="text/javascript"></script>
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery-ui-1.10.4.custom.css')}" type="text/css" media="screen" />
+		<script src="${resource(dir: 'js', file: 'jquery-ui-1.10.4.custom.js')}" type="text/javascript"></script>
 
 		<script>
 			$(document).ready(function(){
@@ -99,7 +93,8 @@
 		<script>
 		  $(function() {
 		    $( "#accordion" ).accordion({
-		      collapsible: true
+		      collapsible: true,
+		      active: false
 		    });
 		  });
 		</script>
@@ -142,7 +137,7 @@
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50>
-							 | <g:remoteLink controller="cloudStore" action="updateResources" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>
+							 | <g:remoteLink controller="cloudstore" action="update" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>
 						<div style="float:right">
 					 		Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
 					 	</div>
@@ -160,7 +155,7 @@
 						<br>
 					</div>
 					<div id="accordion">
-							<g:render template="layouts/dropboxResources" model="[fileInstanceList: fileInstanceList]" />
+							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'dropbox']" />
 					</div>
 				</g:if>
 			</sec:ifLoggedIn>

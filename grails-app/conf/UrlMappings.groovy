@@ -154,10 +154,10 @@ class UrlMappings {
 						DELETE: 'respondInvalidAction']
 		}
 
-		"/update" {
+		"/cloudstore/update" {
 			controller = "cloudStore"
 			action = [GET: 'updateResources',
-						POST: 'respondInvalidAction',
+						POST: 'updateResources',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}
