@@ -152,7 +152,7 @@
 						<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a>
 					</g:else>
 
-					<g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudStore" action="updateResources" update="accordian_${cloudStore.key}" params="[storeName:'${cloudStore.key}']">Sync</g:remoteLink> </g:if></h2>
+					<g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudstore" action="update" update="accordian_${cloudStore.key}" params="[storeName: cloudStore.key]">Sync</g:remoteLink> </g:if></h2>
 					<g:if test="${cloudStore.value }">
 						<div id="accordion_${cloudStore.key }">
 							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
