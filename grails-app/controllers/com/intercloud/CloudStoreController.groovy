@@ -289,7 +289,7 @@ class CloudStoreController extends BaseController {
 		String cloudStoreName = params.storeName
 		def fileInstanceList
 
-		if(cloudStoreName in CLOUD_STORES) {
+		if(cloudStoreName in account.cloudStores.storeName) {
 			log.debug "Uploading file to {}", cloudStoreName
 
 			def uploadedFile = request.getFile('file')
@@ -323,5 +323,22 @@ class CloudStoreController extends BaseController {
 		}
 
 		render(view : cloudStoreName, template: "layouts/${cloudStoreName}Resources", model: [fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
+	}
+
+	public def newFolder() {
+		Account account = getCurrentAccount()
+		String cloudStoreName = params.storeName
+		FileResource parentFileResource = cloudStoreService.getParentFileResourceFromPath(account, cloudStoreName, params.parentPath)
+		String folderName = params.folderName
+
+		log.debug "Creating folder '{}' under '{}' in '{}' cloud store", folderName, parentFileResource.path, cloudStoreName
+
+		boolean isSuccess = cloudStoreService.createFolder(account, cloudStoreName, parentFileResource, folderName)
+
+		if(!isSuccess) {
+			flash.error = message(code: 'cloudstore.newfolderfailed')
+		}
+
+		renderCloudStore(account, cloudStoreName, parentFileResource.path)
 	}
 }

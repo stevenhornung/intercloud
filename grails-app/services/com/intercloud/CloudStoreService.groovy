@@ -231,7 +231,28 @@ class CloudStoreService {
 		log.debug "Deleting file resource from local file system"
 
 		File file = new File(fileResource.locationOnFileSystem)
-		file.delete()
+
+		if(file.isDirectory()) {
+			deleteFolder(file)
+		}
+		else {
+			file.delete()
+		}
+	}
+
+	private void deleteFolder(File folder) {
+		File[] files = folder.listFiles()
+		if(files != null) {
+			for(File f in files) {
+				if(f.isDirectory()) {
+					deleteFolder(f)
+				}
+				else {
+					f.delete()
+				}
+			}
+		}
+		folder.delete()
 	}
 
 	private boolean deleteFromCloudStoreLink(Account account, String cloudStoreName, FileResource fileResource) {
@@ -349,7 +370,7 @@ class CloudStoreService {
 
 	private boolean uploadToDropbox(def cloudStoreClass, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource) {
 		String newFileName = null
-		def cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource.path)
+		def cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource.path, false)
 
 		if(!cloudStoreUploadName) {
 			return false
@@ -364,7 +385,7 @@ class CloudStoreService {
 	}
 
 	private boolean uploadToGoogledrive(def cloudStoreClass, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource) {
-		String extraMetadata = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource.path)
+		String extraMetadata = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource.path, false)
 		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, parentFileResource, extraMetadata)
 		return true
 	}
@@ -446,9 +467,130 @@ class CloudStoreService {
 		}
 	}
 
+	private void saveFolderToLocalFileSystem(String pathToSaveFolder) {
+		try {
+			new File(pathToSaveFolder).mkdirs();
+
+			log.debug "Wrote folder '{}' to local file system", pathToSaveFolder
+		}
+		catch(IOException) {
+			log.warn "Could not create file on local file system. Exception: {}", IOException
+		}
+
+	}
+
 	private void updateIntercloudSpace(CloudStore cloudStore, BigInteger spaceToChange) {
 		log.debug "Updating intercloud space"
 		cloudStore.spaceUsed += spaceToChange
 		cloudStore.save(flush:true)
+	}
+
+	public boolean createFolder(Account account, String cloudStoreName, FileResource parentFileResource, String folderName) {
+		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
+		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
+		def newUpdateCursor
+
+		if(cloudStoreName == 'intercloud') {
+			createFileResourceFromNewFolder(account, cloudStore, folderName, parentFileResource, null)
+		}
+		else if(cloudStoreClass) {
+			log.debug "Checking for updates before creating new folder"
+			String updateCursor = cloudStore.updateCursor
+			def currentFileResources = cloudStore.fileResources
+			newUpdateCursor = cloudStoreClass.updateResources(cloudStore, updateCursor, currentFileResources)
+			cloudStore.updateCursor = newUpdateCursor
+
+			if(cloudStoreName == 'dropbox') {
+				boolean isSuccess = createFolderInDropbox(cloudStoreClass, cloudStore, folderName, parentFileResource)
+				if(!isSuccess) {
+					return false
+				}
+			}
+			else if(cloudStoreName == 'googledrive') {
+				boolean isSuccess = createFolderInGoogledrive(cloudStoreClass, cloudStore, folderName, parentFileResource)
+				if(!isSuccess) {
+					return false
+				}
+			}
+		}
+		else {
+			log.debug "Bad cloud store specified when creating folder in '{}'", cloudStoreName
+			return false
+		}
+
+		cloudStore.save(flush:true)
+
+		return true
+	}
+
+	private void createFileResourceFromNewFolder(Account account, CloudStore cloudStore, String folderName, FileResource parentFileResource, String extraData) {
+		FileResource fileResource = new FileResource()
+
+		String filePath
+
+		// directories besides root do not have trailing forward slash
+		if(parentFileResource.path == "/") {
+			filePath = parentFileResource.path + folderName
+		}
+		else {
+			filePath = parentFileResource.path + "/" + folderName
+		}
+
+		fileResource.fileName = folderName
+
+		if(cloudStore.storeName == 'intercloud') {
+			log.debug "Saving new folder to local file system for InterCloud cloud store"
+			String accountEmail = account.email
+			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot' + filePath
+			fileResource.locationOnFileSystem = locationOnFileSystem
+			saveFolderToLocalFileSystem(locationOnFileSystem)
+		}
+		else if(cloudStore.storeName == 'dropbox') {
+			if(extraData) {
+				if(parentFileResource.path == "/") {
+					filePath = parentFileResource.path + extraData
+				}
+				else {
+					filePath = parentFileResource.path + "/" + folderName
+				}
+
+				fileResource.fileName = extraData
+			}
+		}
+		else if(cloudStore.storeName == 'googledrive') {
+			fileResource.extraMetadata = extraData
+		}
+
+		fileResource.path = filePath
+		fileResource.byteSize = 0
+		fileResource.mimeType = "application/octet-stream"
+		fileResource.isDir = true
+		fileResource.cloudStore = cloudStore
+		fileResource.modified = new Date()
+		fileResource.parentFileResource = parentFileResource
+
+		fileResource.save()
+	}
+
+	private boolean createFolderInDropbox(def cloudStoreClass, CloudStore cloudStore, String folderName, FileResource parentFileResource) {
+		String newFolderName = null
+		def cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, folderName, parentFileResource.path, true)
+
+		if(!cloudStoreUploadName) {
+			return false
+		}
+		if(cloudStoreUploadName != folderName) {
+			newFolderName = cloudStoreUploadName
+		}
+
+		createFileResourceFromNewFolder(cloudStore.account, cloudStore, folderName, parentFileResource, newFolderName)
+
+		return true
+	}
+
+	private boolean createFolderInGoogledrive(def cloudStoreClass, CloudStore cloudStore, String folderName, FileResource parentFileResource) {
+		String extraMetadata = cloudStoreClass.uploadResource(cloudStore, folderName, parentFileResource.path, true)
+		createFileResourceFromNewFolder(cloudStore.account, cloudStore, folderName, parentFileResource, extraMetadata)
+		return true
 	}
 }

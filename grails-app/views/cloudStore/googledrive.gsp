@@ -106,6 +106,35 @@
 					}
 		</script>
 
+		<script>
+		    $(function() {
+			    $( "#dialog-form" ).dialog({
+			      autoOpen: false,
+			      resizable: false,
+			      height:200,
+			      width: 350,
+			      modal: true,
+			      buttons: {
+			        "Create Folder": function() {
+			        	var storeName = $("#storeName").val();
+			        	var parentPath = $("#parentPath").val();
+			        	var folderName = $("#folderName").val();
+			        	$.get("/newfolder", {storeName: storeName, parentPath: parentPath, folderName: folderName});
+
+			            $( this ).dialog( "close" );
+			        },
+			        Cancel: function() {
+			          $( this ).dialog( "close" );
+			        }
+			      }
+			    });
+
+				$( "#newFolder" ).click(function() {
+			        $( "#dialog-form" ).dialog( "open" );
+			      });
+			});
+		</script>
+
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
@@ -138,6 +167,15 @@
 					<div style="margin-top:10px">
 						<img src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50>
 						 | <a href="/update?storeName=googledrive&targetUri=${request.forwardURI }">Sync</a>
+						 <div id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
+					 	<div id="dialog-form">
+					 		<form>
+					 			<label for="folderName">Folder Name</label>
+					 			<input type="text" id="folderName" placeholder="New Folder">
+					 			<input type="hidden" id="storeName" value="googledrive">
+					 			<input type="hidden" id="parentPath" value="${request.forwardURI}">
+					 		</form>
+					 	</div>
 						 <div style="float:right">
 						 	Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
 						 </div>

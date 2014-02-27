@@ -62,7 +62,7 @@ class AwsS3CloudStore implements CloudStoreInterface {
 		account.addToCloudStores(cloudStoreInstance)
 	}
 
-	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath, boolean isDir) {
 		// TODO Auto-generated method stub
 		return null;
 	}

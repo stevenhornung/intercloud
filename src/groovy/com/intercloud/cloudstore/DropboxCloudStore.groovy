@@ -240,17 +240,45 @@ class DropboxCloudStore implements CloudStoreInterface {
 		dropboxClient = new DbxClient(requestConfig, access_token)
 	}
 
-	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath, boolean isDir) {
 		log.debug "Uploading file to dropbox"
 		setDropboxApi(cloudStore)
-		String dropboxUploadName = uploadToDropbox(uploadedFile, parentPath)
+		String dropboxUploadName
+
+		if(isDir) {
+			dropboxUploadName = uploadFolderToDropbox(uploadedFile, parentPath)
+		}
+		else {
+			dropboxUploadName = uploadFileToDropbox(uploadedFile, parentPath)
+		}
 
 		updateDropboxSpace(cloudStore)
 
 		return dropboxUploadName
 	}
 
-	private String uploadToDropbox(def uploadedFile, String parentPath) {
+	private String uploadFolderToDropbox(String folderName, String parentPath) {
+		String folderPath
+
+		// directories besides root do not have trailing forward slash
+		if(parentPath == "/") {
+			folderPath = parentPath + folderName
+		}
+		else {
+			folderPath = parentPath + "/" + folderName
+		}
+
+		try {
+			def dropboxUpload = dropboxClient.createFolder(folderPath)
+			log.debug "Successfully uploaded folder '{}' to dropbox", dropboxUpload.path
+			return dropboxUpload.name
+		} catch(DbxException) {
+			log.warn "Folder could not be uploaded to dropbox. Exception {}", DbxException
+			return null
+		}
+	}
+
+	private String uploadFileToDropbox(def uploadedFile, String parentPath) {
 		String filePath
 
 		// directories besides root do not have trailing forward slash

@@ -366,7 +366,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		cloudStore.credentials << ['ACCESS_TOKEN': credential.getAccessToken()]
 	}
 
-	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath, boolean isDir) {
 		log.debug "Uploading file to google drive"
 		setGoogledriveApi(cloudStore)
 		String googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile, parentPath)
