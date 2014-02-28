@@ -86,7 +86,7 @@
 
 		<script>
 			$(document).ready(function(){
-				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
+				$(".colorbox").colorbox({rel:'colorbox', transition:"none", maxWidth:"75%", maxHeight:"90%"});
 			});
 		</script>
 

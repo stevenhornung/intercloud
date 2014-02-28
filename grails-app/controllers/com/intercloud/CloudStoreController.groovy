@@ -101,16 +101,24 @@ class CloudStoreController extends BaseController {
 		// when we open a folder, the /js/* gets handed to /{foldername}/js/* so not caught by resources plugin
 		// handle this special case
 		if(fileResourcePath.contains("/js/")) {
-			if(cloudStoreName) {
-				getAllCloudStoreResources()
-				return
-			}
-			else {
-				forward(controller: 'base', action: 'respondPageNotFound')
-			}
+			handleJsPaths(cloudStoreName)
+			return
 		}
 
 		log.debug "Getting '{}' file resource from '{}'", fileResourcePath, cloudStoreName
+		handleSpecificCloudStoreResource(account, cloudStoreName, fileResourcePath)
+	}
+
+	private void handleJsPaths(String cloudstoreName) {
+		if(cloudStoreName) {
+			getAllCloudStoreResources()
+		}
+		else {
+			forward(controller: 'base', action: 'respondPageNotFound')
+		}
+	}
+
+	private void handleSpecificCloudStoreResource(Account account, String cloudStoreName, String fileResourcePath) {
 		FileResource specificCloudStoreResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
 
 		if(specificCloudStoreResource) {
@@ -133,44 +141,45 @@ class CloudStoreController extends BaseController {
 		}
 	}
 
-	private void renderFileResource(String storeName, FileResource fileResource) {
+	private void renderFileResource(String cloudStoreName, FileResource fileResource) {
 
 		// Only attempt to render certain mime types
 		if(fileResource.mimeType in RENDER_TYPES) {
-			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
-			if(cloudStoreFileStream) {
-				log.debug "Rendering file resource to screen"
-				renderBytesToScreen(fileResource, cloudStoreFileStream)
-			}
-			else {
-				log.warn "File resource data could not be retrieved from {}", storeName
-				flash.error = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
-				getAllCloudStoreResources()
-			}
+			handleRenderable(cloudStoreName, fileResource, false)
 		}
 		else if(fileResource.mimeType in VIDEO_TYPES){
-
-			// Render as video
-			def cloudStoreFileStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
-			if(cloudStoreFileStream) {
-				log.debug "Rendering video file resource to screen"
-				displayVideo(fileResource, cloudStoreFileStream)
-			}
-			else {
-				log.warn "File resource data could not be retrieved from {}", storeName
-				flash.error = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, storeName])
-				getAllCloudStoreResources()
-			}
+			// display as video
+			handleRenderable(cloudStoreName, fileResource, true)
 		}
 		else {
-
 			// Any other mimetype we just want to display a download link for
-			renderDownloadLink(fileResource, storeName)
+			renderDownloadLink(fileResource, cloudStoreName)
 		}
 	}
 
-	private def renderBytesToScreen(FileResource fileResource, InputStream cloudStoreFileStream) {
+	private void handleRenderable(String cloudStoreName, FileResource fileResource, boolean isVideo) {
+		def cloudStoreFileStream = cloudStoreService.getFileResourceStream(cloudStoreName, fileResource)
+		if(cloudStoreFileStream) {
+			renderBytesToScreen(fileResource, cloudStoreFileStream, isVideo)
+		}
+		else {
+			log.warn "File resource data could not be retrieved from {}", cloudStoreName
+			flash.error = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, cloudStoreName])
+			getAllCloudStoreResources()
+		}
+	}
+
+	private def renderBytesToScreen(FileResource fileResource, InputStream cloudStoreFileStream, boolean isVideo) {
 		try{
+			if(isVideo) {
+				log.debug "Rendering video resource to screen"
+				// TODO : this is not right
+				response.addHeader("Content-disposition", "attachment; filename=${fileResource.fileName}")
+			}
+			else {
+				log.debug "Rendering file resource to screen"
+			}
+
 			response.contentType = fileResource.mimeType
 			response.contentLength = fileResource.byteSize.toInteger()
 			response.outputStream << cloudStoreFileStream
@@ -182,33 +191,8 @@ class CloudStoreController extends BaseController {
 		}
 	}
 
-	private def displayVideo(FileResource fileResource, InputStream cloudStoreFileStream) {
-		try {
-			response.contentLength = fileResource.byteSize.toInteger()
-		    response.addHeader("Content-disposition", "attachment; filename=${fileResource.fileName}")
-		    response.contentType = fileResource.mimeType
-		    response.outputStream << cloudStoreFileStream
-		    response.outputStream.flush()
-		    response.outputStream.close()
-		}
-		catch (Exception) {
-			// do nothing, client probably clicked out during load
-		}
-	}
-
-	private def renderDownloadLink(FileResource fileResource, String storeName) {
-		try{
-			def downloadLink = "<html><head></head><body><img src='${resource(dir: 'images', file: 'file.jpeg')}' height=50 width=50 ><br><a href='/download?fileResourceId=${fileResource.id}&storeName=${storeName}'>Download</a></body></html>"
-
-			response.outputStream << downloadLink
-			response.outputStream.flush()
-			response.outputStream.close()
-		}
-		catch (Exception) {
-			log.debug "Download link could not be rendered to output stream: {}", Exception
-			flash.error = message(code: 'cloudstore.error')
-			getAllCloudStoreResources()
-		}
+	private def renderDownloadLink(FileResource fileResource, String cloudStoreName) {
+		render(view: "download", model: [fileResource: fileResource, cloudStoreName: cloudStoreName])
 	}
 
 	public def deleteResource() {
@@ -223,35 +207,45 @@ class CloudStoreController extends BaseController {
 			flash.error = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
 		}
 
-		// Redirect back to where file resource was deleted from and then worry about rendering
+		// Redirect back to file resource parent folder, then worry about rendering
 		redirect(uri: params.targetUri)
 	}
 
-	public def showDownloadDialog() {
-		def storeName = params.storeName
-		if(params.fileResourceId) {
-			FileResource fileResource = FileResource.get(params.fileResourceId)
-			if(fileResource) {
-				showFileResourceDownload(storeName, fileResource)
-			}
-			else {
-				log.debug "File resource not found from download dialog"
-				flash.error = message(code: 'cloudstore.error')
-				getAllCloudStoreResources()
-			}
+	public def downloadResource() {
+		def cloudStoreName = params.storeName
+		def fileResourceId = params.fileResourceId
+		if(fileResourceId) {
+			handleDownloadById(cloudStoreName, fileResourceId)
 		}
 		else {
-			log.debug "Downloading entire cloud store root as zip"
-			Account account = getCurrentAccount()
-			String fileResourcePath = '/'
-			FileResource rootFileResource = cloudStoreService.getFileResourceFromPath(account, storeName, fileResourcePath)
-
-			showFileResourceDownload(storeName, rootFileResource)
+			handleDownloadCloudStore(cloudStoreName)
 		}
 	}
 
-	private def showFileResourceDownload(String storeName, FileResource fileResource) {
-		InputStream fileResourceStream = cloudStoreService.getFileResourceStream(storeName, fileResource)
+	private void handleDownloadById(String cloudStoreName, String fileResourceId) {
+		FileResource fileResource = FileResource.get(params.fileResourceId)
+
+		if(fileResource) {
+			renderFileResourceDownload(cloudStoreName, fileResource)
+		}
+		else {
+			log.debug "File resource not found by id for download"
+			flash.info = message(code: 'cloudstore.notfound')
+			getAllCloudStoreResources()
+		}
+	}
+
+	private void handleDownloadCloudStore(String cloudStoreName) {
+		log.debug "Downloading entire cloud store root as zip"
+		Account account = getCurrentAccount()
+		String fileResourcePath = '/'
+		FileResource rootFileResource = cloudStoreService.getFileResourceFromPath(account, cloudStoreName, fileResourcePath)
+
+		renderFileResourceDownload(cloudStoreName, rootFileResource)
+	}
+
+	private def renderFileResourceDownload(String cloudStoreName, FileResource fileResource) {
+		InputStream fileResourceStream = cloudStoreService.getFileResourceStream(cloudStoreName, fileResource)
 		try{
 			response.contentType = fileResource.mimeType
 			if(fileResource.isDir) {

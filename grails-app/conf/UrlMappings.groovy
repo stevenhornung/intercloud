@@ -148,7 +148,7 @@ class UrlMappings {
 
 		"/download" {
 			controller = 'cloudStore'
-			action = [GET: 'showDownloadDialog',
+			action = [GET: 'downloadResource',
 						POST: 'respondInvalidAction',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']

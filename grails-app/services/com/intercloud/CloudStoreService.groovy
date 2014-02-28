@@ -14,10 +14,13 @@ class CloudStoreService {
 
 	private static Logger log = LoggerFactory.getLogger(CloudStoreService.class)
 
-	static String INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
-	//static String INTERCLOUD_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage"
+	static String ROOT_DIR
+	static String INTERCLOUD_STORAGE_PATH
+	static String INTERCLOUD
+	static String DROPBOX
+	static String GOOGLEDRIVE
+	static String AWSS3
 
-	private static String ROOT_DIR = "/"
 
 	public def getClientAccessRequestUrl(def cloudStoreClass, def request) {
 		def clientAccessRequestUrl = cloudStoreClass.configure(false, request)
@@ -27,13 +30,13 @@ class CloudStoreService {
 	public def getCloudStoreClass(String cloudStoreName) {
 		def cloudStoreClass = null
 
-		if(cloudStoreName == 'dropbox') {
+		if(cloudStoreName == DROPBOX) {
 			cloudStoreClass = new DropboxCloudStore()
 		}
-		else if(cloudStoreName == 'googledrive') {
+		else if(cloudStoreName == GOOGLEDRIVE) {
 			cloudStoreClass = new GoogledriveCloudStore()
 		}
-		else if(cloudStoreName == 'awss3') {
+		else if(cloudStoreName == AWSS3) {
 			cloudStoreClass = new AwsS3CloudStore()
 		}
 
@@ -71,11 +74,11 @@ class CloudStoreService {
 		def homeResources = [:]
 
 		// Add inter cloud first, want it at the top of the home view
-		def fileResources = getSpecificCloudStoreResources(account, "intercloud", ROOT_DIR)
-		homeResources << ["intercloud" : fileResources]
+		def fileResources = getSpecificCloudStoreResources(account, INTERCLOUD, ROOT_DIR)
+		homeResources << [INTERCLOUD : fileResources]
 
 		account.cloudStores.each {
-			if(it.storeName != "intercloud") {
+			if(it.storeName != INTERCLOUD) {
 
 				fileResources = getSpecificCloudStoreResources(account, it.storeName, ROOT_DIR)
 				if(fileResources != null) {
@@ -136,7 +139,7 @@ class CloudStoreService {
 
 	public def getFileResourceStream(String storeName, FileResource fileResource) {
 		def resourceDataStream = null
-		if(storeName == 'intercloud') {
+		if(storeName == INTERCLOUD) {
 			String locationOnFileSystem = fileResource.locationOnFileSystem
 			resourceDataStream = getStreamFromFileLocation(storeName, fileResource, locationOnFileSystem)
 		}
@@ -206,7 +209,7 @@ class CloudStoreService {
 			CloudStoreUtilities.deleteFromDatabase(fileResource)
 			isSuccess = true
 
-			if(cloudStoreName == 'intercloud') {
+			if(cloudStoreName == INTERCLOUD) {
 				deleteFromLocalFileSystem(fileResource)
 
 				CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
@@ -285,7 +288,7 @@ class CloudStoreService {
 		else {
 			log.debug "Manually updating all cloud store file resources"
 			account.cloudStores.each{
-				if(it.storeName != 'intercloud') {
+				if(it.storeName != INTERCLOUD) {
 					def cloudStoreClass = getCloudStoreClass(it.storeName)
 					updateSingleCloudStore(account, it.storeName, cloudStoreClass)
 				}
@@ -314,7 +317,7 @@ class CloudStoreService {
 		// Determine the parent file resource to upload under
 		FileResource parentFileResource = getParentFileResourceFromPath(account, cloudStoreName, targetDirectory)
 
-		if(cloudStoreName == 'intercloud') {
+		if(cloudStoreName == INTERCLOUD) {
 			createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, parentFileResource, null)
 			BigInteger spaceToAdd = uploadedFile.getSize()
 			updateIntercloudSpace(cloudStore, spaceToAdd)
@@ -326,13 +329,13 @@ class CloudStoreService {
 			newUpdateCursor = cloudStoreClass.updateResources(cloudStore, updateCursor, currentFileResources)
 			cloudStore.updateCursor = newUpdateCursor
 
-			if(cloudStoreName == 'dropbox') {
+			if(cloudStoreName == DROPBOX) {
 				boolean isSuccess = uploadToDropbox(cloudStoreClass, cloudStore, uploadedFile, parentFileResource)
 				if(!isSuccess) {
 					return false
 				}
 			}
-			else if(cloudStoreName == 'googledrive') {
+			else if(cloudStoreName == GOOGLEDRIVE) {
 				boolean isSuccess = uploadToGoogledrive(cloudStoreClass, cloudStore, uploadedFile, parentFileResource)
 				if(!isSuccess) {
 					return false
@@ -405,14 +408,14 @@ class CloudStoreService {
 
 		fileResource.fileName = uploadedFile.originalFilename
 
-		if(cloudStore.storeName == 'intercloud') {
+		if(cloudStore.storeName == INTERCLOUD) {
 			log.debug "Saving uploaded file to local file system for InterCloud cloud store"
 			String accountEmail = account.email
 			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot' + filePath
 			fileResource.locationOnFileSystem = locationOnFileSystem
 			saveFileToLocalFileSystem(locationOnFileSystem, uploadedFile)
 		}
-		else if(cloudStore.storeName == 'dropbox') {
+		else if(cloudStore.storeName == DROPBOX) {
 			if(extraData) {
 				if(parentFileResource.path == "/") {
 					filePath = parentFileResource.path + extraData
@@ -424,7 +427,7 @@ class CloudStoreService {
 				fileResource.fileName = extraData
 			}
 		}
-		else if(cloudStore.storeName == 'googledrive') {
+		else if(cloudStore.storeName == GOOGLEDRIVE) {
 			fileResource.extraMetadata = extraData
 		}
 
@@ -490,7 +493,7 @@ class CloudStoreService {
 		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
 		def newUpdateCursor
 
-		if(cloudStoreName == 'intercloud') {
+		if(cloudStoreName == INTERCLOUD) {
 			createFileResourceFromNewFolder(account, cloudStore, folderName, parentFileResource, null)
 		}
 		else if(cloudStoreClass) {
@@ -500,13 +503,13 @@ class CloudStoreService {
 			newUpdateCursor = cloudStoreClass.updateResources(cloudStore, updateCursor, currentFileResources)
 			cloudStore.updateCursor = newUpdateCursor
 
-			if(cloudStoreName == 'dropbox') {
+			if(cloudStoreName == DROPBOX) {
 				boolean isSuccess = createFolderInDropbox(cloudStoreClass, cloudStore, folderName, parentFileResource)
 				if(!isSuccess) {
 					return false
 				}
 			}
-			else if(cloudStoreName == 'googledrive') {
+			else if(cloudStoreName == GOOGLEDRIVE) {
 				boolean isSuccess = createFolderInGoogledrive(cloudStoreClass, cloudStore, folderName, parentFileResource)
 				if(!isSuccess) {
 					return false
@@ -538,14 +541,14 @@ class CloudStoreService {
 
 		fileResource.fileName = folderName
 
-		if(cloudStore.storeName == 'intercloud') {
+		if(cloudStore.storeName == INTERCLOUD) {
 			log.debug "Saving new folder to local file system for InterCloud cloud store"
 			String accountEmail = account.email
 			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot' + filePath
 			fileResource.locationOnFileSystem = locationOnFileSystem
 			saveFolderToLocalFileSystem(locationOnFileSystem)
 		}
-		else if(cloudStore.storeName == 'dropbox') {
+		else if(cloudStore.storeName == DROPBOX) {
 			if(extraData) {
 				if(parentFileResource.path == "/") {
 					filePath = parentFileResource.path + extraData
@@ -557,7 +560,7 @@ class CloudStoreService {
 				fileResource.fileName = extraData
 			}
 		}
-		else if(cloudStore.storeName == 'googledrive') {
+		else if(cloudStore.storeName == GOOGLEDRIVE) {
 			fileResource.extraMetadata = extraData
 		}
 

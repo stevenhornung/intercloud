@@ -369,7 +369,15 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath, boolean isDir) {
 		log.debug "Uploading file to google drive"
 		setGoogledriveApi(cloudStore)
-		String googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile, parentPath)
+
+		String googledriveFileId
+
+		if(isDir) {
+
+		}
+		else {
+			googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile, parentPath)
+		}
 
 		updateGoogledriveSpace(cloudStore)
 

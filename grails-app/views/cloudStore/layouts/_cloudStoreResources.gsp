@@ -9,7 +9,9 @@
 				<g:else>
 					<td><a class="colorbox" href="/${cloudStore}${fileInstance.path.replaceAll(' ', '+')}">Open</a></td>
 				</g:else>
+				|
 				<td><a href="/download?storeName=${cloudStore}&fileResourceId=${fileInstance.id}">Download</a></td>
+				|
 				<td><a href="/delete?storeName=${cloudStore}&fileResourceId=${fileInstance.id}&targetUri=${request.forwardURI}">Delete</a></td>
 			</p>
 		</div>

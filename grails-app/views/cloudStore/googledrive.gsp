@@ -86,7 +86,7 @@
 
 		<script>
 			$(document).ready(function(){
-				$(".colorbox").colorbox({rel:'colorbox', transition:"none", width:"75%", height:"75%"});
+				$(".colorbox").colorbox({rel:'colorbox', transition:"none", maxWidth:"75%", maxHeight:"90%"});
 			});
 		</script>
 
@@ -166,9 +166,9 @@
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50>
-						 | <a href="/update?storeName=googledrive&targetUri=${request.forwardURI }">Sync</a>
-						 <div id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
-					 	<div id="dialog-form">
+						 | <g:remoteLink controller="cloudstore" action="update" update="accordian" params="[storeName:'googledrive']">Sync</g:remoteLink>
+						<div id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
+					 	 <div id="dialog-form">
 					 		<form>
 					 			<label for="folderName">Folder Name</label>
 					 			<input type="text" id="folderName" placeholder="New Folder">
@@ -176,9 +176,9 @@
 					 			<input type="hidden" id="parentPath" value="${request.forwardURI}">
 					 		</form>
 					 	</div>
-						 <div style="float:right">
+						<div style="float:right">
 						 	Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
-						 </div>
+						</div>
 						<br><br>
 						<g:if test="${params.fileResourcePath }">
 							<g:set var="pathList" value="${params.fileResourcePath.split('/') }" scope="request" />

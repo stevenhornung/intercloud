@@ -1,20 +1,28 @@
+import com.intercloud.CloudStoreService
 import com.intercloud.cloudstore.DropboxCloudStore
 import com.intercloud.cloudstore.GoogledriveCloudStore
 import com.intercloud.cloudstore.AwsS3CloudStore
 import com.intercloud.util.ZipUtilities
 import com.intercloud.sync.SecurityEventListener
+import com.intercloud.accountdetails.AccountDetailsService
 
-// Place your Spring DSL code here
 beans = {
 	securityEventListener(SecurityEventListener) {
 		grailsApplication = ref('grailsApplication')
 	}
 
-	userDetailsService(com.intercloud.accountdetails.AccountDetailsService)
+	userDetailsService(AccountDetailsService)
 
-	zipUtilities (ZipUtilities) {
-		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
-		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
+	cloudStoreService(CloudStoreService) {
+		ROOT_DIR = "/"
+
+		INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
+		//INTERCLOUD_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage"
+
+		INTERCLOUD = "intercloud"
+		DROPBOX = "dropbox"
+		GOOGLEDRIVE = "googledrive"
+		AWSS3 = "awss3"
 	}
 
 	dropboxCloudStore (DropboxCloudStore) {
@@ -41,5 +49,10 @@ beans = {
 
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
 		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
+	}
+
+	zipUtilities (ZipUtilities) {
+		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
+		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
 	}
 }
