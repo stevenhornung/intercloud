@@ -323,7 +323,7 @@ class CloudStoreService {
 
 	private def updateSingleCloudStore(Account account, String storeName, def cloudStoreClass) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
-		cloudStore.save()
+		cloudStore.lock()
 
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
