@@ -84,9 +84,25 @@
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'jquery-ui-1.10.4.custom.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'jquery-ui-1.10.4.custom.js')}" type="text/javascript"></script>
 
+		<link rel="stylesheet" href="${resource(dir: 'css', file: 'accordianza1-style.css')}" type="text/css" media="screen" />
+		<script type="text/javascript" src="//cdnjs.cloudflare.com/ajax/libs/jquery-easing/1.3/jquery.easing.min.js"></script><!-- optional -->
+		<script type="text/javascript" src="${resource(dir: 'js', file: 'jquery.accordionza.min.js')}"></script>
+
 		<script>
 			$(document).ready(function(){
 				$(".colorbox").colorbox({rel:'colorbox', transition:"none", maxWidth:"75%", maxHeight:"90%"});
+			});
+		</script>
+
+		<script>
+			$(document).ready(function() {
+				$('#accordion1').accordionza({
+					captionDelay: 100,
+					captionEasing: 'easeOutBounce',
+					captionHeight: 40,
+					captionHeightClosed: 10,
+					navKey: true
+				});
 			});
 		</script>
 
@@ -110,20 +126,11 @@
 		    });
 		  });
 		</script>
+
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
-		<sec:ifLoggedIn>
-			<div id="status" role="complementary">
-				<ul>
-					<li><a href="/update">Sync Files</a></li>
-					<li><a href="/intercloud">Go to intercloud Files</a></li>
-					<li><a href="/dropbox">Go to Dropbox Files</a></li>
-					<li><a href="/googledrive">Go to Google Drive Files</a></li>
-				</ul>
-			</div>
-		</sec:ifLoggedIn>
-		<div id="page-body" role="main">
+		<div>
 			<sec:ifLoggedIn>
 				<g:if test="${flash.error }">
 					<div class="errors">
@@ -135,30 +142,35 @@
 							${flash.info}
 					</div>
 				</g:if>
-				<g:each in="${homeResources}" status="i" var="cloudStore">
-					<br>
-					<hr>
-					<br>
-					<g:if test="${cloudStore.key == 'dropbox' }">
-						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50></a>
-					</g:if>
-					<g:elseif test="${cloudStore.key == 'googledrive' }">
-						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50></a>
-					</g:elseif>
-					<g:elseif test="${cloudStore.key == 'intercloud' }">
-						<a href="${cloudStore.key}"><img src="${resource(dir: 'images', file: 'intercloud.jpeg')}" width=50 height=50></a>
-					</g:elseif>
-					<g:else>
-						<h2><a href="${cloudStore.key}">${cloudStore.key.capitalize()} Files</a>
-					</g:else>
-
-					<g:if test="${cloudStore.key != 'intercloud' }">	|  <g:remoteLink controller="cloudstore" action="update" update="accordian_${cloudStore.key}" params="[storeName: cloudStore.key]">Sync</g:remoteLink> </g:if></h2>
-					<g:if test="${cloudStore.value }">
-						<div id="accordion_${cloudStore.key }">
-							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
-						</div>
-					</g:if>
-				</g:each>
+				<ul id="accordion1">
+					<g:each in="${homeResources}" status="i" var="cloudStore">
+						<li class="${cloudStore.key}_slide">
+							<div class="slide_handle">
+								<g:if test="${cloudStore.key == 'dropbox' }">
+									<img style="margin-top:4px;margin-left:4px" src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=30 height=30>
+								</g:if>
+								<g:elseif test="${cloudStore.key == 'googledrive' }">
+									<img style="margin-top:4px;margin-left:4px" src="${resource(dir: 'images', file: 'googledrive.png')}" width=30 height=30>
+								</g:elseif>
+								<g:elseif test="${cloudStore.key == 'intercloud' }">
+									<img style="margin-top:4px;margin-left:4px" src="${resource(dir: 'images', file: 'intercloud.jpeg')}" width=30 height=30>
+								</g:elseif>
+								<div></div>
+							</div>
+							<div class="slide_content">
+								<a style="margin-top:4px;margin-left:4px;color:#fff" href="${cloudStore.key}">${cloudStore.key.capitalize()}</a>
+								<g:if test="${cloudStore.key != 'intercloud' }">
+										|	<g:remoteLink controller="cloudstore" action="update" update="accordian_${cloudStore.key}" params="[storeName: cloudStore.key]" style="color:#fff">Sync</g:remoteLink>
+								</g:if>
+								<g:if test="${cloudStore.value }">
+									<div id="accordion_${cloudStore.key }">
+										<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
+									</div>
+								</g:if>
+							</div>
+						</li>
+					</g:each>
+				</ul>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>
 				<h1>Display all features and capabilities for non logged in user</h1>

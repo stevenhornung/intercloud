@@ -42,15 +42,16 @@ class AccountController extends BaseController {
 		}
 
 		Account newAccount = createNewAccount()
+
+		addAccountToUserRole(newAccount)
+		createIntercloudCloudStore(newAccount)
+		createRootIntercloudFileResource(newAccount)
+
 		if(!newAccount.save(flush: true)) {
 			flash.error = message(code: 'account.notcreated')
 			showRegisterErrors()
 			return
 		}
-
-		addAccountToUserRole(newAccount)
-		createIntercloudCloudStore(newAccount)
-		createRootIntercloudFileResource(newAccount)
 
 		log.debug "Account: {} created", newAccount.email
 		flash.loginMessage = message(code: 'account.created')
@@ -93,8 +94,6 @@ class AccountController extends BaseController {
 		cloudStoreInstance.storeName = 'intercloud'
 		cloudStoreInstance.userId = newAccount.email
 
-		cloudStoreInstance.save()
-
 		newAccount.addToCloudStores(cloudStoreInstance)
 	}
 
@@ -115,7 +114,6 @@ class AccountController extends BaseController {
 
 		rootIntercloudFileResource.isDir = true
 		rootIntercloudFileResource.fileName = 'InterCloudRoot'
-		rootIntercloudFileResource.save(flush:true)
 
 		cloudStore.addToFileResources(rootIntercloudFileResource)
 	}

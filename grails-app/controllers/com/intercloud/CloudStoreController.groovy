@@ -9,7 +9,7 @@ import org.slf4j.LoggerFactory
 class CloudStoreController extends BaseController {
 
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
-	private static String ROOT_DIR = "/"
+	 static String ROOT_DIR
 
 	def cloudStoreService
 
@@ -78,7 +78,8 @@ class CloudStoreController extends BaseController {
 			flash.error = message(code: 'cloudstore.linkfailed')
 		}
 
-		renderHomeResources()
+		// Just to rewrite the url so its not /auth_redirect..
+		redirect(uri : "/home")
 	}
 
 	public def renderHomeResources() {
@@ -281,15 +282,16 @@ class CloudStoreController extends BaseController {
 	public def uploadResource() {
 		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
+		String targetDirectory = params.targetDir
+		FileResource parentFileResource = cloudStoreService.getParentFileResourceFromPath(account, cloudStoreName, targetDirectory)
 		def fileInstanceList
 
 		if(cloudStoreName in account.cloudStores.storeName) {
-			log.debug "Uploading file to {}", cloudStoreName
+			log.debug "Uploading file to '{}' cloud store under '{}'", cloudStoreName, parentFileResource.path
 
 			def uploadedFile = request.getFile('file')
-			String targetDirectory = params.targetDir
 
-			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile, targetDirectory)
+			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile, targetDirectory, false)
 
 			if(!isSuccess) {
 				flash.error = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])
@@ -299,7 +301,7 @@ class CloudStoreController extends BaseController {
 			forward(controller: 'base', action: 'respondPageNotFound')
 		}
 
-		renderCloudStore(account, cloudStoreName, ROOT_DIR)
+		renderCloudStore(account, cloudStoreName, parentFileResource.path)
 	}
 
 	private void renderCloudStore(Account account, String cloudStoreName, String directory) {
@@ -322,12 +324,13 @@ class CloudStoreController extends BaseController {
 	public def newFolder() {
 		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
-		FileResource parentFileResource = cloudStoreService.getParentFileResourceFromPath(account, cloudStoreName, params.parentPath)
+		String targetDirectory = params.targetDir
+		FileResource parentFileResource = cloudStoreService.getParentFileResourceFromPath(account, cloudStoreName, targetDirectory)
 		String folderName = params.folderName
 
 		log.debug "Creating folder '{}' under '{}' in '{}' cloud store", folderName, parentFileResource.path, cloudStoreName
 
-		boolean isSuccess = cloudStoreService.createFolder(account, cloudStoreName, parentFileResource, folderName)
+		boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, folderName, targetDirectory, true)
 
 		if(!isSuccess) {
 			flash.error = message(code: 'cloudstore.newfolderfailed')

@@ -1,3 +1,4 @@
+import com.intercloud.CloudStoreController
 import com.intercloud.CloudStoreService
 import com.intercloud.cloudstore.DropboxCloudStore
 import com.intercloud.cloudstore.GoogledriveCloudStore
@@ -12,6 +13,10 @@ beans = {
 	}
 
 	userDetailsService(AccountDetailsService)
+
+	cloudStoreController(CloudStoreController) {
+		ROOT_DIR = "/"
+	}
 
 	cloudStoreService(CloudStoreService) {
 		ROOT_DIR = "/"
@@ -41,6 +46,8 @@ beans = {
 
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
 		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
+
+		GOOGLEDRIVE_FOLDER_TYPE = "application/vnd.google-apps.folder"
 	}
 
 	awsS3CloudStore (AwsS3CloudStore) {

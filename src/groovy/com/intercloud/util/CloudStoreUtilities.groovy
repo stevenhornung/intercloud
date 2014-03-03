@@ -41,7 +41,7 @@ class CloudStoreUtilities {
 		}
 	}
 
-	public static def setParentAndChildFileResources(FileResource fileResource, def currentFileResources) {
+	public static def setParentFileResources(FileResource fileResource, def currentFileResources) {
 		List<String> pathParts = new DefaultUrlMappingParser().parse(fileResource.path).getTokens() as List
 		boolean parentFound = false
 
@@ -57,7 +57,7 @@ class CloudStoreUtilities {
 			FileResource parentFileResource = createParentAndSetAllProperties(fileResource, pathParts)
 			currentFileResources.add(parentFileResource)
 
-			currentFileResources = setParentAndChildFileResources(parentFileResource, currentFileResources)
+			currentFileResources = setParentFileResources(parentFileResource, currentFileResources)
 		}
 
 		currentFileResources.add(fileResource)
@@ -68,7 +68,6 @@ class CloudStoreUtilities {
 		boolean parentFound = false
 		for(FileResource currentResource : currentFileResources) {
 			if(currentResource.path == "/") {
-				currentResource.addToChildFileResources(fileResource)
 				fileResource.parentFileResource = currentResource
 				parentFound = true
 				break
@@ -84,7 +83,6 @@ class CloudStoreUtilities {
 		String parentPath = getParentPath(pathParts)
 		for(FileResource currentResource : currentFileResources) {
 			if(currentResource.path == parentPath) {
-				currentResource.addToChildFileResources(fileResource)
 				fileResource.parentFileResource = currentResource
 				parentFound = true
 				break

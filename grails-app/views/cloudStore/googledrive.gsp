@@ -117,9 +117,9 @@
 			      buttons: {
 			        "Create Folder": function() {
 			        	var storeName = $("#storeName").val();
-			        	var parentPath = $("#parentPath").val();
+			        	var targetDir = $("#targetDir").val();
 			        	var folderName = $("#folderName").val();
-			        	$.get("/newfolder", {storeName: storeName, parentPath: parentPath, folderName: folderName});
+			        	$.get("/newfolder", {storeName: storeName, targetDir: targetDir, folderName: folderName});
 
 			            $( this ).dialog( "close" );
 			        },
@@ -173,7 +173,7 @@
 					 			<label for="folderName">Folder Name</label>
 					 			<input type="text" id="folderName" placeholder="New Folder">
 					 			<input type="hidden" id="storeName" value="googledrive">
-					 			<input type="hidden" id="parentPath" value="${request.forwardURI}">
+					 			<input type="hidden" id="targetDir" value="${request.forwardURI}">
 					 		</form>
 					 	</div>
 						<div style="float:right">

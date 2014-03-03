@@ -40,6 +40,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 	static String CLIENT_SECRET
 	static String REDIRECT_URL
 
+	static String GOOGLEDRIVE_FOLDER_TYPE
+
 	private GoogleAuthorizationCodeFlow flow
 	private Drive driveService
 	private GoogleCredential credential
@@ -171,11 +173,13 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 				continue
 			}
 			if(googleDriveResource.mimeType == 'application/vnd.google-apps.folder') {
-				def fileResource = createFolderFileResource(cloudStoreInstance, googleDriveResource, driveFileIds, fileResources)
+				FileResource fileResource
+				(fileResource, driveFileIds) = createFolderFileResource(cloudStoreInstance, googleDriveResource, driveFileIds, fileResources)
 				fileResources.add(fileResource)
 			}
 			else {
-				def fileResource = createFileResource(cloudStoreInstance, googleDriveResource, driveFileIds, fileResources)
+				FileResource fileResource
+				(fileResource, driveFileIds) = createFileResource(cloudStoreInstance, googleDriveResource, driveFileIds, fileResources)
 				fileResources.add(fileResource)
 			}
 		}
@@ -226,56 +230,57 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		}
 	}
 
-	private FileResource createFolderFileResource(CloudStore cloudStoreInstance, def googleDriveResource, def driveFileIds, def fileResources) {
+	private def createFolderFileResource(CloudStore cloudStoreInstance, def googledriveResource, def driveFileIds, def fileResources) {
 		FileResource fileResource = new FileResource()
 
 		fileResource.cloudStore = cloudStoreInstance
-		fileResource.fileName = googleDriveResource.title
-		fileResource.modified = googleDriveResource.modifiedDate
-		fileResource.mimeType = googleDriveResource.mimeType
+		fileResource.fileName = googledriveResource.title
+		fileResource.modified = googledriveResource.modifiedDate
+		fileResource.mimeType = googledriveResource.mimeType
 		fileResource.isDir = true
-		fileResource.extraMetadata = googleDriveResource.id
+		fileResource.extraMetadata = googledriveResource.id
 
-		if(googleDriveResource.parents[0].isRoot) {
+		fileResource.save()
+
+		if(googledriveResource.parents[0].isRoot) {
 			def rootDriveId = driveFileIds.find { it.driveFileId == 'root' }
 			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
 		}
 
-		fileResource.save()
-
-		String driveFileId = googleDriveResource.id.toString()
+		String driveFileId = googledriveResource.id.toString()
 		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
 
-		return fileResource
+		return [fileResource, driveFileIds]
 	}
 
-	private FileResource createFileResource(CloudStore cloudStoreInstance, def googleDriveResource, def driveFileIds, def fileResources) {
+	private def createFileResource(CloudStore cloudStoreInstance, def googledriveResource, def driveFileIds, def fileResources) {
 		FileResource fileResource = new FileResource()
 
 		fileResource.cloudStore = cloudStoreInstance
-		fileResource.fileName = googleDriveResource.title
-		fileResource.modified = googleDriveResource.modifiedDate
-		fileResource.mimeType = googleDriveResource.mimeType
+		fileResource.fileName = googledriveResource.title
+		fileResource.modified = googledriveResource.modifiedDate
+		fileResource.mimeType = googledriveResource.mimeType
 		fileResource.isDir = false
-		fileResource.byteSize = googleDriveResource.fileSize.toString()
-		fileResource.extraMetadata = googleDriveResource.id
+		fileResource.byteSize = googledriveResource.fileSize.toString()
+		fileResource.extraMetadata = googledriveResource.id
 
-		if(googleDriveResource.parents[0].isRoot) {
+		// early save to get an id,
+		fileResource.save()
+
+		if(googledriveResource.parents[0].isRoot) {
 			def rootDriveId = driveFileIds.find { it.driveFileId == 'root' }
 			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
 		}
 
-		fileResource.save()
+		String driveFileId = googledriveResource.id.toString()
+		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' : fileResource.id])
 
-		String driveFileId = googleDriveResource.id.toString()
-		driveFileIds.add(['driveFileId': driveFileId, 'fileResourceId' :fileResource.id])
-
-		return fileResource
+		return [fileResource, driveFileIds]
 	}
 
-	private def setParentFileResource(def googleDriveResources, def fileResources, def driveFileIds) {
+	private def setParentFileResource(def googledriveResources, def fileResources, def driveFileIds) {
 		def updatedResources = []
 		for(fileResource in fileResources) {
 			if(fileResource.parentFileResource != null || fileResource.path == '/') {
@@ -285,7 +290,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			for(fileId in driveFileIds) {
 				if(fileResource.id == fileId.fileResourceId) {
 					FileResource childFileResource = fileResources.find { it.id == fileId.fileResourceId }
-					def parentFileResourceId = getParentFileResourceId(fileId.driveFileId, googleDriveResources, fileResources, driveFileIds)
+					def parentFileResourceId = getParentFileResourceId(fileId.driveFileId, googledriveResources, fileResources, driveFileIds)
 					childFileResource.parentFileResource = FileResource.get(parentFileResourceId)
 					updatedResources.add(childFileResource)
 					break
@@ -295,9 +300,9 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return updatedResources
 	}
 
-	private Long getParentFileResourceId(def driveFileId, def googleDriveResources, def fileResources, def driveFileIds) {
+	private Long getParentFileResourceId(def driveFileId, def googledriveResources, def fileResources, def driveFileIds) {
 		Long parentFileResourceId = null
-		for(driveResource in googleDriveResources) {
+		for(driveResource in googledriveResources) {
 			if(driveResource.id == driveFileId) {
 				def parentId = driveResource.parents[0].id
 				for(fileId in driveFileIds) {
@@ -366,17 +371,17 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		cloudStore.credentials << ['ACCESS_TOKEN': credential.getAccessToken()]
 	}
 
-	public def uploadResource(CloudStore cloudStore, def uploadedFile, String parentPath, boolean isDir) {
+	public def uploadResource(CloudStore cloudStore, def uploadedFile, FileResource parentFileResource, boolean isDir) {
 		log.debug "Uploading file to google drive"
 		setGoogledriveApi(cloudStore)
 
 		String googledriveFileId
 
 		if(isDir) {
-
+			googledriveFileId = uploadFolderToGoogledrive(cloudStore, uploadedFile, parentFileResource)
 		}
 		else {
-			googledriveFileId = uploadToGoogledrive(cloudStore, uploadedFile, parentPath)
+			googledriveFileId = uploadFileToGoogledrive(cloudStore, uploadedFile, parentFileResource)
 		}
 
 		updateGoogledriveSpace(cloudStore)
@@ -384,13 +389,12 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		return googledriveFileId
 	}
 
-	private String uploadToGoogledrive(CloudStore cloudStore, def uploadedFile, String parentPath) {
+	private String uploadFileToGoogledrive(CloudStore cloudStore, def uploadedFile, FileResource parentFileResource) {
 		File body = new File()
 		body.title = uploadedFile.originalFilename
 		body.mimeType =uploadedFile.contentType
 
-		// TODO: get parent from parent parth err somefin
-		body.parents = Arrays.asList(new ParentReference().setId('root'))
+		body.parents = Arrays.asList(new ParentReference().setId(parentFileResource.extraMetadata))
 
 		InputStreamContent mediaContent = new InputStreamContent(uploadedFile.contentType, uploadedFile.inputStream)
 
@@ -402,6 +406,27 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			log.warn "File could not be uploaded to googledrive. Exception {}", Exception
 			return null
 		}
+	}
+
+	private String uploadFolderToGoogledrive(CloudStore cloudStore, def uploadedFile, FileResource parentFileResource) {
+		File body = new File()
+		body.title = uploadedFile
+		body.mimeType = GOOGLEDRIVE_FOLDER_TYPE
+
+		body.parents = Arrays.asList(new ParentReference().setId(parentFileResource.extraMetadata))
+
+		try {
+			File file = driveService.files().insert(body).execute()
+			log.debug "Successfully uploaded file '{}' to googledrive", file.title
+			return file.id
+		} catch (Exception) {
+			log.warn "File could not be uploaded to googledrive. Exception {}", Exception
+			return null
+		}
+	}
+
+	private def getParentDriveResourceByPath(String parentPath) {
+		FileResource parentFileResource
 	}
 
 	public InputStream downloadResource(CloudStore cloudStore, FileResource fileResource) {
@@ -426,6 +451,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		InputStream zippedFolderInputStream = null
 
 		if(!doesFolderExistInGoogledrive(fileResource)) {
+			log.debug "Folder '{}' does not exist in Google Drive", fileResource.fileName
 			return null
 		}
 

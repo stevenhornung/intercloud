@@ -46,8 +46,8 @@ class CloudStoreService {
 	public boolean authRedirect(Account account, def cloudStoreClass, def request) {
 		def didFinishConfigure = cloudStoreClass.configure(true, request)
 		if(didFinishConfigure) {
-			// Run async job to link up cloud store
 
+			// Run async job to link up cloud store
 			def future = callAsync {
 				return saveCloudStoreInstance(account, cloudStoreClass)
 			}
@@ -75,7 +75,7 @@ class CloudStoreService {
 
 		// Add inter cloud first, want it at the top of the home view
 		def fileResources = getSpecificCloudStoreResources(account, INTERCLOUD, ROOT_DIR)
-		homeResources << [INTERCLOUD : fileResources]
+		homeResources << ["${INTERCLOUD}" : fileResources]
 
 		account.cloudStores.each {
 			if(it.storeName != INTERCLOUD) {
@@ -104,6 +104,8 @@ class CloudStoreService {
 		if(cloudStore) {
 			fileResource = cloudStore.fileResources.find { it.path == fileResourcePath }
 		}
+
+		return fileResource
 	}
 
 	public CloudStore getAccountCloudStore(Account account, String cloudStoreName) {
@@ -205,24 +207,9 @@ class CloudStoreService {
 		FileResource fileResource = FileResource.get(fileResourceId)
 
 		if(fileResource) {
-			log.debug "Deleting resource data from db"
-			CloudStoreUtilities.deleteFromDatabase(fileResource)
-			isSuccess = true
-
-			if(cloudStoreName == INTERCLOUD) {
-				deleteFromLocalFileSystem(fileResource)
-
-				CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
-
-				BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
-				updateIntercloudSpace(cloudStore, spaceToDelete)
-			}
-			else {
-				isSuccess = deleteFromCloudStoreLink(account, cloudStoreName, fileResource)
-			}
+			isSuccess = didDeleteResource(account, cloudStoreName, fileResource)
 		}
 		else {
-
 			log.debug "Attempted to delete a file resource that did not exist"
 			isSuccess = true
 		}
@@ -230,15 +217,41 @@ class CloudStoreService {
 		return isSuccess
 	}
 
+	private boolean didDeleteResource(Account account, String cloudStoreName, FileResource fileResource) {
+		boolean isSuccess = false
+
+		log.debug "Deleting resource data from db"
+		CloudStoreUtilities.deleteFromDatabase(fileResource)
+
+		if(cloudStoreName == INTERCLOUD) {
+			deleteFromLocalFileSystem(fileResource)
+
+			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+
+			BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
+			updateIntercloudSpace(cloudStore, spaceToDelete)
+			cloudStore.save(flush:true)
+
+			isSuccess = true
+		}
+		else {
+			isSuccess = deleteFromCloudStoreLink(account, cloudStoreName, fileResource)
+		}
+
+		return isSuccess
+	}
+
 	private void deleteFromLocalFileSystem(FileResource fileResource) {
-		log.debug "Deleting file resource from local file system"
+
 
 		File file = new File(fileResource.locationOnFileSystem)
 
 		if(file.isDirectory()) {
+			log.debug "Deleting folder and contentes from local file system"
 			deleteFolder(file)
 		}
 		else {
+			log.debug "Deleting file resource from local file system"
 			file.delete()
 		}
 	}
@@ -276,22 +289,32 @@ class CloudStoreService {
 
 	public void updateResources(Account account, String cloudStoreName) {
 		if(cloudStoreName) {
-			log.debug "Manually updating {} file resources", cloudStoreName
-			def cloudStoreClass = getCloudStoreClass(cloudStoreName)
-			if(cloudStoreClass) {
-				updateSingleCloudStore(account, cloudStoreName, cloudStoreClass)
-			}
-			else {
-				log.debug "Bad cloud store specified when running manual update: {}", cloudStoreName
-			}
+			manualSingleUpdate(account, cloudStoreName)
 		}
 		else {
-			log.debug "Manually updating all cloud store file resources"
-			account.cloudStores.each{
-				if(it.storeName != INTERCLOUD) {
-					def cloudStoreClass = getCloudStoreClass(it.storeName)
-					updateSingleCloudStore(account, it.storeName, cloudStoreClass)
-				}
+			manualAllUpdate(account)
+		}
+	}
+
+	private void manualSingleUpdate(Account account, String cloudStoreName) {
+		log.debug "Manually updating {} file resources", cloudStoreName
+
+		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
+		if(cloudStoreClass) {
+			updateSingleCloudStore(account, cloudStoreName, cloudStoreClass)
+		}
+		else {
+			log.debug "Bad cloud store specified when running manual update: {}", cloudStoreName
+		}
+	}
+
+	private void manualAllUpdate(Account account) {
+		log.debug "Manually updating all cloud store file resources"
+
+		account.cloudStores.each{
+			if(it.storeName != INTERCLOUD) {
+				def cloudStoreClass = getCloudStoreClass(it.storeName)
+				updateSingleCloudStore(account, it.storeName, cloudStoreClass)
 			}
 		}
 	}
@@ -309,47 +332,34 @@ class CloudStoreService {
 		}
 	}
 
-	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile, String targetDirectory) {
-		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
+	public boolean uploadResource(Account account, String cloudStoreName, def uploadedFile, String targetDirectory, boolean isDir) {
+		boolean isSuccess
 		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
-		def newUpdateCursor
+		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
 
 		// Determine the parent file resource to upload under
 		FileResource parentFileResource = getParentFileResourceFromPath(account, cloudStoreName, targetDirectory)
 
 		if(cloudStoreName == INTERCLOUD) {
-			createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, parentFileResource, null)
-			BigInteger spaceToAdd = uploadedFile.getSize()
-			updateIntercloudSpace(cloudStore, spaceToAdd)
+			isSuccess = handleIntercloudUpload(account, cloudStore, uploadedFile, parentFileResource, isDir)
 		}
 		else if(cloudStoreClass) {
-			log.debug "Checking for updates before upload"
-			String updateCursor = cloudStore.updateCursor
-			def currentFileResources = cloudStore.fileResources
-			newUpdateCursor = cloudStoreClass.updateResources(cloudStore, updateCursor, currentFileResources)
-			cloudStore.updateCursor = newUpdateCursor
-
-			if(cloudStoreName == DROPBOX) {
-				boolean isSuccess = uploadToDropbox(cloudStoreClass, cloudStore, uploadedFile, parentFileResource)
-				if(!isSuccess) {
-					return false
-				}
-			}
-			else if(cloudStoreName == GOOGLEDRIVE) {
-				boolean isSuccess = uploadToGoogledrive(cloudStoreClass, cloudStore, uploadedFile, parentFileResource)
-				if(!isSuccess) {
-					return false
-				}
-			}
+			isSuccess = handleCloudServiceUpload(account, cloudStore, cloudStoreClass, uploadedFile, parentFileResource, isDir)
 		}
 		else {
 			log.debug "Bad cloud store specified when uploading file '{}'", cloudStoreName
-			return false
+			isSuccess = false
 		}
 
-		cloudStore.save(flush:true)
+		if(isSuccess) {
+			cloudStore.save(flush:true)
+		}
+		else {
+			// throw away any changes made
+			cloudStore.discard()
+		}
 
-		return true
+		return isSuccess
 	}
 
 	private FileResource getParentFileResourceFromPath(Account account, String cloudStoreName, String targetDirectory) {
@@ -371,31 +381,82 @@ class CloudStoreService {
 
 	}
 
-	private boolean uploadToDropbox(def cloudStoreClass, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource) {
-		String newFileName = null
-		def cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource.path, false)
-
-		if(!cloudStoreUploadName) {
-			return false
+	private boolean handleIntercloudUpload(Account account, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource, boolean isDir) {
+		if(isDir) {
+			createFileResourceFromNewFolder(account, cloudStore, uploadedFile, parentFileResource, null)
 		}
-		if(cloudStoreUploadName != uploadedFile.originalFilename) {
-			newFileName = cloudStoreUploadName
-		}
+		else {
+			createFileResourceFromUploadedFile(account, cloudStore, uploadedFile, parentFileResource, null)
 
-		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, parentFileResource, newFileName)
+			BigInteger spaceToAdd = uploadedFile.getSize()
+			updateIntercloudSpace(cloudStore, spaceToAdd)
+		}
 
 		return true
 	}
 
-	private boolean uploadToGoogledrive(def cloudStoreClass, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource) {
-		String extraMetadata = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource.path, false)
-		createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, parentFileResource, extraMetadata)
+	private boolean handleCloudServiceUpload(Account account, CloudStore cloudStore, def cloudStoreClass, def uploadedFile, FileResource parentFileResource, boolean isDir) {
+		boolean isSuccess = true
+
+		log.debug "Checking for updates before upload"
+		updateResources(account, cloudStore.storeName)
+
+		if(cloudStore.storeName == DROPBOX) {
+			isSuccess = uploadToDropbox(cloudStoreClass, cloudStore, uploadedFile, parentFileResource, isDir)
+		}
+		else if(cloudStore.storeName == GOOGLEDRIVE) {
+			isSuccess = uploadToGoogledrive(cloudStoreClass, cloudStore, uploadedFile, parentFileResource, isDir)
+		}
+
+		return isSuccess
+	}
+
+	private boolean uploadToDropbox(def cloudStoreClass, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource, boolean isDir) {
+		String newName = null
+		def cloudStoreUploadName
+
+		if(isDir) {
+			cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource, true)
+		}
+		else {
+			cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource, false)
+		}
+
+		if(!cloudStoreUploadName) {
+			return false
+		}
+
+		if(isDir) {
+			if(cloudStoreUploadName != uploadedFile) {
+				newName = cloudStoreUploadName
+			}
+			createFileResourceFromNewFolder(cloudStore.account, cloudStore, uploadedFile, parentFileResource, newName)
+		}
+		else {
+			if(cloudStoreUploadName != uploadedFile.originalFilename) {
+				newName = cloudStoreUploadName
+			}
+			createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, parentFileResource, newName)
+		}
+
+		return true
+	}
+
+	private boolean uploadToGoogledrive(def cloudStoreClass, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource, boolean isDir) {
+		String extraMetadata
+		if(isDir) {
+			extraMetadata = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource, true)
+			createFileResourceFromNewFolder(cloudStore.account, cloudStore, uploadedFile, parentFileResource, extraMetadata)
+		}
+		else {
+			extraMetadata = cloudStoreClass.uploadResource(cloudStore, uploadedFile, parentFileResource, false)
+			createFileResourceFromUploadedFile(cloudStore.account, cloudStore, uploadedFile, parentFileResource, extraMetadata)
+		}
 		return true
 	}
 
 	private void createFileResourceFromUploadedFile(Account account, CloudStore cloudStore, def uploadedFile, FileResource parentFileResource, String extraData) {
 		FileResource fileResource = new FileResource()
-
 		String filePath
 
 		// directories besides root do not have trailing forward slash
@@ -439,7 +500,55 @@ class CloudStoreService {
 		fileResource.modified = new Date()
 		fileResource.parentFileResource = parentFileResource
 
-		fileResource.save()
+		cloudStore.addToFileResources(fileResource)
+	}
+
+	private void createFileResourceFromNewFolder(Account account, CloudStore cloudStore, String folderName, FileResource parentFileResource, String extraData) {
+		FileResource fileResource = new FileResource()
+		String filePath
+
+		// directories besides root do not have trailing forward slash
+		if(parentFileResource.path == "/") {
+			filePath = parentFileResource.path + folderName
+		}
+		else {
+			filePath = parentFileResource.path + "/" + folderName
+		}
+
+		fileResource.fileName = folderName
+
+		if(cloudStore.storeName == INTERCLOUD) {
+			log.debug "Saving new folder to local file system for InterCloud cloud store"
+			String accountEmail = account.email
+			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot' + filePath
+			fileResource.locationOnFileSystem = locationOnFileSystem
+			saveFolderToLocalFileSystem(locationOnFileSystem)
+		}
+		else if(cloudStore.storeName == DROPBOX) {
+			if(extraData) {
+				if(parentFileResource.path == "/") {
+					filePath = parentFileResource.path + extraData
+				}
+				else {
+					filePath = parentFileResource.path + "/" + folderName
+				}
+
+				fileResource.fileName = extraData
+			}
+		}
+		else if(cloudStore.storeName == GOOGLEDRIVE) {
+			fileResource.extraMetadata = extraData
+		}
+
+		fileResource.path = filePath
+		fileResource.byteSize = 0
+		fileResource.mimeType = "application/octet-stream"
+		fileResource.isDir = true
+		fileResource.cloudStore = cloudStore
+		fileResource.modified = new Date()
+		fileResource.parentFileResource = parentFileResource
+
+		cloudStore.addToFileResources(fileResource)
 	}
 
 	private void saveFileToLocalFileSystem(String pathToSaveFile, def newFile) {
@@ -485,115 +594,5 @@ class CloudStoreService {
 	private void updateIntercloudSpace(CloudStore cloudStore, BigInteger spaceToChange) {
 		log.debug "Updating intercloud space"
 		cloudStore.spaceUsed += spaceToChange
-		cloudStore.save(flush:true)
-	}
-
-	public boolean createFolder(Account account, String cloudStoreName, FileResource parentFileResource, String folderName) {
-		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
-		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
-		def newUpdateCursor
-
-		if(cloudStoreName == INTERCLOUD) {
-			createFileResourceFromNewFolder(account, cloudStore, folderName, parentFileResource, null)
-		}
-		else if(cloudStoreClass) {
-			log.debug "Checking for updates before creating new folder"
-			String updateCursor = cloudStore.updateCursor
-			def currentFileResources = cloudStore.fileResources
-			newUpdateCursor = cloudStoreClass.updateResources(cloudStore, updateCursor, currentFileResources)
-			cloudStore.updateCursor = newUpdateCursor
-
-			if(cloudStoreName == DROPBOX) {
-				boolean isSuccess = createFolderInDropbox(cloudStoreClass, cloudStore, folderName, parentFileResource)
-				if(!isSuccess) {
-					return false
-				}
-			}
-			else if(cloudStoreName == GOOGLEDRIVE) {
-				boolean isSuccess = createFolderInGoogledrive(cloudStoreClass, cloudStore, folderName, parentFileResource)
-				if(!isSuccess) {
-					return false
-				}
-			}
-		}
-		else {
-			log.debug "Bad cloud store specified when creating folder in '{}'", cloudStoreName
-			return false
-		}
-
-		cloudStore.save(flush:true)
-
-		return true
-	}
-
-	private void createFileResourceFromNewFolder(Account account, CloudStore cloudStore, String folderName, FileResource parentFileResource, String extraData) {
-		FileResource fileResource = new FileResource()
-
-		String filePath
-
-		// directories besides root do not have trailing forward slash
-		if(parentFileResource.path == "/") {
-			filePath = parentFileResource.path + folderName
-		}
-		else {
-			filePath = parentFileResource.path + "/" + folderName
-		}
-
-		fileResource.fileName = folderName
-
-		if(cloudStore.storeName == INTERCLOUD) {
-			log.debug "Saving new folder to local file system for InterCloud cloud store"
-			String accountEmail = account.email
-			String locationOnFileSystem = INTERCLOUD_STORAGE_PATH + '/' + accountEmail + '/InterCloudRoot' + filePath
-			fileResource.locationOnFileSystem = locationOnFileSystem
-			saveFolderToLocalFileSystem(locationOnFileSystem)
-		}
-		else if(cloudStore.storeName == DROPBOX) {
-			if(extraData) {
-				if(parentFileResource.path == "/") {
-					filePath = parentFileResource.path + extraData
-				}
-				else {
-					filePath = parentFileResource.path + "/" + folderName
-				}
-
-				fileResource.fileName = extraData
-			}
-		}
-		else if(cloudStore.storeName == GOOGLEDRIVE) {
-			fileResource.extraMetadata = extraData
-		}
-
-		fileResource.path = filePath
-		fileResource.byteSize = 0
-		fileResource.mimeType = "application/octet-stream"
-		fileResource.isDir = true
-		fileResource.cloudStore = cloudStore
-		fileResource.modified = new Date()
-		fileResource.parentFileResource = parentFileResource
-
-		fileResource.save()
-	}
-
-	private boolean createFolderInDropbox(def cloudStoreClass, CloudStore cloudStore, String folderName, FileResource parentFileResource) {
-		String newFolderName = null
-		def cloudStoreUploadName = cloudStoreClass.uploadResource(cloudStore, folderName, parentFileResource.path, true)
-
-		if(!cloudStoreUploadName) {
-			return false
-		}
-		if(cloudStoreUploadName != folderName) {
-			newFolderName = cloudStoreUploadName
-		}
-
-		createFileResourceFromNewFolder(cloudStore.account, cloudStore, folderName, parentFileResource, newFolderName)
-
-		return true
-	}
-
-	private boolean createFolderInGoogledrive(def cloudStoreClass, CloudStore cloudStore, String folderName, FileResource parentFileResource) {
-		String extraMetadata = cloudStoreClass.uploadResource(cloudStore, folderName, parentFileResource.path, true)
-		createFileResourceFromNewFolder(cloudStore.account, cloudStore, folderName, parentFileResource, extraMetadata)
-		return true
 	}
 }
