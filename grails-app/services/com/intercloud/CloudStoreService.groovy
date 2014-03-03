@@ -227,6 +227,7 @@ class CloudStoreService {
 			deleteFromLocalFileSystem(fileResource)
 
 			CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+			cloudStore.lock()
 
 			BigInteger spaceToDelete = -(new BigInteger(fileResource.byteSize))
 			updateIntercloudSpace(cloudStore, spaceToDelete)
@@ -273,6 +274,7 @@ class CloudStoreService {
 
 	private boolean deleteFromCloudStoreLink(Account account, String cloudStoreName, FileResource fileResource) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(cloudStoreName, account)
+		cloudStore.lock()
 		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
 		boolean isSuccess = false
 
@@ -321,6 +323,7 @@ class CloudStoreService {
 
 	private def updateSingleCloudStore(Account account, String storeName, def cloudStoreClass) {
 		CloudStore cloudStore = CloudStore.findByStoreNameAndAccount(storeName, account)
+		cloudStore.save()
 
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
@@ -336,6 +339,7 @@ class CloudStoreService {
 		boolean isSuccess
 		def cloudStoreClass = getCloudStoreClass(cloudStoreName)
 		CloudStore cloudStore = account.cloudStores.find { it.storeName == cloudStoreName}
+		cloudStore.lock()
 
 		// Determine the parent file resource to upload under
 		FileResource parentFileResource = getParentFileResourceFromPath(account, cloudStoreName, targetDirectory)

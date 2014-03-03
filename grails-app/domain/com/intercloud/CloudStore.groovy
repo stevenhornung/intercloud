@@ -22,6 +22,7 @@ class CloudStore implements Comparable {
 
 	static mapping = {
 		fileResources cascade: 'all-delete-orphan', lazy: false
+		version false
 	}
 
 	int compareTo(obj) {

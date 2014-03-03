@@ -100,13 +100,6 @@
 		</script>
 
 		<script>
-			Dropzone.options.dropzone = {
-				parallelUploads: 1,
-				maxFilesize: 3072 // 3 gb
-					}
-		</script>
-
-		<script>
 		    $(function() {
 			    $( "#dialog-form" ).dialog({
 			      autoOpen: false,

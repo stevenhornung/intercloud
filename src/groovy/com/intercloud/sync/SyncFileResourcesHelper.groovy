@@ -9,12 +9,13 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
 class SyncFileResourcesHelper {
-	
+
 	private static Logger log = LoggerFactory.getLogger(SyncFileResourcesHelper.class)
-	
+
 	public void syncSingleUserCloudStores(Account account) {
 		def accountCloudStores = account.cloudStores
 		for(CloudStore cloudStore : accountCloudStores) {
+			cloudStore.lock()
 			if(cloudStore.storeName == 'dropbox') {
 				runDropboxUpdater(cloudStore, account)
 			}
@@ -26,27 +27,27 @@ class SyncFileResourcesHelper {
 			}
 		}
 	}
-	
+
 	private void runDropboxUpdater(CloudStore cloudStore, Account account) {
 		log.debug "Running auto dropbox updater for user '{}'", account.email
-		
+
 		def credentials = cloudStore.credentials
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
-		
+
 		String newUpdateCursor = new DropboxCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
 
 		cloudStore.updateCursor = newUpdateCursor
 		cloudStore.save()
 	}
-	
+
 	private void runGoogledriveUpdater(CloudStore cloudStore, Account account) {
 		log.debug "Running auto google drive updater for user '{}'", account.email
-		
+
 		def credentials = cloudStore.credentials
 		String updateCursor = cloudStore.updateCursor
 		def currentFileResources = cloudStore.fileResources
-		
+
 		String newUpdateCursor = new GoogledriveCloudStore().updateResources(cloudStore, updateCursor, currentFileResources)
 
 		cloudStore.updateCursor = newUpdateCursor

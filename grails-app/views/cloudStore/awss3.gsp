@@ -104,13 +104,6 @@
 		  });
 		</script>
 
-		<script>
-			Dropzone.options.dropzone = {
-				parallelUploads: 1,
-				maxFilesize: 3072 // 3 gb
-					}
-		</script>
-
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>

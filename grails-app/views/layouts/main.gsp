@@ -29,6 +29,12 @@
 		<link rel="stylesheet" href="${resource(dir: 'css', file: 'colorbox.css')}" type="text/css" media="screen" />
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
 
+		<script>
+			Dropzone.options.dropzone = {
+				parallelUploads: 5,
+				maxFilesize: 3072 // 3 gb
+					}
+		</script>
 
 	</head>
 	<body>
