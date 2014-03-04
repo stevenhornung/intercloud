@@ -163,6 +163,17 @@
 										|	<g:remoteLink controller="cloudstore" action="update" update="accordian_${cloudStore.key}" params="[storeName: cloudStore.key]" style="color:#fff">Sync</g:remoteLink>
 								</g:if>
 								<g:if test="${cloudStore.value }">
+									<div style="border:solid;border-width:1px;margin-bottom:20px;border-radius:5px;padding:3px">
+										<div style="margin-left:10px;display:inline-block;">
+											Name
+										</div>
+										<div style="margin-left:40%;display:inline-block;">
+											Kind
+										</div>
+										<div style="float:right;margin-right:30px;display:inline-block;">
+											Modified
+										</div>
+									</div>
 									<div id="accordion_${cloudStore.key }">
 										<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
 									</div>

@@ -45,21 +45,25 @@ beans = {
 		CLIENT_SECRET = "OZQKsV0dGM04h-FtNt-VpGIF"
 
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
+
 		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
+		//CLIENT_ID = "887098665005-d5gvvl2l344k21cje461348djl6k4uvh.apps.googleusercontent.com"
+		//CLIENT_SECRET = "0Clr25m78aADDV_Vk4bBpuAr"
 
 		GOOGLEDRIVE_FOLDER_TYPE = "application/vnd.google-apps.folder"
 	}
 
 	awsS3CloudStore (AwsS3CloudStore) {
 		STORE_NAME = 'awss3'
-		AWS_CREDENTIAL_URL = "http://localhost:8080/awss3credentials"
+		//AWS_CREDENTIAL_URL = "http://localhost:8080/awss3credentials"
+		//REDIRECT_URL = "http://localhost:8080/auth_redirect"
 
-		REDIRECT_URL = "http://localhost:8080/auth_redirect"
-		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
+		AWS_CREDENTIAL_URL = "http://stevenhornung.com:8443/awss3credentials"
+		REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
 	}
 
 	zipUtilities (ZipUtilities) {
-		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
-		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
+		//ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
+		ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
 	}
 }

@@ -158,9 +158,9 @@
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
-						<img src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50>
+						<img style="display:inline-block" src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50>
 						 | <g:remoteLink controller="cloudstore" action="update" update="accordian" params="[storeName:'googledrive']">Sync</g:remoteLink>
-						<div id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
+						<div style="display:inline-block" id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
 					 	 <div id="dialog-form">
 					 		<form>
 					 			<label for="folderName">Folder Name</label>
@@ -169,7 +169,7 @@
 					 			<input type="hidden" id="targetDir" value="${request.forwardURI}">
 					 		</form>
 					 	</div>
-						<div style="float:right">
+						<div style="float:right;display:inline-block">
 						 	Space: ${spaceUsedList[0]} ${spaceUsedList[1]} of ${totalSpaceList[0]} ${totalSpaceList[1]}</b>
 						</div>
 						<br><br>
@@ -184,6 +184,17 @@
 						</g:if>
 						<hr>
 						<br>
+						<div style="border:solid;border-width:1px;margin-bottom:20px;border-radius:5px;padding:3px">
+							<div style="margin-left:10px;display:inline-block;">
+								Name
+							</div>
+							<div style="margin-left:40%;display:inline-block;">
+								Kind
+							</div>
+							<div style="float:right;margin-right:30px;display:inline-block;">
+								Modified
+							</div>
+						</div>
 						<div id="accordion">
 							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'googledrive']" />
 						</div>

@@ -36,6 +36,13 @@
 					}
 		</script>
 
+		<script>
+			window.onbeforeunload = function (e) {
+
+			};
+
+		</script>
+
 	</head>
 	<body>
 		<header>
