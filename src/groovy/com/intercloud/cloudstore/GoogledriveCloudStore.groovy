@@ -198,6 +198,8 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.path = "/"
 		fileResource.isDir = true
 		fileResource.extraMetadata = 'root'
+		fileResource.modified = new Date()
+		fileResource.mimeType = "application/octet-stream"
 
 		fileResource.save()
 
@@ -246,6 +248,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			def rootDriveId = driveFileIds.find { it.driveFileId == 'root' }
 			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
+			parentFileResource.addToChildFileResources(fileResource)
 		}
 
 		String driveFileId = googledriveResource.id.toString()
@@ -272,6 +275,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 			def rootDriveId = driveFileIds.find { it.driveFileId == 'root' }
 			FileResource parentFileResource = fileResources.find { it.id == rootDriveId.fileResourceId }
 			fileResource.parentFileResource = parentFileResource
+			parentFileResource.addToChildFileResources(fileResource)
 		}
 
 		String driveFileId = googledriveResource.id.toString()
@@ -291,7 +295,9 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 				if(fileResource.id == fileId.fileResourceId) {
 					FileResource childFileResource = fileResources.find { it.id == fileId.fileResourceId }
 					def parentFileResourceId = getParentFileResourceId(fileId.driveFileId, googledriveResources, fileResources, driveFileIds)
-					childFileResource.parentFileResource = FileResource.get(parentFileResourceId)
+					FileResource parentFileResource = FileResource.get(parentFileResourceId)
+					childFileResource.parentFileResource = parentFileResource
+					parentFileResource.addToChildFileResources(childFileResource)
 					updatedResources.add(childFileResource)
 					break
 				}
@@ -688,6 +694,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.mimeType = "application/octet-stream"
 		fileResource.extraMetadata = googledriveFile.id
 		fileResource.path = getPathOfUpdatedFileResource(fileResource)
+		fileResource.modified = googledriveFile.modifiedDate
 
 		return fileResource
 	}
@@ -701,6 +708,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 		fileResource.extraMetadata = googledriveFile.id
 		fileResource.mimeType = googledriveFile.mimeType
 		fileResource.path = getPathOfUpdatedFileResource(fileResource)
+		fileResource.modified = googledriveFile.modifiedDate
 
 		return fileResource
 	}
@@ -717,7 +725,7 @@ class GoogledriveCloudStore implements CloudStoreInterface{
 
 		cloudStore.addToFileResources(fileResource)
 
-		currentFileResources = CloudStoreUtilities.setParentAndChildFileResources(fileResource, currentFileResources)
+		currentFileResources = CloudStoreUtilities.setParentFileResources(fileResource, currentFileResources)
 		return currentFileResources
 	}
 

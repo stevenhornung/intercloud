@@ -503,6 +503,8 @@ class CloudStoreService {
 		fileResource.cloudStore = cloudStore
 		fileResource.modified = new Date()
 		fileResource.parentFileResource = parentFileResource
+		parentFileResource.addToChildFileResources(fileResource)
+
 
 		cloudStore.addToFileResources(fileResource)
 	}
@@ -538,10 +540,12 @@ class CloudStoreService {
 				}
 
 				fileResource.fileName = extraData
+				fileResource.modified = "--"
 			}
 		}
 		else if(cloudStore.storeName == GOOGLEDRIVE) {
 			fileResource.extraMetadata = extraData
+			fileResource.modified = new Date()
 		}
 
 		fileResource.path = filePath
@@ -549,8 +553,8 @@ class CloudStoreService {
 		fileResource.mimeType = "application/octet-stream"
 		fileResource.isDir = true
 		fileResource.cloudStore = cloudStore
-		fileResource.modified = new Date()
 		fileResource.parentFileResource = parentFileResource
+		parentFileResource.addToChildFileResources(fileResource)
 
 		cloudStore.addToFileResources(fileResource)
 	}

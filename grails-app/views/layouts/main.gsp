@@ -30,13 +30,6 @@
 		<script src="${resource(dir: 'js', file: 'jquery.colorbox.js')}" type="text/javascript"></script>
 
 		<script>
-			Dropzone.options.dropzone = {
-				parallelUploads: 5,
-				maxFilesize: 3072 // 3 gb
-					}
-		</script>
-
-		<script>
 			window.onbeforeunload = function (e) {
 
 			};

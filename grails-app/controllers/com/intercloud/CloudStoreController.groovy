@@ -85,13 +85,13 @@ class CloudStoreController extends BaseController {
 	public def renderHomeResources() {
 		Account account = getCurrentAccount()
 		def homeResources = cloudStoreService.getHomeCloudStoreResources(account)
-		render (view: "index", template: "layouts/homeResources", model: [homeResources : homeResources])
+		render (view: "index", model: [homeResources : homeResources])
 	}
 
 	public def getAllCloudStoreResources() {
 		Account account = getCurrentAccount()
 		def cloudStoreName = params.storeName
-		renderCloudStore(account, cloudStoreName, ROOT_DIR)
+		renderCloudStore(account, cloudStoreName, ROOT_DIR, false)
 	}
 
 	public def getSpecificCloudStoreResource() {
@@ -124,7 +124,7 @@ class CloudStoreController extends BaseController {
 
 		if(specificCloudStoreResource) {
 			if(specificCloudStoreResource.isDir) {
-				renderCloudStore(account, cloudStoreName, specificCloudStoreResource.path)
+				renderCloudStore(account, cloudStoreName, specificCloudStoreResource.path, false)
 			}
 			else {
 				renderFileResource(cloudStoreName, specificCloudStoreResource)
@@ -208,8 +208,10 @@ class CloudStoreController extends BaseController {
 			flash.error = message(code: 'cloudstore.deletefailed', args: [cloudStoreName])
 		}
 
-		// Redirect back to file resource parent folder, then worry about rendering
-		redirect(uri: params.targetUri)
+		String targetUri = params.targetUri
+		FileResource parentFileResource = cloudStoreService.getParentFileResourceFromPath(account, cloudStoreName, targetUri)
+
+		renderCloudStore(account, cloudStoreName, parentFileResource.path, true)
 	}
 
 	public def downloadResource() {
@@ -272,7 +274,7 @@ class CloudStoreController extends BaseController {
 		cloudStoreService.updateResources(account, cloudStoreName)
 
 		if(cloudStoreName) {
-			renderCloudStore(account, cloudStoreName, ROOT_DIR)
+			renderCloudStore(account, cloudStoreName, ROOT_DIR, true)
 		}
 		else {
 			forward(controller: 'home', action:'index')
@@ -289,7 +291,7 @@ class CloudStoreController extends BaseController {
 		if(cloudStoreName in account.cloudStores.storeName) {
 			log.debug "Uploading file to '{}' cloud store under '{}'", cloudStoreName, parentFileResource.path
 
-			def uploadedFile = request.getFile('file')
+			def uploadedFile = params.file
 
 			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile, targetDirectory, false)
 
@@ -301,10 +303,10 @@ class CloudStoreController extends BaseController {
 			forward(controller: 'base', action: 'respondPageNotFound')
 		}
 
-		renderCloudStore(account, cloudStoreName, parentFileResource.path)
+		renderCloudStore(account, cloudStoreName, parentFileResource.path, true)
 	}
 
-	private void renderCloudStore(Account account, String cloudStoreName, String directory) {
+	private void renderCloudStore(Account account, String cloudStoreName, String directory, boolean isAjaxUpdate) {
 		CloudStore cloudStore = cloudStoreService.getAccountCloudStore(account, cloudStoreName)
 
 		def totalSpaceList
@@ -318,7 +320,13 @@ class CloudStoreController extends BaseController {
 			fileInstanceList = cloudStoreService.getSpecificCloudStoreResources(account, cloudStoreName, directory)
 		}
 
-		render(view : cloudStoreName, template: "layouts/${cloudStoreName}Resources", model: [fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
+		log.debug "Rendering '{}' resources", cloudStoreName
+		if(isAjaxUpdate) {
+			render(template: "layouts/${cloudStoreName}Resources", model: [cloudStore: cloudStoreName, fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
+		}
+		else {
+			render(view: cloudStoreName, template: "layouts/${cloudStoreName}Resources", model: [fileInstanceList: fileInstanceList, totalSpaceList: totalSpaceList, spaceUsedList: spaceUsedList])
+		}
 	}
 
 	public def newFolder() {
@@ -335,7 +343,10 @@ class CloudStoreController extends BaseController {
 		if(!isSuccess) {
 			flash.error = message(code: 'cloudstore.newfolderfailed')
 		}
+		else {
+			flash.info = message(code: 'cloudstore.newfoldersuccess', args: [folderName])
+		}
 
-		renderCloudStore(account, cloudStoreName, parentFileResource.path)
+		renderCloudStore(account, cloudStoreName, parentFileResource.path, true)
 	}
 }

@@ -183,6 +183,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 				FileResource dirFileResource = new FileResource()
 				dirFileResource = dropboxFolderToFileResource(entry, dirFileResource, cloudStoreInstance)
 				dirFileResource.parentFileResource = parentFileResource
+				parentFileResource.addToChildFileResources(dirFileResource)
 				def nestedDropboxFolder = dropboxClient.getMetadataWithChildren(entry.path)
 				dirResources.addAll(getFilesInDir(nestedDropboxFolder, dirFileResource, cloudStoreInstance))
 			}
@@ -190,6 +191,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 				FileResource fileResource = new FileResource()
 				fileResource = dropboxFileToFileResource(entry, fileResource, cloudStoreInstance)
 				fileResource.parentFileResource = parentFileResource
+				parentFileResource.addToChildFileResources(fileResource)
 				dirResources.add(fileResource)
 			}
 		}
@@ -208,6 +210,7 @@ class DropboxCloudStore implements CloudStoreInterface {
 			fileResource.fileName = dropboxFolder.name
 		}
 		fileResource.mimeType = "application/octet-stream"
+		fileResource.modified = "--"
 
 		return fileResource
 	}

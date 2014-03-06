@@ -91,15 +91,6 @@
 		</script>
 
 		<script>
-		  $(function() {
-		    $( "#accordion" ).accordion({
-		      collapsible: true,
-		      active: false
-		    });
-		  });
-		</script>
-
-		<script>
 		    $(function() {
 			    $( "#dialog-form" ).dialog({
 			      autoOpen: false,
@@ -112,7 +103,18 @@
 			        	var storeName = $("#storeName").val();
 			        	var targetDir = $("#targetDir").val();
 			        	var folderName = $("#folderName").val();
-			        	$.get("/newfolder", {storeName: storeName, targetDir: targetDir, folderName: folderName});
+			        	$.ajax({
+			        		url: "/newfolder",
+			        		type: "POST",
+			        		data: {
+			        			storeName: storeName,
+			        			targetDir: targetDir,
+			        			folderName: folderName},
+			        		success: function(data) {
+			        			$("#resourceList").html(data);
+			        			$("#flashinfo").html("${flash.info}")
+			        		}
+			        	});
 
 			            $( this ).dialog( "close" );
 			        },
@@ -125,6 +127,19 @@
 				$( "#newFolder" ).click(function() {
 			        $( "#dialog-form" ).dialog( "open" );
 			      });
+
+				Dropzone.options.dropboxDropzone = {
+				  init: function() {
+				    this.on("complete", function(file) {
+				    	$("#flashinfo").html("File uploaded successfully.");
+				    	setTimeout(function() {
+				    		$("#flashinfo").html("");
+				    	}, 3000);
+			        });
+				  },
+				  parallelUploads: 5,
+				  maxFilesize: 3072 // 3 gb
+				};
 			});
 		</script>
 
@@ -135,31 +150,29 @@
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=dropbox">Download Entire Dropbox</a></p>
-					<form id="dropzone" action="/upload?storeName=dropbox&targetDir=${request.forwardURI}" class="dropzone" >
+					<g:formRemote name="dropboxDropzone" url="[controller: 'cloudstore', action: 'upload', params:[storeName: 'dropbox', targetDir: request.forwardURI]]" update="resourceList" class="dropzone">
 					  <div class="fallback">
 					    <input name="file" type="file" multiple />
 					  </div>
-					</form>
+					</g:formRemote>
 
 				</div>
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<g:if test="${flash.error }">
-					<div class="errors">
+					<div id="flasherror" class="errors">
 							${flash.error}
 					</div>
 			</g:if>
-			<g:if test="${flash.info }">
-					<div class="message">
-							${flash.info}
-					</div>
-			</g:if>
+			<div id="flashinfo" class="message">
+					${flash.info}
+			</div>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img style="display:inline-block" src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50>
-							 | <g:remoteLink controller="cloudstore" action="update" update="accordian" params="[storeName:'dropbox']">Sync</g:remoteLink>
+							 | <g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName:'dropbox']">Sync</g:remoteLink>
 							 <div style="display:inline-block" id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
 							 	<div id="dialog-form">
 							 		<form>
@@ -196,8 +209,8 @@
 							Modified
 						</div>
 					</div>
-					<div id="accordion">
-							<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'dropbox']" />
+					<div id="resourceList">
+						<g:render template="layouts/dropboxResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'dropbox']" />
 					</div>
 				</g:if>
 			</sec:ifLoggedIn>

@@ -106,27 +106,6 @@
 			});
 		</script>
 
-		<script>
-		  $(function() {
-		    $( "#accordion_intercloud" ).accordion({
-		      collapsible: true,
-		      active: false
-		    });
-		  });
-		  $(function() {
-		    $( "#accordion_dropbox" ).accordion({
-		      collapsible: true,
-		      active: false
-		    });
-		  });
-		  $(function() {
-		    $( "#accordion_googledrive" ).accordion({
-		      collapsible: true,
-		      active: false
-		    });
-		  });
-		</script>
-
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
@@ -160,7 +139,7 @@
 							<div class="slide_content">
 								<a style="margin-top:4px;margin-left:4px;color:#fff" href="${cloudStore.key}">${cloudStore.key.capitalize()}</a>
 								<g:if test="${cloudStore.key != 'intercloud' }">
-										|	<g:remoteLink controller="cloudstore" action="update" update="accordian_${cloudStore.key}" params="[storeName: cloudStore.key]" style="color:#fff">Sync</g:remoteLink>
+										|	<g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName: cloudStore.key]" style="color:#fff">Sync</g:remoteLink>
 								</g:if>
 								<g:if test="${cloudStore.value }">
 									<div style="border:solid;border-width:1px;margin-bottom:20px;border-radius:5px;padding:3px">
@@ -174,8 +153,8 @@
 											Modified
 										</div>
 									</div>
-									<div id="accordion_${cloudStore.key }">
-										<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
+									<div id="resourceList">
+										<g:render template="layouts/${cloudStore.key}Resources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
 									</div>
 								</g:if>
 							</div>

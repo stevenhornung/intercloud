@@ -122,10 +122,10 @@ class UrlMappings {
 		}
 
 
-		"/delete" {
+		"/cloudstore/delete" {
 			controller = 'cloudStore'
-			action = [GET: 'deleteResource',
-						POST: 'respondInvalidAction',
+			action = [GET: 'respondInvalidAction',
+						POST: 'deleteResource',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}
@@ -156,13 +156,13 @@ class UrlMappings {
 
 		"/cloudstore/update" {
 			controller = "cloudStore"
-			action = [GET: 'updateResources',
+			action = [GET: 'respondInvalidAction',
 						POST: 'updateResources',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}
 
-		"/upload" {
+		"/cloudstore/upload" {
 			controller = "cloudStore"
 			action = [GET: 'respondInvalidAction',
 						POST: 'uploadResource',
@@ -172,8 +172,8 @@ class UrlMappings {
 
 		"/newfolder" {
 			controller = "cloudStore"
-			action = [GET: 'newFolder',
-						POST: 'respondInvalidAction',
+			action = [GET: 'respondInvalidAction',
+						POST: 'newFolder',
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}

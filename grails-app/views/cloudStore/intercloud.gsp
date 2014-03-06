@@ -91,15 +91,6 @@
 		</script>
 
 		<script>
-		  $(function() {
-		    $( "#accordion" ).accordion({
-		      collapsible: true,
-		      active: false
-		    });
-		  });
-		</script>
-
-		<script>
 		    $(function() {
 			    $( "#dialog-form" ).dialog({
 			      autoOpen: false,
@@ -112,7 +103,18 @@
 			        	var storeName = $("#storeName").val();
 			        	var targetDir = $("#targetDir").val();
 			        	var folderName = $("#folderName").val();
-			        	$.get("/newfolder", {storeName: storeName, targetDir: targetDir, folderName: folderName});
+			        	$.ajax({
+			        		url: "/newfolder",
+			        		type: "POST",
+			        		data: {
+			        			storeName: storeName,
+			        			targetDir: targetDir,
+			        			folderName: folderName},
+			        		success: function(data) {
+			        			$("#resourceList").html(data);
+			        			$("#flashinfo").html("${flash.info}")
+			        		}
+			        	});
 
 			            $( this ).dialog( "close" );
 			        },
@@ -125,31 +127,47 @@
 				$( "#newFolder" ).click(function() {
 			        $( "#dialog-form" ).dialog( "open" );
 			      });
+
+				Dropzone.options.intercloudDropzone = {
+				  init: function() {
+				    this.on("complete", function(file) {
+				    	$("#flashinfo").html("File uploaded successfully.");
+				    	setTimeout(function() {
+				    		$("#flashinfo").html("");
+				    	}, 3000);
+
+			        });
+				  },
+				  parallelUploads: 5,
+				  maxFilesize: 3072 // 3 gb
+				};
 			});
 		</script>
 
 	</head>
-	<body>
-		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
+	<body
+		<a href="#page-body" class="skip"></a>
 		<sec:ifLoggedIn>
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=intercloud">Download Entire intercloud</a></p>
-					<form id="dropzone" action="/upload?storeName=intercloud&targetDir=${request.forwardURI}" class="dropzone">
+					<g:formRemote id="intercloudDropzone" name="intercloudDropzone" url="[controller: 'cloudstore', action: 'upload', params:[storeName: 'intercloud', targetDir: request.forwardURI]]" update="resourceList" class="dropzone">
 					  <div class="fallback">
 					    <input name="file" type="file" multiple />
 					  </div>
-					</form>
-
+					</g:formRemote>
 				</div>
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
 			<g:if test="${flash.error }">
-					<div class="errors">
-							${flash.error}
-					</div>
+				<div id="flasherror" class="errors">
+					${flash.error}
+				</div>
 			</g:if>
+			<div id="flashinfo" class="message">
+				${flash.info}
+			</div>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
 					<img style="display:inline-block" src="${resource(dir: 'images', file: 'intercloud.jpeg')}" width=50 height=50>
@@ -189,8 +207,8 @@
 							Modified
 						</div>
 					</div>
-					<div id="accordion">
-						<g:render template="layouts/cloudStoreResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'intercloud']" />
+					<div id="resourceList">
+						<g:render template="layouts/intercloudResources" model="[fileInstanceList: fileInstanceList, cloudStore: 'intercloud']" />
 					</div>
 				</g:if>
 			</sec:ifLoggedIn>

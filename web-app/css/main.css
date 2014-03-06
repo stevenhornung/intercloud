@@ -336,7 +336,6 @@ fieldset.embedded legend {
 
 .message {
 	background: #f3f3ff;
-	border: 1px solid #b2d1ff;
 	color: #006dba;
 	   -moz-box-shadow: 0 0 0.25em #b2d1ff;
 	-webkit-box-shadow: 0 0 0.25em #b2d1ff;
@@ -595,11 +594,11 @@ a.skip {
 	left: -9999px;
 }
 
-#element_to_pop_up { 
+#element_to_pop_up {
     background-color:#fff;
     border-radius:15px;
     color:#000;
-    display:none; 
+    display:none;
     padding:20px;
     min-width:400px;
     min-height: 180px;

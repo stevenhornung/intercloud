@@ -69,6 +69,7 @@ class CloudStoreUtilities {
 		for(FileResource currentResource : currentFileResources) {
 			if(currentResource.path == "/") {
 				fileResource.parentFileResource = currentResource
+				currentResource.addToChildFileResources(fileResource)
 				parentFound = true
 				break
 			}
@@ -84,6 +85,7 @@ class CloudStoreUtilities {
 		for(FileResource currentResource : currentFileResources) {
 			if(currentResource.path == parentPath) {
 				fileResource.parentFileResource = currentResource
+				currentResource.addToChildFileResources(fileResource)
 				parentFound = true
 				break
 			}
@@ -106,6 +108,7 @@ class CloudStoreUtilities {
 		FileResource parentFileResource = createParentDirectory(pathParts)
 		parentFileResource.addToChildFileResources(fileResource)
 		fileResource.parentFileResource = parentFileResource
+		parentFileResource.addToChildFileResources(fileResource)
 
 		return parentFileResource
 	}
