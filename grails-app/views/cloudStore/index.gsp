@@ -106,21 +106,28 @@
 			});
 		</script>
 
+		<script>
+			$(document).ready(function() {
+
+				// On page load, remove any
+				setTimeout(function() {
+		    		$("#flashinfo").html("");
+		    		$("#flasherror").html("");
+		    	}, 3000);
+			});
+		</script>
+
 	</head>
 	<body>
 		<a href="#page-body" class="skip"><g:message code="default.link.skip.label" default="Skip to content&hellip;"/></a>
 		<div>
 			<sec:ifLoggedIn>
-				<g:if test="${flash.error }">
-					<div class="errors">
-							${flash.error}
-					</div>
-				</g:if>
-				<g:if test="${flash.info }">
-					<div class="message">
-							${flash.info}
-					</div>
-				</g:if>
+				<div id="flasherror" class="errors">
+					${flash.error}
+				</div>
+				<div id="flashinfo" class="message">
+					${flash.info}
+				</div>
 				<ul id="accordion1">
 					<g:each in="${homeResources}" status="i" var="cloudStore">
 						<li class="${cloudStore.key}_slide">

@@ -272,7 +272,9 @@ class CloudStoreController extends BaseController {
 		String cloudStoreName = params.storeName
 		String targetDirectory = params.targetDir
 
-		cloudStoreService.updateResources(account, cloudStoreName)
+		if(cloudStoreName != "intercloud") {
+			cloudStoreService.updateResources(account, cloudStoreName)
+		}
 
 		if(cloudStoreName && targetDirectory) {
 			if(targetDirectory == "/home") {
@@ -301,10 +303,6 @@ class CloudStoreController extends BaseController {
 			def uploadedFile = params.file
 
 			boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, uploadedFile, targetDirectory, false)
-
-			if(!isSuccess) {
-				flash.error = message(code: 'cloudstore.uploadfailed', args: [uploadedFile.originalFilename, cloudStoreName])
-			}
 		}
 		else {
 			forward(controller: 'base', action: 'respondPageNotFound')
@@ -346,13 +344,6 @@ class CloudStoreController extends BaseController {
 		log.debug "Creating folder '{}' under '{}' in '{}' cloud store", folderName, parentFileResource.path, cloudStoreName
 
 		boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, folderName, targetDirectory, true)
-
-		if(!isSuccess) {
-			flash.error = message(code: 'cloudstore.newfolderfailed')
-		}
-		else {
-			flash.info = message(code: 'cloudstore.newfoldersuccess', args: [folderName])
-		}
 
 		renderCloudStore(account, cloudStoreName, parentFileResource.path, true)
 	}

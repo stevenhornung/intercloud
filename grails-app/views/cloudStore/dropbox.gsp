@@ -112,9 +112,17 @@
 			        			folderName: folderName},
 			        		success: function(data) {
 			        			$("#resourceList").html(data);
-			        			$("#flashinfo").html("${flash.info}")
+			        			$("#flashinfo").html("Folder created successfully.")
+			        		},
+			        		error: function() {
+			        			$("#flasherror").html("Folder creation failed.")
 			        		}
 			        	});
+
+			        	setTimeout(function() {
+				    		$("#flashinfo").html("");
+				    		$("#flasherror").html("");
+				    	}, 3000);
 
 			            $( this ).dialog( "close" );
 			        },
@@ -130,7 +138,7 @@
 
 				Dropzone.options.dropboxDropzone = {
 				  init: function() {
-				    this.on("complete", function(file) {
+				    this.on("success", function(file) {
 				    	var storeName = $("#uploadStoreName").val();
 			        	var targetDir = $("#uploadTargetDir").val();
 			        	$.ajax({
@@ -149,6 +157,14 @@
 				    	$("#flashinfo").html("File uploaded successfully.");
 				    	setTimeout(function() {
 				    		$("#flashinfo").html("");
+				    		$("#flasherror").html("");
+				    	}, 3000);
+			        });
+			        this.on("error", function(file) {
+			        	$("#flasherror").html("File upload failed.");
+				    	setTimeout(function() {
+				    		$("#flashinfo").html("");
+				    		$("#flasherror").html("");
 				    	}, 3000);
 			        });
 				  },
@@ -177,13 +193,11 @@
 			</g:if>
 		</sec:ifLoggedIn>
 		<div id="page-body" role="main">
-			<g:if test="${flash.error }">
-					<div id="flasherror" class="errors">
-							${flash.error}
-					</div>
-			</g:if>
+			<div id="flasherror" class="errors">
+				${flash.error}
+			</div>
 			<div id="flashinfo" class="message">
-					${flash.info}
+				${flash.info}
 			</div>
 			<sec:ifLoggedIn>
 				<g:if test="${fileInstanceList != null }">
