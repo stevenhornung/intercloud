@@ -139,7 +139,7 @@
 							<div class="slide_content">
 								<a style="margin-top:4px;margin-left:4px;color:#fff" href="${cloudStore.key}">${cloudStore.key.capitalize()}</a>
 								<g:if test="${cloudStore.key != 'intercloud' }">
-										|	<g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName: cloudStore.key]" style="color:#fff">Sync</g:remoteLink>
+										|	<g:remoteLink controller="cloudstore" action="update" update="${cloudStore.key}ResourceList" params="[storeName: cloudStore.key, targetDir: request.forwardURI]" style="color:#fff">Sync</g:remoteLink>
 								</g:if>
 								<g:if test="${cloudStore.value }">
 									<div style="border:solid;border-width:1px;margin-bottom:20px;border-radius:5px;padding:3px">
@@ -153,7 +153,7 @@
 											Modified
 										</div>
 									</div>
-									<div id="resourceList">
+									<div id="${cloudStore.key}ResourceList">
 										<g:render template="layouts/${cloudStore.key}Resources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
 									</div>
 								</g:if>

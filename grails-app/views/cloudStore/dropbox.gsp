@@ -131,13 +131,28 @@
 				Dropzone.options.dropboxDropzone = {
 				  init: function() {
 				    this.on("complete", function(file) {
+				    	var storeName = $("#uploadStoreName").val();
+			        	var targetDir = $("#uploadTargetDir").val();
+			        	$.ajax({
+			        		url: "/cloudstore/update",
+			        		type: "POST",
+			        		data: {
+			        			storeName: storeName,
+			        			targetDir: targetDir
+			        		},
+			        		success: function(data) {
+			        			$("#resourceList").html(data);
+			        		}
+			        	});
+
+
 				    	$("#flashinfo").html("File uploaded successfully.");
 				    	setTimeout(function() {
 				    		$("#flashinfo").html("");
 				    	}, 3000);
 			        });
 				  },
-				  parallelUploads: 5,
+				  parallelUploads: 1,
 				  maxFilesize: 3072 // 3 gb
 				};
 			});
@@ -151,9 +166,11 @@
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=dropbox">Download Entire Dropbox</a></p>
 					<g:formRemote name="dropboxDropzone" url="[controller: 'cloudstore', action: 'upload', params:[storeName: 'dropbox', targetDir: request.forwardURI]]" update="resourceList" class="dropzone">
-					  <div class="fallback">
-					    <input name="file" type="file" multiple />
-					  </div>
+						<input type="hidden" id="uploadStoreName" value="dropbox">
+					 	<input type="hidden" id="uploadTargetDir" value="${request.forwardURI}">
+					  	<div class="fallback">
+					    	<input name="file" type="file" multiple />
+					  	</div>
 					</g:formRemote>
 
 				</div>
@@ -172,7 +189,7 @@
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img style="display:inline-block" src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=50 height=50>
-							 | <g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName:'dropbox']">Sync</g:remoteLink>
+							 | <g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName:'dropbox', targetDir: request.forwardURI]">Sync</g:remoteLink>
 							 <div style="display:inline-block" id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
 							 	<div id="dialog-form">
 							 		<form>

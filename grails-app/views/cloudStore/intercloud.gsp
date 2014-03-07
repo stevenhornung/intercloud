@@ -131,14 +131,32 @@
 				Dropzone.options.intercloudDropzone = {
 				  init: function() {
 				    this.on("complete", function(file) {
+				    	var storeName = $("#uploadStoreName").val();
+			        	var targetDir = $("#uploadTargetDir").val();
+
+			        	// Workaround to force update because formRemote update function not
+			        	// working for some reason. Need to go back and figure out why because
+			        	// its a double call basically
+			        	$.ajax({
+			        		url: "/cloudstore/update",
+			        		type: "POST",
+			        		data: {
+			        			storeName: storeName,
+			        			targetDir: targetDir
+			        		},
+			        		success: function(data) {
+			        			$("#resourceList").html(data);
+			        		}
+			        	});
+
+
 				    	$("#flashinfo").html("File uploaded successfully.");
 				    	setTimeout(function() {
 				    		$("#flashinfo").html("");
 				    	}, 3000);
-
 			        });
 				  },
-				  parallelUploads: 5,
+				  parallelUploads: 1,
 				  maxFilesize: 3072 // 3 gb
 				};
 			});
@@ -151,10 +169,12 @@
 			<g:if test="${fileInstanceList != null }">
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=intercloud">Download Entire intercloud</a></p>
-					<g:formRemote id="intercloudDropzone" name="intercloudDropzone" url="[controller: 'cloudstore', action: 'upload', params:[storeName: 'intercloud', targetDir: request.forwardURI]]" update="resourceList" class="dropzone">
-					  <div class="fallback">
-					    <input name="file" type="file" multiple />
-					  </div>
+					<g:formRemote name="intercloudDropzone" url="[controller: 'cloudstore', action: 'upload', params:[storeName: 'intercloud', targetDir: request.forwardURI]]" update="resourceList" class="dropzone">
+						<input type="hidden" id="uploadStoreName" value="intercloud">
+					 	<input type="hidden" id="uploadTargetDir" value="${request.forwardURI}">
+					  	<div class="fallback">
+					    	<input name="file" type="file" multiple />
+					  	</div>
 					</g:formRemote>
 				</div>
 			</g:if>

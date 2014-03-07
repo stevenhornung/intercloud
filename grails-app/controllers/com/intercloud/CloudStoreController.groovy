@@ -165,7 +165,7 @@ class CloudStoreController extends BaseController {
 		}
 		else {
 			log.warn "File resource data could not be retrieved from {}", cloudStoreName
-			flash.error = message(code: 'cloudstore.datanotretrieved', args: [fileResource.fileName, cloudStoreName])
+			flash.error = message(code: 'cloudstore.datanotretrieved', args: [cloudStoreName, fileResource.fileName])
 			getAllCloudStoreResources()
 		}
 	}
@@ -270,11 +270,18 @@ class CloudStoreController extends BaseController {
 	public def updateResources() {
 		Account account = getCurrentAccount()
 		String cloudStoreName = params.storeName
+		String targetDirectory = params.targetDir
 
 		cloudStoreService.updateResources(account, cloudStoreName)
 
-		if(cloudStoreName) {
-			renderCloudStore(account, cloudStoreName, ROOT_DIR, true)
+		if(cloudStoreName && targetDirectory) {
+			if(targetDirectory == "/home") {
+				renderCloudStore(account, cloudStoreName, ROOT_DIR, true)
+			}
+			else {
+				FileResource parentFileResource = cloudStoreService.getParentFileResourceFromPath(account, cloudStoreName, targetDirectory)
+				renderCloudStore(account, cloudStoreName, parentFileResource.path, true)
+			}
 		}
 		else {
 			forward(controller: 'home', action:'index')

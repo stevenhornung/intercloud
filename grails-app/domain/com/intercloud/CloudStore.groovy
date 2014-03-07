@@ -22,7 +22,12 @@ class CloudStore implements Comparable {
 
 	static mapping = {
 		fileResources cascade: 'all-delete-orphan', lazy: false
-		version false
+
+		// This is so we can do pessimistic locking.  However, as is, it only works when saves
+		// happen only on cloudStores but need GoogledriveCloudStore to save fileResources when created
+		// in order to get their id to set parents :( will need to figure out a way around this
+		// path searching seems expensive but may be only option
+		//version false
 	}
 
 	int compareTo(obj) {

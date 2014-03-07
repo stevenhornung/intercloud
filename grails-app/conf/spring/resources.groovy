@@ -21,13 +21,13 @@ beans = {
 	cloudStoreService(CloudStoreService) {
 		ROOT_DIR = "/"
 
-		INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
-		//INTERCLOUD_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage"
-
 		INTERCLOUD = "intercloud"
 		DROPBOX = "dropbox"
 		GOOGLEDRIVE = "googledrive"
 		AWSS3 = "awss3"
+
+		INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
+		//INTERCLOUD_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage"
 	}
 
 	dropboxCloudStore (DropboxCloudStore) {
@@ -41,9 +41,9 @@ beans = {
 
 	googledriveCloudStore (GoogledriveCloudStore) {
 		STORE_NAME = 'googledrive'
+
 		CLIENT_ID = "887098665005.apps.googleusercontent.com"
 		CLIENT_SECRET = "OZQKsV0dGM04h-FtNt-VpGIF"
-
 		REDIRECT_URL = "http://localhost:8080/auth_redirect"
 
 		//REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
@@ -55,6 +55,7 @@ beans = {
 
 	awsS3CloudStore (AwsS3CloudStore) {
 		STORE_NAME = 'awss3'
+
 		//AWS_CREDENTIAL_URL = "http://localhost:8080/awss3credentials"
 		//REDIRECT_URL = "http://localhost:8080/auth_redirect"
 
@@ -63,7 +64,7 @@ beans = {
 	}
 
 	zipUtilities (ZipUtilities) {
-		//ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
-		ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
+		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
+		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
 	}
 }

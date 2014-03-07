@@ -100,8 +100,8 @@
 			      modal: true,
 			      buttons: {
 			        "Create Folder": function() {
-			        	var storeName = $("#storeName").val();
-			        	var targetDir = $("#targetDir").val();
+			        	var storeName = $("#folderStoreName").val();
+			        	var targetDir = $("#folderTargetDir").val();
 			        	var folderName = $("#folderName").val();
 			        	$.ajax({
 			        		url: "/newfolder",
@@ -131,13 +131,28 @@
 				Dropzone.options.googledriveDropzone = {
 				  init: function() {
 				    this.on("complete", function(file) {
+				    	var storeName = $("#uploadStoreName").val();
+			        	var targetDir = $("#uploadTargetDir").val();
+			        	$.ajax({
+			        		url: "/cloudstore/update",
+			        		type: "POST",
+			        		data: {
+			        			storeName: storeName,
+			        			targetDir: targetDir
+			        		},
+			        		success: function(data) {
+			        			$("#resourceList").html(data);
+			        		}
+			        	});
+
+
 				    	$("#flashinfo").html("File uploaded successfully.");
 				    	setTimeout(function() {
 				    		$("#flashinfo").html("");
 				    	}, 3000);
 			        });
 				  },
-				  parallelUploads: 5,
+				  parallelUploads: 1,
 				  maxFilesize: 3072 // 3 gb
 				};
 			});
@@ -151,9 +166,11 @@
 				<div id="status" role="complementary">
 					<p><a href="/download?storeName=googledrive">Download Entire Google Drive</a></p>
 					<g:formRemote name="googledriveDropzone" url="[controller: 'cloudstore', action: 'upload', params:[storeName: 'googledrive', targetDir: request.forwardURI]]" update="resourceList" class="dropzone">
-					  <div class="fallback">
-					    <input name="file" type="file" multiple />
-					  </div>
+						<input type="hidden" id="uploadStoreName" value="googledrive">
+					 	<input type="hidden" id="uploadTargetDir" value="${request.forwardURI}">
+					  	<div class="fallback">
+					    	<input name="file" type="file" multiple />
+					  	</div>
 					</g:formRemote>
 
 				</div>
@@ -172,14 +189,14 @@
 				<g:if test="${fileInstanceList != null }">
 					<div style="margin-top:10px">
 						<img style="display:inline-block" src="${resource(dir: 'images', file: 'googledrive.png')}" width=50 height=50>
-						 | <g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName:'googledrive']">Sync</g:remoteLink>
+						 | <g:remoteLink controller="cloudstore" action="update" update="resourceList" params="[storeName:'googledrive', targetDir: request.forwardURI]">Sync</g:remoteLink>
 						<div style="display:inline-block" id="newFolder">| <a href="#"><a href="#">New Folder</a></div>
 					 	 <div id="dialog-form">
 					 		<form>
 					 			<label for="folderName">Folder Name</label>
 					 			<input type="text" id="folderName" placeholder="New Folder">
-					 			<input type="hidden" id="storeName" value="googledrive">
-					 			<input type="hidden" id="targetDir" value="${request.forwardURI}">
+					 			<input type="hidden" id="folderStoreName" value="googledrive">
+					 			<input type="hidden" id="folderTargetDir" value="${request.forwardURI}">
 					 		</form>
 					 	</div>
 						<div style="float:right;display:inline-block">
