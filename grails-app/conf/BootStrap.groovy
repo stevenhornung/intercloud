@@ -35,6 +35,9 @@ class BootStrap {
 
 		createIntercloudCloudStore(shaderAdmin)
 		createRootIntercloudFileResource(shaderAdmin)
+
+		steveAdmin.save(flush:true)
+		shaderAdmin.save(flush:true)
     }
 
 	private def createIntercloudCloudStore(Account newAccount) {

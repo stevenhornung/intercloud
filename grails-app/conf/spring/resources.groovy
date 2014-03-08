@@ -1,4 +1,5 @@
 import com.intercloud.CloudStoreController
+import com.intercloud.AccountController
 import com.intercloud.CloudStoreService
 import com.intercloud.cloudstore.DropboxCloudStore
 import com.intercloud.cloudstore.GoogledriveCloudStore
@@ -8,6 +9,14 @@ import com.intercloud.sync.SecurityEventListener
 import com.intercloud.accountdetails.AccountDetailsService
 
 beans = {
+
+	/*
+	 *	Design to Prod:
+	 *		-resources.groovy
+	 *		-BootStrap.groovy
+	 */
+
+
 	securityEventListener(SecurityEventListener) {
 		grailsApplication = ref('grailsApplication')
 	}
@@ -16,6 +25,11 @@ beans = {
 
 	cloudStoreController(CloudStoreController) {
 		ROOT_DIR = "/"
+	}
+
+	accountController(AccountController) {
+		BASE_LOCATION = "storage/InterCloudStorage/"
+		//BASE_LOCATION = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage/"
 	}
 
 	cloudStoreService(CloudStoreService) {
@@ -28,6 +42,11 @@ beans = {
 
 		INTERCLOUD_STORAGE_PATH = "storage/InterCloudStorage"
 		//INTERCLOUD_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage"
+	}
+
+	zipUtilities (ZipUtilities) {
+		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
+		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
 	}
 
 	dropboxCloudStore (DropboxCloudStore) {
@@ -61,10 +80,5 @@ beans = {
 
 		AWS_CREDENTIAL_URL = "http://stevenhornung.com:8443/awss3credentials"
 		REDIRECT_URL = "https://www.stevenhornung.com:8443/auth_redirect"
-	}
-
-	zipUtilities (ZipUtilities) {
-		ZIP_TEMP_STORAGE_PATH = "storage/TemporaryZipStorage"
-		//ZIP_TEMP_STORAGE_PATH = "/home/stevenhornung/Development/intercloud/storage/TemporaryZipStorage"
 	}
 }

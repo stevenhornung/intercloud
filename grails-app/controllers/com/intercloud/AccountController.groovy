@@ -12,6 +12,8 @@ class AccountController extends BaseController {
 
 	private static Logger log = LoggerFactory.getLogger(AccountController.class)
 
+	static String BASE_LOCATION
+
 	public def index() {
 		def account = getCurrentAccount()
 		if(account) {
@@ -43,15 +45,17 @@ class AccountController extends BaseController {
 
 		Account newAccount = createNewAccount()
 
-		addAccountToUserRole(newAccount)
-		createIntercloudCloudStore(newAccount)
-		createRootIntercloudFileResource(newAccount)
-
 		if(!newAccount.save(flush: true)) {
 			flash.error = message(code: 'account.notcreated')
 			showRegisterErrors()
 			return
 		}
+
+		addAccountToUserRole(newAccount)
+		createIntercloudCloudStore(newAccount)
+		createRootIntercloudFileResource(newAccount)
+
+		newAccount.save(flush:true)
 
 		log.debug "Account: {} created", newAccount.email
 		flash.loginMessage = message(code: 'account.created')
@@ -94,6 +98,8 @@ class AccountController extends BaseController {
 		cloudStoreInstance.storeName = 'intercloud'
 		cloudStoreInstance.userId = newAccount.email
 
+		cloudStoreInstance.save()
+
 		newAccount.addToCloudStores(cloudStoreInstance)
 	}
 
@@ -106,8 +112,7 @@ class AccountController extends BaseController {
 		rootIntercloudFileResource.cloudStore = cloudStore
 		rootIntercloudFileResource.path = '/'
 
-		String locationOnFileSystem = "storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
-		//String locationOnFileSystem = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+		String locationOnFileSystem = BASE_LOCATION + newAccount.email + '/InterCloudRoot'
 
 		new File(locationOnFileSystem).mkdirs()
 		rootIntercloudFileResource.locationOnFileSystem = locationOnFileSystem

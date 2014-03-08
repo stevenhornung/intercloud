@@ -505,7 +505,6 @@ class CloudStoreService {
 		fileResource.parentFileResource = parentFileResource
 		parentFileResource.addToChildFileResources(fileResource)
 
-
 		cloudStore.addToFileResources(fileResource)
 	}
 
