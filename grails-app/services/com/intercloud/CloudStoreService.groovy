@@ -49,6 +49,7 @@ class CloudStoreService {
 
 			// Run async job to link up cloud store
 			def future = callAsync {
+				log.debug "Saving cloud store"
 				return saveCloudStoreInstance(account, cloudStoreClass)
 			}
 			Map linkCloudStoreParam = ['future': future]
@@ -57,7 +58,7 @@ class CloudStoreService {
 		return didFinishConfigure
 	}
 
-	private boolean saveCloudStoreInstance(Account account, def cloudStoreClass) {
+	private def saveCloudStoreInstance(Account account, def cloudStoreClass) {
 		CloudStore cloudStoreInstance = new CloudStore()
 		boolean isSuccess = cloudStoreClass.setCloudStoreProperties(cloudStoreInstance, account)
 
@@ -67,7 +68,7 @@ class CloudStoreService {
 				isSuccess = false
 			}
 		}
-		return isSuccess
+		return [account, isSuccess]
 	}
 
 	public def getHomeCloudStoreResources(Account account) {
@@ -601,5 +602,21 @@ class CloudStoreService {
 	private void updateIntercloudSpace(CloudStore cloudStore, BigInteger spaceToChange) {
 		log.debug "Updating intercloud space"
 		cloudStore.spaceUsed += spaceToChange
+	}
+
+	public String getCloudStoreNameFromPath(String targetDirectory) {
+		String cloudStoreName = null
+
+		if(targetDirectory.startsWith("/dropbox")) {
+			cloudStoreName = "dropbox"
+		}
+		else if(targetDirectory.startsWith("/googledrive")) {
+			cloudStoreName = "googledrive"
+		}
+		else if(targetDirectory.startsWith("/intercloud")) {
+			cloudStoreName = "intercloud"
+		}
+
+		return cloudStoreName
 	}
 }

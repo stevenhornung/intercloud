@@ -9,11 +9,18 @@ class LinkCloudStoreJob {
 
 	static triggers = {}
 
+	def jmsService
+
 	def execute(context) {
 		//String storeName = context.mergedJobDataMap.get('storeName')
 		def future = context.mergedJobDataMap.get('future')
 
-		def isSuccess = future.get()
+		Account account
+		boolean isSuccess
+		(account, isSuccess) = future.get()
 		log.debug "Cloud store link completed with status: {}", isSuccess
+
+		// Send message that client resources need updating
+		jmsService.send(queue:'cloudstore.isUpdated', [acctId: account.id])
 	}
 }

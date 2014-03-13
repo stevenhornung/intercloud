@@ -96,18 +96,6 @@
 
 		<script>
 			$(document).ready(function() {
-				$('#accordion1').accordionza({
-					captionDelay: 100,
-					captionEasing: 'easeOutBounce',
-					captionHeight: 40,
-					captionHeightClosed: 10,
-					navKey: true
-				});
-			});
-		</script>
-
-		<script>
-			$(document).ready(function() {
 
 				// On page load, remove any
 				setTimeout(function() {
@@ -115,6 +103,59 @@
 		    		$("#flasherror").html("");
 		    	}, 3000);
 			});
+		</script>
+
+		<script>
+			$(document).ready(function() {
+				// On page load, begin polling if client needs resource update
+				pollServerForUpdates();
+
+			});
+
+			function pollServerForUpdates() {
+				$.ajax({
+	        		url: "/cloudstore/needsupdate",
+	        		type: "POST",
+	        		complete: function(response) {
+	        			var resp = $.parseJSON(response.responseText);
+
+	        			// check if client needs update
+	        			if(resp.isUpdated) {
+        					updateResources();
+	        			}
+
+        				// Poll every 5 seconds
+        				setTimeout(function() {
+        					pollServerForUpdates();
+        				}, 5000);
+	        		}
+		        });
+			}
+
+			function updateResources() {
+				var targetDir = $(location).attr('href');
+				$.ajax({
+	        		url: "/cloudstore/update",
+	        		type: "POST",
+	        		data: {
+			        	targetDir: targetDir,
+			        	sync: false
+			        },
+	        		success: function(data) {
+	        			$("#homeResources").html(data);
+	        			$("#flashinfo").html("Cloud store linked successfully.")
+	        			setUpdated();
+	        		}
+	        	});
+			}
+
+			function setUpdated() {
+				$.ajax({
+	        		url: "/cloudstore/setupdated",
+	        		type: "POST",
+	        		success: function(response) {}
+	        	});
+			}
 		</script>
 
 	</head>
@@ -128,46 +169,9 @@
 				<div id="flashinfo" class="message">
 					${flash.info}
 				</div>
-				<ul id="accordion1">
-					<g:each in="${homeResources}" status="i" var="cloudStore">
-						<li class="${cloudStore.key}_slide">
-							<div class="slide_handle">
-								<g:if test="${cloudStore.key == 'dropbox' }">
-									<img style="margin-top:4px;margin-left:4px" src="${resource(dir: 'images', file: 'dropbox.jpeg')}" width=30 height=30>
-								</g:if>
-								<g:elseif test="${cloudStore.key == 'googledrive' }">
-									<img style="margin-top:4px;margin-left:4px" src="${resource(dir: 'images', file: 'googledrive.png')}" width=30 height=30>
-								</g:elseif>
-								<g:elseif test="${cloudStore.key == 'intercloud' }">
-									<img style="margin-top:4px;margin-left:4px" src="${resource(dir: 'images', file: 'intercloud.jpeg')}" width=30 height=30>
-								</g:elseif>
-								<div></div>
-							</div>
-							<div class="slide_content">
-								<a style="margin-top:4px;margin-left:4px;color:#fff" href="${cloudStore.key}">${cloudStore.key.capitalize()}</a>
-								<g:if test="${cloudStore.key != 'intercloud' }">
-										|	<g:remoteLink controller="cloudstore" action="update" update="${cloudStore.key}ResourceList" params="[storeName: cloudStore.key, targetDir: request.forwardURI]" style="color:#fff">Sync</g:remoteLink>
-								</g:if>
-								<g:if test="${cloudStore.value }">
-									<div style="border:solid;border-width:1px;margin-bottom:20px;border-radius:5px;padding:3px">
-										<div style="margin-left:10px;display:inline-block;">
-											Name
-										</div>
-										<div style="margin-left:40%;display:inline-block;">
-											Kind
-										</div>
-										<div style="float:right;margin-right:30px;display:inline-block;">
-											Modified
-										</div>
-									</div>
-									<div id="${cloudStore.key}ResourceList">
-										<g:render template="layouts/${cloudStore.key}Resources" model="[fileInstanceList: cloudStore.value, cloudStore: cloudStore.key]" />
-									</div>
-								</g:if>
-							</div>
-						</li>
-					</g:each>
-				</ul>
+				<div id="homeResources">
+					<g:render template="layouts/homeResources" model="[homeResources: homeResources]" />
+				</div>
 			</sec:ifLoggedIn>
 			<sec:ifNotLoggedIn>
 				<h1>Display all features and capabilities for non logged in user</h1>

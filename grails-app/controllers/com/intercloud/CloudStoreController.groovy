@@ -6,12 +6,15 @@ import com.intercloud.util.CloudStoreUtilities
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 
+import grails.converters.JSON
+
 class CloudStoreController extends BaseController {
 
 	private static Logger log = LoggerFactory.getLogger(CloudStoreController.class)
-	 static String ROOT_DIR
+	static String ROOT_DIR
 
 	def cloudStoreService
+	def jmsService
 
 	public def index() {
 		Account account = getCurrentAccount()
@@ -23,7 +26,7 @@ class CloudStoreController extends BaseController {
 			}
 			else {
 				log.debug "No store name specified to link to"
-				renderHomeResources()
+				renderHomeResources(false)
 			}
 		}
 		else {
@@ -45,12 +48,12 @@ class CloudStoreController extends BaseController {
 			else {
 				log.debug "Retrieving of cloud store request url failed from '{}'", cloudStoreName
 				flash.error = message(code: 'service.linkfailed', args: [cloudStoreName])
-				renderHomeResources()
+				renderHomeResources(false)
 			}
 		}
 		else {
 			log.debug "Bad cloud store specified to link"
-			renderHomeResources()
+			renderHomeResources(false)
 		}
 	}
 
@@ -82,10 +85,16 @@ class CloudStoreController extends BaseController {
 		redirect(uri : "/home")
 	}
 
-	public def renderHomeResources() {
+	public def renderHomeResources(boolean isAjaxUpdate) {
 		Account account = getCurrentAccount()
 		def homeResources = cloudStoreService.getHomeCloudStoreResources(account)
-		render (view: "index", model: [homeResources : homeResources])
+
+		if(isAjaxUpdate) {
+			render (template: "layouts/homeResources", model: [homeResources : homeResources])
+		}
+		else {
+			render (view: "index", template: "layouts/homeResources", model: [homeResources : homeResources])
+		}
 	}
 
 	public def getAllCloudStoreResources() {
@@ -269,15 +278,18 @@ class CloudStoreController extends BaseController {
 
 	public def updateResources() {
 		Account account = getCurrentAccount()
-		String cloudStoreName = params.storeName
+		boolean sync = params.sync == 'true' ? true : false
 		String targetDirectory = params.targetDir
+		String cloudStoreName = params.storeName ? params.storeName : cloudStoreService.getCloudStoreNameFromPath(targetDirectory)
 
-		if(cloudStoreName != "intercloud") {
+		// Only sync non cloud store and when we explictly ask to sync
+		if(cloudStoreName != "intercloud" && sync) {
 			cloudStoreService.updateResources(account, cloudStoreName)
 		}
 
 		if(cloudStoreName && targetDirectory) {
-			if(targetDirectory == "/home") {
+			// need to do better than targetURI then can remove the second if
+			if(targetDirectory == "/home" || targetDirectory == "/cloudstore/update") {
 				renderCloudStore(account, cloudStoreName, ROOT_DIR, true)
 			}
 			else {
@@ -286,7 +298,7 @@ class CloudStoreController extends BaseController {
 			}
 		}
 		else {
-			forward(controller: 'home', action:'index')
+			renderHomeResources(true)
 		}
 	}
 
@@ -346,5 +358,20 @@ class CloudStoreController extends BaseController {
 		boolean isSuccess = cloudStoreService.uploadResource(account, cloudStoreName, folderName, targetDirectory, true)
 
 		renderCloudStore(account, cloudStoreName, parentFileResource.path, true)
+	}
+
+	public def needsUpdate() {
+		Account account = getCurrentAccount()
+
+		render([isUpdated: account.isUpdated] as JSON)
+	}
+
+	public def setUpdated() {
+		Account account = getCurrentAccount()
+
+		// Send message that updating has finished
+		jmsService.send(queue:'cloudstore.finishedUpdate', [acctId: account.id])
+
+		render([isUpdated: account.isUpdated] as JSON)
 	}
 }

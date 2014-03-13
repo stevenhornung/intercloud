@@ -2,6 +2,8 @@ import com.intercloud.*
 
 class BootStrap {
 
+	static String BASE_LOCATION
+
 	def springSecurityService
 
     def init = { servletContext ->
@@ -59,8 +61,7 @@ class BootStrap {
 		rootIntercloudFileResource.cloudStore = cloudStore
 		rootIntercloudFileResource.path = '/'
 
-		String locationOnFileSystem = "storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
-		//String locationOnFileSystem = "/home/stevenhornung/Development/intercloud/storage/InterCloudStorage/" + newAccount.email + '/InterCloudRoot'
+		String locationOnFileSystem = BASE_LOCATION + newAccount.email + '/InterCloudRoot'
 
 		new File(locationOnFileSystem).mkdirs()
 		rootIntercloudFileResource.locationOnFileSystem = locationOnFileSystem

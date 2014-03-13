@@ -12,10 +12,13 @@ class SyncFileResourcesHelper {
 
 	private static Logger log = LoggerFactory.getLogger(SyncFileResourcesHelper.class)
 
+	//def jmsService
+
 	public void syncSingleUserCloudStores(Account account) {
 		def accountCloudStores = account.cloudStores
 		for(CloudStore cloudStore : accountCloudStores) {
 			cloudStore.lock()
+
 			if(cloudStore.storeName == 'dropbox') {
 				runDropboxUpdater(cloudStore, account)
 			}
@@ -25,6 +28,9 @@ class SyncFileResourcesHelper {
 			else {
 				// intercloud cloud store, no sync needed
 			}
+
+			// Send message that client resources need updating
+			//jmsService.send(queue:'cloudstore.isUpdated', [acctId: account.id])
 		}
 	}
 

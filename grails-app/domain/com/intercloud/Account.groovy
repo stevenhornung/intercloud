@@ -12,6 +12,7 @@ class Account {
 	boolean accountExpired
 	boolean accountLocked
 	boolean passwordExpired
+	boolean isUpdated = false
 
 	static hasMany = [cloudStores: CloudStore]
 

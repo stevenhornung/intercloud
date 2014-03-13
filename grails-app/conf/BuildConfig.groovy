@@ -28,6 +28,8 @@ grails.project.dependency.resolution = {
     }
 
     dependencies {
+        runtime 'mysql:mysql-connector-java:5.1.29'
+
 		compile 'com.dropbox.core:dropbox-core-sdk:[1.7,1.8)'
 		compile 'com.google.apis:google-api-services-drive:v2-rev100-1.17.0-rc'
 		compile 'com.google.api-client:google-api-client-servlet:1.17.0-rc'
@@ -40,6 +42,9 @@ grails.project.dependency.resolution = {
 		test "org.spockframework:spock-grails-support:0.7-groovy-2.0"
 
 		build 'org.apache.tika:tika-core:0.9'
+
+        // issue with unresolved class and jms
+        compile 'org.springframework:spring-jms:3.2.5.RELEASE'
     }
 
     plugins {
@@ -57,6 +62,9 @@ grails.project.dependency.resolution = {
 
 		compile ":executor:0.3"
 		compile ":quartz:1.0-RC9"
+
+        compile ":jms:1.2"
+        compile ":activemq:0.4.1"
 
 		compile ':webflow:2.0.8.1'
 

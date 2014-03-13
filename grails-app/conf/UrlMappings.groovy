@@ -177,5 +177,21 @@ class UrlMappings {
 						PUT: 'respondInvalidAction',
 						DELETE: 'respondInvalidAction']
 		}
+
+		"/cloudstore/needsupdate" {
+			controller = "cloudStore"
+			action = [GET: 'respondInvalidAction',
+						POST: 'needsUpdate',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
+
+		"/cloudstore/setupdated" {
+			controller = "cloudStore"
+			action = [GET: 'respondInvalidAction',
+						POST: 'setUpdated',
+						PUT: 'respondInvalidAction',
+						DELETE: 'respondInvalidAction']
+		}
 	}
 }
